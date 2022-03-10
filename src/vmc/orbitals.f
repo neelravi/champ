@@ -2,7 +2,12 @@
 c Written by Cyrus Umrigar starting from Kevin Schmidt's routine
 c Modified by A. Scemama
 
-      use const, only: nelec, ipr, use_qmckl, qmckl_ctx
+
+      ! Include all the const module for QMCkl. Avoid 'only', otherwise you will
+      ! need to change it every time QMCkl is updated, or you will need
+      ! to have extra ifdef statements here.
+      use const !, only: nelec, ipr, use_qmckl, qmckl_ctx
+
       use wfsec, only: iwf
       use phifun, only: phin, dphin, d2phin, n0_ibasis, n0_nbasis
       use coefs, only: coef, nbasis, norb
@@ -13,9 +18,14 @@ c Modified by A. Scemama
       use orbval, only: ddorb, dorb, nadorb, orb
       use precision_kinds, only: dp
       use contrl_file,only: ounit
+
+#ifdef QMCKL_FOUND
+      use qmckl
+#endif
+
       implicit none
 
-      integer :: i, ier, ider, iorb, k, m
+      integer :: i, ier, ider, iorb, k, l, m
       integer :: m0
 
       real(dp), dimension(3,*) :: x
@@ -24,6 +34,14 @@ c Modified by A. Scemama
 c     real(dp), dimension(nelec,nbasis) :: bhin
 c     real(dp), dimension(3*nelec,nbasis) :: dbhin
 c     real(dp), dimension(nelec,nbasis) :: d2bhin
+
+ccc   QMCkl
+      real(dp), allocatable :: ao_vgl_qmckl(:,:,:)
+      real(dp), allocatable :: mo_vgl_qmckl(:,:,:)
+      integer :: rc
+      integer*8 :: n8
+ccc
+
 
       ier=1
       if(iperiodic.eq.0) then
@@ -97,11 +115,44 @@ c get basis functions for all electrons
          ider=2
          if(iforce_analy.eq.1) ider=3
 
-!         if (use_qmckl) then
-!           call qmckl_get_ao_vgl(qmckl_ctx, ao_vgl, size(ao_vgl)*1_8)
-!         else
+         if (use_qmckl) then
+           if (ider == 3) then
+             stop 'QMCkl can''t do forces'
+           end if
+
+           rc = qmckl_set_electron_coord(qmckl_ctx, 'N', x, 3_8*nelec)
+           if (rc /= QMCKL_SUCCESS) then
+             print *, 'Error setting electron coordinates in QMCkl'
+           end if
+
+      call basis_fns(1,nelec,rvec_en,r_en,ider)
+           allocate(ao_vgl_qmckl(nbasis, 5, nelec))
+           rc = qmckl_get_ao_basis_ao_vgl(qmckl_ctx,
+     &          ao_vgl_qmckl, nbasis*nelec*5_8)
+           if (rc /= QMCKL_SUCCESS) then
+             print *, 'Error getting AOs from QMCkl'
+           end if
+
+           do i=1,nelec
+             print *, ''
+             do m=1,nbasis
+               print *, i, m
+               print *, d2phin(m,i) , ao_vgl_qmckl(m,5,i)
+               print *, phin(m,i) , ao_vgl_qmckl(m,1,i)
+               print *, dphin(1,m,i) , ao_vgl_qmckl(m,2,i)
+               print *, dphin(2,m,i) , ao_vgl_qmckl(m,3,i)
+               print *, dphin(3,m,i) , ao_vgl_qmckl(m,4,i)
+               d2phin(m,i) = ao_vgl_qmckl(m,5,i)
+               phin(m,i) = ao_vgl_qmckl(m,1,i)
+               dphin(1,m,i) = ao_vgl_qmckl(m,2,i)
+               dphin(2,m,i) = ao_vgl_qmckl(m,3,i)
+               dphin(3,m,i) = ao_vgl_qmckl(m,4,i)
+             end do
+           end do
+           deallocate(ao_vgl_qmckl)
+         else
            call basis_fns(1,nelec,rvec_en,r_en,ider)
-!         endif 
+         end if
 
 c in alternativa al loop 26
 c        do jbasis=1,nbasis

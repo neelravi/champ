@@ -25,6 +25,7 @@ module const
     logical, public :: use_qmckl = .True.
 #else
     integer, public :: qmckl_ctx = 0
+    integer, public :: QMCKL_SUCCESS = 0
     logical, public :: use_qmckl = .False.
 #endif
 

@@ -1519,9 +1519,22 @@ subroutine parser
 
   if (use_qmckl) then
     qmckl_ctx = qmckl_context_create()
+
     iostat = qmckl_trexio_read(qmckl_ctx, file_trexio, 1_8*len(trim(file_trexio)))
     if (iostat /= QMCKL_SUCCESS) then
       print *, 'Error: Unable to read TREXIO file '//trim(file_trexio)
+      call abort()
+    end if
+
+    iostat = qmckl_set_electron_num(qmckl_ctx, nup*1_8, ndn*1_8)
+    if (iostat /= QMCKL_SUCCESS) then
+      print *, 'Error: Unable to set the number of electrons in QMCkl'
+      call abort()
+    end if
+
+    iostat = qmckl_set_electron_walk_num(qmckl_ctx, 1_8) ! Only one walker is used in CHAMP
+    if (iostat /= QMCKL_SUCCESS) then
+      print *, 'Error: Unable to set the number of electrons in QMCkl'
       call abort()
     end if
   end if
