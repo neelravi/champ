@@ -2,7 +2,7 @@
 c Written by Cyrus Umrigar starting from Kevin Schmidt's routine
 c Modified by A. Scemama
 
-      use const, only: nelec, ipr
+      use const, only: nelec, ipr, use_qmckl, qmckl_ctx
       use wfsec, only: iwf
       use phifun, only: phin, dphin, d2phin, n0_ibasis, n0_nbasis
       use coefs, only: coef, nbasis, norb
@@ -96,7 +96,12 @@ c no 3d interpolation
 c get basis functions for all electrons
          ider=2
          if(iforce_analy.eq.1) ider=3
-         call basis_fns(1,nelec,rvec_en,r_en,ider)
+
+!         if (use_qmckl) then
+!           call qmckl_get_ao_vgl(qmckl_ctx, ao_vgl, size(ao_vgl)*1_8)
+!         else
+           call basis_fns(1,nelec,rvec_en,r_en,ider)
+!         endif 
 
 c in alternativa al loop 26
 c        do jbasis=1,nbasis

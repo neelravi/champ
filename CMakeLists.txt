@@ -153,12 +153,6 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
         "-Wno-c-binding-type" "-Wno-function-elimination"
         )
   endif()
-  if (TREXIO_FOUND)
-    list(APPEND Fortran_FLAGS "-ltrexio")
-  endif()
-  if (QMCKL_FOUND)
-    list(APPEND Fortran_FLAGS "-lqmckl")
-  endif()
 
   set(CMAKE_Fortran_FORMAT_FIXED_FLAG "-ffixed-form -ffixed-line-length-132 -fno-automatic")
 
@@ -177,12 +171,6 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     list(APPEND Fortran_FLAGS "-O0" "-diag-enable=all" "-traceback" "-g" "-check" "all" )
   else()
   endif()
-  if (TREXIO_FOUND)
-    list(APPEND Fortran_FLAGS "-ltrexio")
-  endif()
-  if (QMCKL_FOUND)
-    list(APPEND Fortran_FLAGS "-lqmckl")
-  endif()
 
   set(CMAKE_Fortran_FORMAT_FIXED_FLAG "-fixed -132")
   #if (MKL_FOUND)
@@ -197,12 +185,27 @@ elseif(Fortran_COMPILER_ID MATCHES "PGI")
   list(APPEND CMAKE_Fortran_FLAGS "-Mfreeform -Mdclchk -Mstandard -Mallocatable=03")
 endif()
 
+if (TREXIO_FOUND)
+  list(APPEND Fortran_FLAGS "-ltrexio")
+endif()
+if (QMCKL_FOUND)
+  list(APPEND Fortran_FLAGS "-lqmckl")
+endif()
+
 message("")
 message(STATUS "Fortran compiler flags   : " )
 foreach(flag ${Fortran_FLAGS})
   message("                                    :: " ${flag})
 endforeach(flag)
 
+
+if (TREXIO_FOUND)
+  list(APPEND TREX_LIBS ${TREXIO_LIBRARY})
+endif()
+
+if (QMCKL_FOUND)
+  list(APPEND TREX_LIBS ${QMCKL_LIBRARY})
+endif()
 
 ## Subdirectories
 # Include the following subdirectories
