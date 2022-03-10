@@ -107,6 +107,18 @@ if (TREXIO_FOUND)
   add_definitions(-DTREXIO_FOUND=\"${TREXIO_FOUND}\")
 endif(TREXIO_FOUND)
 
+# Find QMCkl
+if (TREXIO_FOUND)
+  find_package(QMCKL QUIET)
+endif(TREXIO_FOUND)
+if (QMCKL_FOUND)
+  message(STATUS "Is QMCkl library found           :: " ${QMCKL_FOUND})
+  message(STATUS "QMCKL Library include dirs       :: " ${QMCKL_INCLUDE_DIR})
+  message(STATUS "QMCKL Library lib dirs           :: " ${QMCKL_LIBRARY})
+  message(STATUS "                                    ")
+  add_definitions(-DQMCKL_FOUND=\"${QMCKL_FOUND}\")
+endif(QMCKL_FOUND)
+
 #  documentation requirements
 if (BUILD_DOC)
   find_package(DOXYGEN)
@@ -144,6 +156,9 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   if (TREXIO_FOUND)
     list(APPEND Fortran_FLAGS "-ltrexio")
   endif()
+  if (QMCKL_FOUND)
+    list(APPEND Fortran_FLAGS "-lqmckl")
+  endif()
 
   set(CMAKE_Fortran_FORMAT_FIXED_FLAG "-ffixed-form -ffixed-line-length-132 -fno-automatic")
 
@@ -164,6 +179,9 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   endif()
   if (TREXIO_FOUND)
     list(APPEND Fortran_FLAGS "-ltrexio")
+  endif()
+  if (QMCKL_FOUND)
+    list(APPEND Fortran_FLAGS "-lqmckl")
   endif()
 
   set(CMAKE_Fortran_FORMAT_FIXED_FLAG "-fixed -132")

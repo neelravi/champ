@@ -1,2 +1,2 @@
-cmake -S. -Bbuild -DCMAKE_Fortran_COMPILER=mpiifort
-cmake --build build  
+cmake -S. -Bbuild -DCMAKE_Fortran_COMPILER=mpiifort  -DBLAS_LIBRARIES="-mkl=parallel"
+cmake --build build
