@@ -7,7 +7,7 @@
       use csfs, only: nstates
       use dets, only: ndet
       use elec, only: ndn, nup
-      use multidet, only: irepcol_det, ireporb_det, ivirt, iwundet, kref, numrep_det
+      use multidet, only: irepcol_det, ireporb_det, ivirt, iwundet, kref, numrep_det, k_det, ndetiab, ndet_req
       use slatn, only: slmin
       use ycompactn, only: ymatn
       use coefs, only: norb
@@ -24,7 +24,7 @@
 
       integer :: i, iab, iel, index_det, iorb
       integer :: irep, ish, istate, jj
-      integer :: jorb, jrep, k, ndim, ndim2
+      integer :: jorb, jrep, k, ndim, ndim2, kun, kw
       integer :: nel
       real(dp) :: det, dum1
       real(dp), dimension(nelec, norb_tot, 3) :: gmat
@@ -32,8 +32,7 @@
       real(dp), dimension(norb_tot, 3) :: b
       real(dp), dimension(3) :: ddx_mdet
       real(dp), dimension(norb_tot) :: orb_sav
-      real(dp), parameter :: one = 1.d0
-      real(dp), parameter :: half = 0.5d0
+      real(dp), dimension(ndet_req) :: ddetn
 
 
 
@@ -72,92 +71,42 @@ c temporarely copy orbn to orb
       enddo
 
 c compute wave function
-      do k=1,kref-1
+c     loop inequivalent determinants
+      do k=1,ndetiab(iab)
+         
+         ndim=numrep_det(k,iab)
+         ndim2=ndim*ndim
 
-        if(iwundet(k,iab).eq.k) then
-
-          ndim=numrep_det(k,iab)
-
-          ndim2=ndim*ndim
-          jj=0
-          do jrep=1,ndim
-             jorb=ireporb_det(jrep,k,iab)
-             do irep=1,ndim
-                iorb=irepcol_det(irep,k,iab)
-                jj=jj+1
-                wfmatn(k,jj)=aan(iorb,jorb)
-             enddo
-          enddo
-          call matinv(wfmatn(k,1:ndim2),ndim,det)
-
-          
-          detn(k)=det
-
-       else
-          index_det=iwundet(k,iab)
-          detn(k)=detn(index_det)
-
-        endif
-
+         jj=0
+         do jrep=1,ndim
+            jorb=ireporb_det(jrep,k,iab)
+            do irep=1,ndim
+               iorb=irepcol_det(irep,k,iab)
+               jj=jj+1
+               wfmatn(k,jj)=aan(iorb,jorb)
+            enddo
+         enddo
+         call matinv(wfmatn(k,1:ndim2),ndim,det)
+         ddetn(k)=det
       enddo
 
-      do k=kref+1,ndet
-
-
-        if(iwundet(k,iab).eq.k) then
-
-          ndim=numrep_det(k,iab)
-          
-          ndim2=ndim*ndim
-          jj=0
-          do jrep=1,ndim
-             jorb=ireporb_det(jrep,k,iab)
-             do irep=1,ndim
-                iorb=irepcol_det(irep,k,iab)
-                jj=jj+1
-                
-                wfmatn(k,jj)=aan(iorb,jorb)
-             enddo
-          enddo
-          call matinv(wfmatn(k,1:ndim2),ndim,det)
-          
-
-          
-          
-          detn(k)=det
-
-       else
-          index_det=iwundet(k,iab)
-          detn(k)=detn(index_det)
-          
-        endif
-
-
+c     unrolling inequivalent determinants
+      do k=1,ndet
+         kun=iwundet(k,iab)
+         kw=k_det(kun,iab)
+         detn(k)=detn(kref)
+         if(kun.ne.kref) then
+            detn(k)=detn(k)*ddetn(kw)
+         endif
+c     print *, "k ",k,"detn(k) ",detn(k)
       enddo
-
-      do k=1,kref-1
-        if(iwundet(k,iab).ne.kref) then
-          detn(k)=detn(k)*detn(kref)
-        endif
-      enddo
-
-      do k=kref+1,ndet
-        if(iwundet(k,iab).ne.kref) then
-          detn(k)=detn(k)*detn(kref)
-        endif
-      enddo
-
-c      do k=1,ndet
-c        if(k.ne.kref.and.iwundet(k,iab).ne.kref) then
-c          detn(k)=detn(k)*detn(kref)
-c        endif
-c      enddo
-
-c      do istate=1,nstates
+      
+      
+c     do istate=1,nstates
 c        if(iab.eq.1) call compute_ymat(iab,detn,detiab(1,2),wfmatn,ymatn(1,1,istate),istate)
-c        if(iab.eq.2) call compute_ymat(iab,detiab(1,1),detn,wfmatn,ymatn(1,1,istate),istate)
-c      enddo
-
+c     if(iab.eq.2) call compute_ymat(iab,detiab(1,1),detn,wfmatn,ymatn(1,1,istate),istate)
+c     enddo
+      
       if (iab.eq.1) then
          do istate=1,nstates
             call compute_ymat(iab,detn,detiab(1,2),wfmatn,ymatn(1,1,istate),istate)
@@ -201,8 +150,7 @@ c-----------------------------------------------------------------------
       real(dp), dimension(nelec, norb_tot, 3) :: gmat
       real(dp), dimension(3) :: velocity
       real(dp), dimension(nmat_dim) :: slmi
-      real(dp), parameter :: one = 1.d0
-      real(dp), parameter :: half = 0.5d0
+
 
 
 

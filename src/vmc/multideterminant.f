@@ -6,7 +6,7 @@
       use csfs, only: nstates
       use dets, only: ndet
       use elec, only: ndn, nup
-      use multidet, only: irepcol_det, ireporb_det, iwundet, kref, numrep_det
+      use multidet, only: irepcol_det, ireporb_det, iwundet, kref, numrep_det, ndetiab, k_det, ndet_req
       use optwf_contrl, only: ioptorb
       use ycompact, only: dymat, ymat
       use zcompact, only: aaz, dzmat, emz, zmat
@@ -25,7 +25,7 @@
       use matinv_mod, only: matinv
       implicit none
 
-      integer :: i, iab, iel, index_det, iorb
+      integer :: i, iab, iel, index_det, iorb, kun, kw
       integer :: irep, ish, istate, jorb
       integer :: jrep, k, ndim, nel, ndim2
       real(dp) :: det, dum1, dum2, dum3
@@ -33,9 +33,8 @@
       real(dp), dimension(3, nelec) :: vj
       real(dp), dimension(*) :: vpsp_det
       real(dp), dimension(nelec**2, 2) :: btemp
-      real(dp), parameter :: one = 1.d0
-      real(dp), parameter :: half = 0.5d0
-
+      real(dp), dimension(ndet_req,2) :: ddetiab
+      real(dp), dimension(ndet_req,2) :: ddenergy_det
 
 
 
@@ -136,126 +135,53 @@ c     endif
 
       do iab=1,2
          
-         do k=1,kref-1
+         ! loop inequivalent determinants
+         do k=1,ndetiab(iab)
             
-            if(iwundet(k,iab).eq.k) then
-
-               iel=0
-               nel=nup
-               if(iab.eq.2) then
-                  iel=nup
-                  nel=ndn
-               endif
+           ndim=numrep_det(k,iab)
+           do irep=1,ndim
+              iorb=irepcol_det(irep,k,iab)
+              do jrep=1,ndim
+                 jorb=ireporb_det(jrep,k,iab)
+                 wfmat(k,irep+(jrep-1)*ndim,iab)=aa(iorb,jorb,iab)
+              enddo
+           enddo
                
-               ndim=numrep_det(k,iab)
-
-               
-
-               do irep=1,ndim
-                  iorb=irepcol_det(irep,k,iab)
-                  do jrep=1,ndim
-                     jorb=ireporb_det(jrep,k,iab)
-                     wfmat(k,irep+(jrep-1)*ndim,iab)=aa(iorb,jorb,iab)
-                  enddo
-               enddo
-               
-               ndim2=ndim*ndim
-               call matinv(wfmat(k,1:ndim2,iab),ndim,det)
-               detiab(k,iab)=det
-               
-               denergy_det(k,iab)=0                 
-               
-               do irep=1,ndim
-                  iorb=irepcol_det(irep,k,iab)
-                  do jrep=1,ndim
-                     jorb=ireporb_det(jrep,k,iab)
-                     denergy_det(k,iab)=denergy_det(k,iab)+wfmat(k,jrep+(irep-1)*ndim,iab)*tildem(iorb,jorb,iab)
-                  enddo
-               enddo
-                  
-               
-               
-
-            else
-               
-               index_det=iwundet(k,iab)
-               denergy_det(k,iab)=denergy_det(index_det,iab)
-               detiab(k,iab)=detiab(index_det,iab)
-               
-            endif
-            
-            eloc_det(k,iab)=denergy_det(k,iab)+eloc_det(kref,iab)
-
-            
-         enddo
-
-
-         do k=kref+1,ndet
-            
-            if(iwundet(k,iab).eq.k) then
-               
-               iel=0
-               nel=nup
-               if(iab.eq.2) then
-                  iel=nup
-                  nel=ndn
-               endif
-               
-               ndim=numrep_det(k,iab)
-              
-                  
-               do irep=1,ndim
-                  iorb=irepcol_det(irep,k,iab)
-                  do jrep=1,ndim
-                     jorb=ireporb_det(jrep,k,iab)
-                     wfmat(k,irep+(jrep-1)*ndim,iab)=aa(iorb,jorb,iab)
-                  enddo
-               enddo
-               
-               ndim2=ndim*ndim
-               call matinv(wfmat(k,1:ndim2,iab),ndim,det)
-               detiab(k,iab)=det
-               
-               denergy_det(k,iab)=0                 
-               
-               do irep=1,ndim
-                  iorb=irepcol_det(irep,k,iab)
-                  do jrep=1,ndim
-                     jorb=ireporb_det(jrep,k,iab)
-                     denergy_det(k,iab)=denergy_det(k,iab)+wfmat(k,jrep+(irep-1)*ndim,iab)*tildem(iorb,jorb,iab)
-                  enddo
-               enddo
-               
-               
-            else
-               
-               index_det=iwundet(k,iab)
-               denergy_det(k,iab)=denergy_det(index_det,iab)
-               detiab(k,iab)=detiab(index_det,iab)
-
-            endif
-            
-            eloc_det(k,iab)=denergy_det(k,iab)+eloc_det(kref,iab)
-            
-            
-         enddo
-         
+           ndim2=ndim*ndim
+           call matinv(wfmat(k,1:ndim2,iab),ndim,det)
+           ddetiab(k,iab)=det
+           
+           ddenergy_det(k,iab)=0
+           do irep=1,ndim
+              iorb=irepcol_det(irep,k,iab)
+              do jrep=1,ndim
+                 jorb=ireporb_det(jrep,k,iab)
+                 ddenergy_det(k,iab)=ddenergy_det(k,iab)+wfmat(k,jrep+(irep-1)*ndim,iab)*tildem(iorb,jorb,iab)
+              enddo
+           enddo
+           
+        enddo
+        
+!     unrolling inequivalent determinants
+        do k=1,ndet
+           kun=iwundet(k,iab)
+           
+           detiab(k,iab)=detiab(kref,iab)
+           eloc_det(k,iab)=eloc_det(kref,iab)
+           denergy_det(k,iab)=0.d0
+           if(kun.ne.kref) then
+              kw=k_det(kun,iab)
+              eloc_det(k,iab)=eloc_det(k,iab)+denergy_det(kw,iab)
+              detiab(k,iab)=ddetiab(kw,iab)*detiab(k,iab)
+              denergy_det(k,iab)=ddenergy_det(kw,iab)
+!     print *, 'CIAO',k,eloc_det(k,iab),detiab(k,iab)
+           endif
+        enddo
+        
+        
 
       enddo
-
       
-      do iab=1,2
-         do k=1,kref-1
-            if(iwundet(k,iab).ne.kref) then
-               detiab(k,iab)=detiab(k,iab)*detiab(kref,iab)
-            endif
-         enddo
-         do k=kref+1,ndet
-            if(iwundet(k,iab).ne.kref) then
-               detiab(k,iab)=detiab(k,iab)*detiab(kref,iab)
-            endif
-         enddo
-      enddo
          
          
 c compute Ymat for future use
@@ -288,7 +214,7 @@ c-----------------------------------------------------------------------
       use const, only: nelec
       use dets, only: cdet, ndet
       use dets_equiv, only: cdet_equiv, dcdet_equiv
-      use multidet, only: irepcol_det, ireporb_det, iwundet, kref, numrep_det
+      use multidet, only: irepcol_det, ireporb_det, iwundet, kref, numrep_det, k_det, ndetiab
       use wfsec, only: iwf
       use coefs, only: norb
       use denergy_det_m, only: denergy_det
@@ -298,7 +224,7 @@ c-----------------------------------------------------------------------
       implicit none
 
       integer :: i, iab, iorb, irep, istate
-      integer :: j, jorb, jrep, k
+      integer :: j, jorb, jrep, k, kun, kw
       integer :: kk, ndim
       real(dp) :: detall, detrefi
       real(dp), dimension(ndet) :: detu
@@ -318,65 +244,35 @@ c-----------------------------------------------------------------------
         enddo
       enddo
 
-      
-      do k=1,kref-1
+
+      cdet_equiv=0
+      dcdet_equiv=0
+      do k=1,ndet
          
-         cdet_equiv(k)=0
-         dcdet_equiv(k)=0
-         
-         if(iwundet(k,iab).ne.kref) then
-            kk=iwundet(k,iab)
-            detall=(detrefi*(2-iab)*detu(kk)*detd(k))+(detrefi*(iab-1)*detu(k)*detd(kk))
+         kun=iwundet(k,iab)
+         if(kun.ne.kref) then
+            kk=k_det(kun,iab)
+            detall=detrefi*detu(k)*detd(k)
             cdet_equiv(kk)=cdet_equiv(kk)+cdet(k,istate,iwf)*detall
             dcdet_equiv(kk)=dcdet_equiv(kk)+cdet(k,istate,iwf)*detall*(denergy_det(k,1)+denergy_det(k,2))
          endif
          
       enddo
-
-      do k=kref+1,ndet
-                        
-         cdet_equiv(k)=0
-         dcdet_equiv(k)=0
-
-         if(iwundet(k,iab).ne.kref) then
-            kk=iwundet(k,iab)
-            detall=(detrefi*(2-iab)*detu(kk)*detd(k))+(detrefi*(iab-1)*detu(k)*detd(kk))
-            cdet_equiv(kk)=cdet_equiv(kk)+cdet(k,istate,iwf)*detall
-            dcdet_equiv(kk)=dcdet_equiv(kk)+cdet(k,istate,iwf)*detall*(denergy_det(k,1)+denergy_det(k,2))
-         endif
-         
-      enddo
-         
-
-      do kk=1,kref-1
-        if(iwundet(kk,iab).eq.kk) then
-           ndim=numrep_det(kk,iab)
-           
-           do irep=1,ndim
-              iorb=irepcol_det(irep,kk,iab)
-              do jrep=1,ndim
-                 jorb=ireporb_det(jrep,kk,iab)
-                 ymat(jorb,iorb)=ymat(jorb,iorb)+cdet_equiv(kk)*wfmat(kk,jrep+(irep-1)*ndim)
-              enddo
-           enddo
-           
-        endif
-      enddo
       
-      do kk=kref+1,ndet
-        if(iwundet(kk,iab).eq.kk) then
-           ndim=numrep_det(kk,iab)
-           
-           do irep=1,ndim
-              iorb=irepcol_det(irep,kk,iab)
-              do jrep=1,ndim
-                 jorb=ireporb_det(jrep,kk,iab)
-                 ymat(jorb,iorb)=ymat(jorb,iorb)+cdet_equiv(kk)*wfmat(kk,jrep+(irep-1)*ndim)
-              enddo
-           enddo
-           
-        endif
+      do kk=1,ndetiab(iab)
+!     print *,'OLA',kk,cdet_equiv(kk)
+         
+         ndim=numrep_det(kk,iab)
+         do irep=1,ndim
+            iorb=irepcol_det(irep,kk,iab)
+            do jrep=1,ndim
+               jorb=ireporb_det(jrep,kk,iab)
+               ymat(jorb,iorb)=ymat(jorb,iorb)+cdet_equiv(kk)*wfmat(kk,jrep+(irep-1)*ndim)
+            enddo
+         enddo
+         
       enddo
+
 
       return
       end
@@ -388,7 +284,7 @@ c-----------------------------------------------------------------------
       use const, only: nelec
       use dets, only: ndet
       use dets_equiv, only: cdet_equiv, dcdet_equiv
-      use multidet, only: irepcol_det, ireporb_det, iwundet, kref, numrep_det
+      use multidet, only: irepcol_det, ireporb_det, iwundet, kref, numrep_det, ndetiab
       use coefs, only: norb
       use Bloc, only: tildem
 
@@ -413,93 +309,45 @@ c-----------------------------------------------------------------------
         enddo
       enddo
 
-      do kk=1,kref-1
+      do kk=1,ndetiab(iab)
 
-         if(iwundet(kk,iab).eq.kk) then
-
-            ndim=numrep_det(kk,iab)
+         ndim=numrep_det(kk,iab)
             
-            do irep=1,ndim
-               iorb=ireporb_det(irep,kk,iab)
-               do jrep=1,ndim
-                  jj=jrep+(irep-1)*ndim
-                  dmat1(jj)=0.d0
-                  do lrep=1,ndim
-                     lorb=irepcol_det(lrep,kk,iab)
-                     dmat1(jj)=dmat1(jj)+wfmat(kk,jrep+(lrep-1)*ndim,iab)*tildem(lorb,iorb,iab)
-                  enddo
+         do irep=1,ndim
+            iorb=ireporb_det(irep,kk,iab)
+            do jrep=1,ndim
+               jj=jrep+(irep-1)*ndim
+               dmat1(jj)=0.d0
+               do lrep=1,ndim
+                  lorb=irepcol_det(lrep,kk,iab)
+                  dmat1(jj)=dmat1(jj)+wfmat(kk,jrep+(lrep-1)*ndim,iab)*tildem(lorb,iorb,iab)
                enddo
             enddo
-            
-            do irep=1,ndim
-               do jrep=1,ndim
-                  jj=jrep+(irep-1)*ndim
-                  dmat2(jj)=0.d0
-                  do lrep=1,ndim
-                     ll=jrep+(lrep-1)*ndim
-                     dmat2(jj)=dmat2(jj)+dmat1(ll)*wfmat(kk,lrep+(irep-1)*ndim,iab)
-                  enddo
+         enddo
+         
+         do irep=1,ndim
+            do jrep=1,ndim
+               jj=jrep+(irep-1)*ndim
+               dmat2(jj)=0.d0
+               do lrep=1,ndim
+                  ll=jrep+(lrep-1)*ndim
+                  dmat2(jj)=dmat2(jj)+dmat1(ll)*wfmat(kk,lrep+(irep-1)*ndim,iab)
                enddo
             enddo
-               
-            do irep=1,ndim
-               iorb=irepcol_det(irep,kk,iab)
-               do jrep=1,ndim
-                  jorb=ireporb_det(jrep,kk,iab)
-                  
-                  jj=jrep+(irep-1)*ndim
-                  dymat(jorb,iorb)=dymat(jorb,iorb)+wfmat(kk,jj,iab)*dcdet_equiv(kk)-cdet_equiv(kk)*dmat2(jj)
-               enddo
+         enddo
+         
+         do irep=1,ndim
+            iorb=irepcol_det(irep,kk,iab)
+            do jrep=1,ndim
+               jorb=ireporb_det(jrep,kk,iab)                 
+               jj=jrep+(irep-1)*ndim
+               dymat(jorb,iorb)=dymat(jorb,iorb)+wfmat(kk,jj,iab)*dcdet_equiv(kk)-cdet_equiv(kk)*dmat2(jj)
             enddo
-            
-            
-         endif
-
-      enddo
-
-      do kk=kref+1,ndet
-
-         if(iwundet(kk,iab).eq.kk) then
-
-            ndim=numrep_det(kk,iab)
-            
-            do irep=1,ndim
-               iorb=ireporb_det(irep,kk,iab)
-               do jrep=1,ndim
-                  jj=jrep+(irep-1)*ndim
-                  dmat1(jj)=0.d0
-                  do lrep=1,ndim
-                     lorb=irepcol_det(lrep,kk,iab)
-                     dmat1(jj)=dmat1(jj)+wfmat(kk,jrep+(lrep-1)*ndim,iab)*tildem(lorb,iorb,iab)
-                  enddo
-               enddo
-            enddo
-            
-            do irep=1,ndim
-               do jrep=1,ndim
-                  jj=jrep+(irep-1)*ndim
-                  dmat2(jj)=0.d0
-                  do lrep=1,ndim
-                     ll=jrep+(lrep-1)*ndim
-                     dmat2(jj)=dmat2(jj)+dmat1(ll)*wfmat(kk,lrep+(irep-1)*ndim,iab)
-                  enddo
-               enddo
-            enddo
-               
-            do irep=1,ndim
-               iorb=irepcol_det(irep,kk,iab)
-               do jrep=1,ndim
-                  jorb=ireporb_det(jrep,kk,iab)
-                  
-                  jj=jrep+(irep-1)*ndim
-                  dymat(jorb,iorb)=dymat(jorb,iorb)+wfmat(kk,jj,iab)*dcdet_equiv(kk)-cdet_equiv(kk)*dmat2(jj)
-               enddo
-            enddo
-            
-         endif
+         enddo
          
       enddo
-
+      
+      
       return
       end
 c-----------------------------------------------------------------------

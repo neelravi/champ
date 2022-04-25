@@ -339,10 +339,13 @@ module multidet
     integer, dimension(:), allocatable :: ivirt !(2)
     integer, dimension(:, :), allocatable :: iwundet !(MDET,2)
     integer :: kref
+    integer :: ndet_req
     integer, dimension(:, :), allocatable :: numrep_det !(MDET,2)
-
+    integer, dimension(:, :), allocatable :: k_det !(MDET,2)
+    integer, dimension(:), allocatable :: ndetiab !(2)
+    
     private
-    public :: iactv, irepcol_det, ireporb_det, ivirt, iwundet, kref, numrep_det
+    public :: iactv, irepcol_det, ireporb_det, ivirt, iwundet, kref, numrep_det, k_det, ndetiab, ndet_req
     public :: allocate_multidet, deallocate_multidet
     save
 contains
@@ -355,6 +358,8 @@ contains
         if (.not. allocated(ivirt)) allocate (ivirt(2), source=0)
         if (.not. allocated(iwundet)) allocate (iwundet(ndet, 2), source=0)
         if (.not. allocated(numrep_det)) allocate (numrep_det(ndet, 2), source=0)
+        if (.not. allocated(k_det)) allocate (k_det(ndet, 2), source=0)
+        if (.not. allocated(ndetiab)) allocate (ndetiab(2), source=0)
     end subroutine allocate_multidet
 
     subroutine deallocate_multidet()
@@ -364,6 +369,8 @@ contains
         if (allocated(ireporb_det)) deallocate (ireporb_det)
         if (allocated(irepcol_det)) deallocate (irepcol_det)
         if (allocated(iactv)) deallocate (iactv)
+        if (allocated(k_det)) deallocate (k_det)
+        if (allocated(ndetiab)) deallocate (ndetiab)
     end subroutine deallocate_multidet
 
 end module multidet

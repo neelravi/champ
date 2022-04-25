@@ -7,7 +7,7 @@ c Written by Claudia Filippi
 
       use dets, only: ndet
       use elec, only: ndn, nup
-      use multidet, only: ivirt, kref, numrep_det
+      use multidet, only: ivirt, kref, numrep_det, ndetiab
 
       use slatn, only: slmin
       use ycompact, only: ymat
@@ -58,20 +58,14 @@ c Written by Claudia Filippi
          enddo
       enddo
       
+
+      ! This loop should run just over unique or unequivalent determinants
+      do k=1,ndetiab(iab)
+          ndim=numrep_det(k,iab)
+          ndim2=ndim*ndim
+          wfmat(k,1:ndim2,iab)=wfmatn(k,1:ndim2)
+       enddo
       
-      do k=1,kref-1
-         ndim=numrep_det(k,iab)
-         ndim2=ndim*ndim
-         wfmat(k,1:ndim2,iab)=wfmatn(k,1:ndim2)
-      enddo
-      
-      
-      
-      do k=kref+1,ndet
-         ndim=numrep_det(k,iab)
-         ndim2=ndim*ndim
-         wfmat(k,1:ndim2,iab)=wfmatn(k,1:ndim2)
-      enddo
       
       
       

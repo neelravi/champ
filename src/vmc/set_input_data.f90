@@ -63,6 +63,7 @@ subroutine multideterminants_define(iflag, icheck)
     use dets, only: cdet, ndet
     use elec, only: ndn, nup
     use multidet, only: iactv, irepcol_det, ireporb_det, ivirt, iwundet, kref, numrep_det, allocate_multidet
+    use multidet, only: k_det, ndetiab, ndet_req
     use coefs, only: norb
     use dorb_m, only: iworbd
 
@@ -79,7 +80,7 @@ subroutine multideterminants_define(iflag, icheck)
     integer :: irep, isav, ish, istate
     integer :: isub, iw, iwf, iwref
     integer :: j, k, kref_old, l
-    integer :: ndet_dist, nel
+    integer :: ndet_dist, nel, kk
     integer, dimension(nelec) :: iswapped
     integer, dimension(ndet) :: itotphase
 
@@ -265,6 +266,34 @@ subroutine multideterminants_define(iflag, icheck)
         enddo
     enddo
 
+
+    !reshufling arrays to avoid redundancy of unequivalent determinats
+    do iab = 1, 2
+       kk=0
+       do k = 1, ndet
+          if(iwundet(k,iab).eq.k.and.k.ne.kref) then
+             if(numrep_det(k, iab).gt.0) then
+                
+                kk=kk+1
+                k_det(k,iab)=kk
+                
+                irepcol_det(:, kk, iab) = irepcol_det(:, k, iab)
+                ireporb_det(:, kk, iab) = ireporb_det(:, k, iab)
+                numrep_det(kk, iab)=numrep_det(k, iab)
+             endif
+          endif
+       enddo
+       ndetiab(iab)=kk
+    enddo
+
+    !setting larger number of required determinants for unequivalent or unique determinants 
+    if(ndetiab(1).le.ndetiab(2)) then
+       ndet_req=ndetiab(1)
+    else
+       ndet_req=ndetiab(2)
+    endif
+
+    
     return
 end subroutine multideterminants_define
 
