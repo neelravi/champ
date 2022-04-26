@@ -8,6 +8,7 @@
       use dets, only: ndet
       use elec, only: ndn, nup
       use multidet, only: irepcol_det, ireporb_det, ivirt, iwundet, kref, numrep_det, k_det, ndetiab, ndet_req
+      use multidet, only: k_det2, ndetiab2, k_aux
       use slatn, only: slmin
       use ycompactn, only: ymatn
       use coefs, only: norb
@@ -24,7 +25,7 @@
 
       integer :: i, iab, iel, index_det, iorb
       integer :: irep, ish, istate, jj
-      integer :: jorb, jrep, k, ndim, ndim2, kun, kw
+      integer :: jorb, jrep, k, ndim, ndim2, kun, kw, kk
       integer :: nel
       real(dp) :: det, dum1
       real(dp), dimension(nelec, norb_tot, 3) :: gmat
@@ -90,14 +91,12 @@ c     loop inequivalent determinants
          ddetn(k)=det
       enddo
 
-c     unrolling inequivalent determinants
-      do k=1,ndet
-         kun=iwundet(k,iab)
-         kw=k_det(kun,iab)
-         detn(k)=detn(kref)
-         if(kun.ne.kref) then
-            detn(k)=detn(k)*ddetn(kw)
-         endif
+c     Unrolling determinats different to kref
+      detn=detn(kref)
+      do kk=1,ndetiab2(iab)
+         k=k_det2(kk,iab)
+         kw=k_aux(kk,iab)  
+         detn(k)=detn(k)*ddetn(kw)
 c     print *, "k ",k,"detn(k) ",detn(k)
       enddo
       

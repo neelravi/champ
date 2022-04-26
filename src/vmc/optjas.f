@@ -9,6 +9,7 @@
       use dets, only: cdet, ndet
       use elec, only: ndn, nup
       use multidet, only: irepcol_det, ireporb_det, ivirt, iwundet, kref, numrep_det, k_det, ndetiab, ndet_req
+      use multidet, only: k_det2, k_aux, ndetiab2
       use optwf_contrl, only: ioptjas
       use optwf_parms, only: nparmj
       use scratch, only: denergy_det, dtildem
@@ -28,7 +29,7 @@
 
       integer :: i, iab, iel, index_det, iorb
       integer :: iparm, irep, ish, istate
-      integer :: jorb, jrep, k, ndim, kun, kw
+      integer :: jorb, jrep, k, ndim, kun, kw, kk
       integer :: nel
       real(dp) :: deloc_dj_k, deloc_dj_kref, dum2, dum3, term_jas
       real(dp), dimension(*) :: psid
@@ -112,17 +113,12 @@ C       enddo
            enddo          
            
            
-           do k=1,kref-1
-              kun=iwundet(k,iab)
-              kw=k_det(kun,iab)
-              denergy_det(k,iab)=0.d0
-              if(kun.ne.kref) denergy_det(k,iab)=ddenergy_det(kw,iab)
-           enddo
-           do k=kref+1,ndet
-              kun=iwundet(k,iab)
-              kw=k_det(kun,iab)
-              denergy_det(k,iab)=0.d0
-              if(kun.ne.kref) denergy_det(k,iab)=ddenergy_det(kw,iab)
+c     Unrolling determinants different to kref
+           denergy_det(:,iab)=0.d0           
+           do kk=1,ndetiab2(iab)
+              k=k_det2(kk,iab)
+              kw=k_aux(kk,iab)
+              denergy_det(k,iab)=ddenergy_det(kw,iab)
            enddo
            
            

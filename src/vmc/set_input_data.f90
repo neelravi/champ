@@ -63,7 +63,7 @@ subroutine multideterminants_define(iflag, icheck)
     use dets, only: cdet, ndet
     use elec, only: ndn, nup
     use multidet, only: iactv, irepcol_det, ireporb_det, ivirt, iwundet, kref, numrep_det, allocate_multidet
-    use multidet, only: k_det, ndetiab, ndet_req
+    use multidet, only: k_det, ndetiab, ndet_req, k_det2, k_aux, ndetiab2
     use coefs, only: norb
     use dorb_m, only: iworbd
 
@@ -80,7 +80,7 @@ subroutine multideterminants_define(iflag, icheck)
     integer :: irep, isav, ish, istate
     integer :: isub, iw, iwf, iwref
     integer :: j, k, kref_old, l
-    integer :: ndet_dist, nel, kk
+    integer :: ndet_dist, nel, kk, kun
     integer, dimension(nelec) :: iswapped
     integer, dimension(ndet) :: itotphase
 
@@ -293,6 +293,20 @@ subroutine multideterminants_define(iflag, icheck)
        ndet_req=ndetiab(2)
     endif
 
+    !arrays for all not equivalent to kref
+    do iab = 1, 2
+       kk=0
+       do k = 1, ndet
+          kun=iwundet(k,iab)
+          if(kun.ne.kref.and.k.ne.kref) then
+                kk=kk+1
+                k_det2(kk,iab)=k
+                k_aux(kk,iab)=k_det(kun,iab)
+          endif
+       enddo
+       ndetiab2(iab)=kk
+    enddo
+    
     
     return
 end subroutine multideterminants_define

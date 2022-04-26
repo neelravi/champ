@@ -7,6 +7,7 @@
       use dets, only: ndet
       use elec, only: ndn, nup
       use multidet, only: irepcol_det, ireporb_det, iwundet, kref, numrep_det, ndetiab, k_det, ndet_req
+      use multidet, only: k_det2, k_aux, ndetiab2
       use optwf_contrl, only: ioptorb
       use ycompact, only: dymat, ymat
       use zcompact, only: aaz, dzmat, emz, zmat
@@ -27,7 +28,7 @@
 
       integer :: i, iab, iel, index_det, iorb, kun, kw
       integer :: irep, ish, istate, jorb
-      integer :: jrep, k, ndim, nel, ndim2
+      integer :: jrep, k, ndim, nel, ndim2, kk
       real(dp) :: det, dum1, dum2, dum3
       real(dp), dimension(ndet, 2) :: eloc_det
       real(dp), dimension(3, nelec) :: vj
@@ -162,22 +163,18 @@ c     endif
            
         enddo
         
-!     unrolling inequivalent determinants
-        do k=1,ndet
-           kun=iwundet(k,iab)
-           
-           detiab(k,iab)=detiab(kref,iab)
-           eloc_det(k,iab)=eloc_det(kref,iab)
-           denergy_det(k,iab)=0.d0
-           if(kun.ne.kref) then
-              kw=k_det(kun,iab)
-              eloc_det(k,iab)=eloc_det(k,iab)+denergy_det(kw,iab)
-              detiab(k,iab)=ddetiab(kw,iab)*detiab(k,iab)
-              denergy_det(k,iab)=ddenergy_det(kw,iab)
+! unrolling determinants different to kref
+        detiab(:,iab)=detiab(kref,iab)
+        eloc_det(:,iab)=eloc_det(kref,iab)
+        denergy_det(:,iab)=0.d0
+        do kk=1,ndetiab2(iab)
+           k=k_det2(kk,iab)
+           kw=k_aux(kk,iab)
+           eloc_det(k,iab)=eloc_det(k,iab)+denergy_det(kw,iab)
+           detiab(k,iab)=ddetiab(kw,iab)*detiab(k,iab)
+           denergy_det(k,iab)=ddenergy_det(kw,iab)
 !     print *, 'CIAO',k,eloc_det(k,iab),detiab(k,iab)
-           endif
         enddo
-        
         
 
       enddo
@@ -215,6 +212,7 @@ c-----------------------------------------------------------------------
       use dets, only: cdet, ndet
       use dets_equiv, only: cdet_equiv, dcdet_equiv
       use multidet, only: irepcol_det, ireporb_det, iwundet, kref, numrep_det, k_det, ndetiab
+      use multidet, only: k_det2, ndetiab2, k_aux
       use wfsec, only: iwf
       use coefs, only: norb
       use denergy_det_m, only: denergy_det
@@ -247,17 +245,15 @@ c-----------------------------------------------------------------------
 
       cdet_equiv=0
       dcdet_equiv=0
-      do k=1,ndet
-         
-         kun=iwundet(k,iab)
-         if(kun.ne.kref) then
-            kk=k_det(kun,iab)
-            detall=detrefi*detu(k)*detd(k)
-            cdet_equiv(kk)=cdet_equiv(kk)+cdet(k,istate,iwf)*detall
-            dcdet_equiv(kk)=dcdet_equiv(kk)+cdet(k,istate,iwf)*detall*(denergy_det(k,1)+denergy_det(k,2))
-         endif
-         
+! Unroling determinants different to kref
+      do kk=1,ndetiab2(iab)
+         k=k_det2(kk,iab)
+         kw=k_aux(kk,iab)
+         detall=detrefi*detu(k)*detd(k)
+         cdet_equiv(kw)=cdet_equiv(kw)+cdet(k,istate,iwf)*detall
+         dcdet_equiv(kw)=dcdet_equiv(kw)+cdet(k,istate,iwf)*detall*(denergy_det(k,1)+denergy_det(k,2))
       enddo
+      
       
       do kk=1,ndetiab(iab)
 !     print *,'OLA',kk,cdet_equiv(kk)
@@ -272,7 +268,7 @@ c-----------------------------------------------------------------------
          enddo
          
       enddo
-
+      
 
       return
       end
