@@ -9,7 +9,7 @@
       use dets, only: cdet, ndet
       use elec, only: ndn, nup
       use multidet, only: irepcol_det, ireporb_det, ivirt, iwundet, kref, numrep_det, k_det, ndetiab, ndet_req
-      use multidet, only: k_det2, k_aux, ndetiab2
+      use multidet, only: k_det2, k_aux, ndetiab2, ndetsingle
       use optwf_contrl, only: ioptjas
       use optwf_parms, only: nparmj
       use scratch, only: denergy_det, dtildem
@@ -98,11 +98,21 @@ C       enddo
 
 
         do iab=1,2
-           
-           do k=1,ndetiab(iab)
+
+           ddenergy_det(:,iab)=0
+           do k=1,ndetsingle(iab)
+
+              iorb=irepcol_det(1,k,iab)
+              jorb=ireporb_det(1,k,iab)
+              ddenergy_det(k,iab)=wfmat(k,1,iab)*dtildem(iorb,jorb,iab)
+             
+           enddo          
+
+c           do k=1,ndetiab(iab)
+           do k=ndetsingle(iab)+1,ndetiab(iab)
                     
               ndim=numrep_det(k,iab) 
-              ddenergy_det(k,iab)=0
+             
               do irep=1,ndim
                  iorb=irepcol_det(irep,k,iab)
                  do jrep=1,ndim

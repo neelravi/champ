@@ -7,7 +7,7 @@
       use dets, only: ndet
       use elec, only: ndn, nup
       use multidet, only: irepcol_det, ireporb_det, iwundet, kref, numrep_det, ndetiab, k_det, ndet_req
-      use multidet, only: k_det2, k_aux, ndetiab2
+      use multidet, only: k_det2, k_aux, ndetiab2, ndetsingle
       use optwf_contrl, only: ioptorb
       use ycompact, only: dymat, ymat
       use zcompact, only: aaz, dzmat, emz, zmat
@@ -136,9 +136,23 @@ c     endif
 
       do iab=1,2
          
-         ! loop inequivalent determinants
-         do k=1,ndetiab(iab)
+!     loop inequivalent determinants
+! determinants with single exitations
+         do k=1,ndetsingle(iab)
             
+           
+            iorb=irepcol_det(1,k,iab)
+            jorb=ireporb_det(1,k,iab)
+            wfmat(k,1,iab)=aa(iorb,jorb,iab)               
+            
+            call matinv(wfmat(k,1,iab),1,ddetiab(k,iab))
+            ddenergy_det(k,iab)=wfmat(k,1,iab)*tildem(iorb,jorb,iab)
+            
+         enddo
+
+! determinants multiple exitations
+        do k=ndetsingle(iab)+1,ndetiab(iab)
+           
            ndim=numrep_det(k,iab)
            do irep=1,ndim
               iorb=irepcol_det(irep,k,iab)
@@ -147,7 +161,7 @@ c     endif
                  wfmat(k,irep+(jrep-1)*ndim,iab)=aa(iorb,jorb,iab)
               enddo
            enddo
-               
+           
            ndim2=ndim*ndim
            call matinv(wfmat(k,1:ndim2,iab),ndim,det)
            ddetiab(k,iab)=det
@@ -212,7 +226,7 @@ c-----------------------------------------------------------------------
       use dets, only: cdet, ndet
       use dets_equiv, only: cdet_equiv, dcdet_equiv
       use multidet, only: irepcol_det, ireporb_det, iwundet, kref, numrep_det, k_det, ndetiab
-      use multidet, only: k_det2, ndetiab2, k_aux
+      use multidet, only: k_det2, ndetiab2, k_aux, ndetsingle
       use wfsec, only: iwf
       use coefs, only: norb
       use denergy_det_m, only: denergy_det
@@ -254,9 +268,19 @@ c-----------------------------------------------------------------------
          dcdet_equiv(kw)=dcdet_equiv(kw)+cdet(k,istate,iwf)*detall*(denergy_det(k,1)+denergy_det(k,2))
       enddo
       
-      
-      do kk=1,ndetiab(iab)
+
+! loop over single exitations
+      do kk=1,ndetsingle(iab)
 !     print *,'OLA',kk,cdet_equiv(kk)
+
+         iorb=irepcol_det(1,kk,iab)
+         jorb=ireporb_det(1,kk,iab)
+         ymat(jorb,iorb)=ymat(jorb,iorb)+cdet_equiv(kk)*wfmat(kk,1)
+         
+      enddo
+
+      
+      do kk=ndetsingle(iab)+1,ndetiab(iab)
          
          ndim=numrep_det(kk,iab)
          do irep=1,ndim
@@ -280,7 +304,7 @@ c-----------------------------------------------------------------------
       use const, only: nelec
       use dets, only: ndet
       use dets_equiv, only: cdet_equiv, dcdet_equiv
-      use multidet, only: irepcol_det, ireporb_det, iwundet, kref, numrep_det, ndetiab
+      use multidet, only: irepcol_det, ireporb_det, iwundet, kref, numrep_det, ndetiab, ndetsingle
       use coefs, only: norb
       use Bloc, only: tildem
 
@@ -305,7 +329,23 @@ c-----------------------------------------------------------------------
         enddo
       enddo
 
-      do kk=1,ndetiab(iab)
+! loop over single exitations      
+      do kk=1,ndetsingle(iab)
+
+
+         iorb=ireporb_det(1,kk,iab)
+         jj=jrep+(irep-1)*ndim
+         lorb=irepcol_det(1,kk,iab)
+         dmat1(1)=wfmat(kk,1,iab)*tildem(lorb,iorb,iab)
+         dmat2(1)=dmat1(1)*wfmat(kk,1,iab)
+         dymat(jorb,iorb)=dymat(jorb,iorb)+wfmat(kk,jj,iab)*dcdet_equiv(kk)-cdet_equiv(kk)*dmat2(1)
+                  
+      enddo
+
+      
+
+!     do kk=1,ndetiab(iab)
+      do kk=ndetsingle(iab)+1,ndetiab(iab)
 
          ndim=numrep_det(kk,iab)
             
