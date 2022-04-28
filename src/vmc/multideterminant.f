@@ -145,7 +145,9 @@ c     endif
             jorb=ireporb_det(1,k,iab)
             wfmat(k,1,iab)=aa(iorb,jorb,iab)               
             
-            call matinv(wfmat(k,1,iab),1,ddetiab(k,iab))
+!     call matinv(wfmat(k,1,iab),1,ddetiab(k,iab))
+            ddetiab(k,iab)=wfmat(k,1,iab)
+            wfmat(k,1,iab)=1.0d0/wfmat(k,1,iab)
             ddenergy_det(k,iab)=wfmat(k,1,iab)*tildem(iorb,jorb,iab)
             
          enddo

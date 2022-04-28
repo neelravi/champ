@@ -75,9 +75,9 @@ c     loop over single exitations
          jorb=ireporb_det(1,k,iab)
          iorb=irepcol_det(1,k,iab)
          wfmatn(k,1)=aan(iorb,jorb)
-         call matinv(wfmatn(k,1),1,ddetn(k))
-c         ddetn(k)=det
-c         ddetn(k)=1.0d0/wfmatn(k,1)
+c     call matinv(wfmatn(k,1),1,ddetn(k))
+         ddetn(k)=wfmatn(k,1)
+         wfmatn(k,1)=1.0d0/wfmatn(k,1)
       enddo
       
 c     loop over multiple exitations      

@@ -60,11 +60,11 @@ c Written by Claudia Filippi
       
 
 !     This loop should run just over unique or unequivalent determinants
-! single exitations
+! single excitations
       do k=1,ndetsingle(iab)
           wfmat(k,1,iab)=wfmatn(k,1)
        enddo
-! multiple exitations
+! multiple excitations
       do k=ndetsingle(iab)+1,ndetiab(iab)
           ndim=numrep_det(k,iab)
           ndim2=ndim*ndim
