@@ -113,27 +113,11 @@ c no 3d interpolation
         else
 
          if (use_qmckl) then
-cccccc HERE ccccc
            rc = qmckl_get_mo_basis_mo_num(qmckl_ctx, n8)
            rc = qmckl_set_electron_coord(qmckl_ctx, 'N', x, 3_8*nelec)
            if (rc /= QMCKL_SUCCESS) then
              print *, 'Error setting electron coordinates in QMCkl'
            end if
-
-!          allocate(mo_coef_qmckl(nbasis, n8))
-!          rc = qmckl_get_mo_basis_coefficient(qmckl_ctx,
-!     &          mo_coef_qmckl, n8*nbasis)
-!          if (rc /= QMCKL_SUCCESS) then
-!            print *, 'Error getting MOs from QMCkl'
-!          end if
-!
-!          do iorb=1,norb
-!            do m=1,nbasis
-!              print '(I4,X,I4,X,F12.6, X, F12.6)', iorb, m, 
-!     &           mo_coef_qmckl(m,iorb), coef(m,iorb,iwf)
-!            end do
-!          end do
-!          stop
 
            allocate(mo_vgl_qmckl(n8, 5, nelec))
            rc = qmckl_get_mo_basis_mo_vgl_inplace(qmckl_ctx,
@@ -142,40 +126,14 @@ cccccc HERE ccccc
              print *, 'Error getting MOs from QMCkl'
            end if
 
-      call basis_fns(1,nelec,rvec_en,r_en,ider)
-      do iorb=1,norb+nadorb
-        do i=1,nelec
-          orb(i,iorb)=0
-          dorb(1,i,iorb)=0
-          dorb(2,i,iorb)=0
-          dorb(3,i,iorb)=0
-          ddorb(i,iorb)=0
-          do m=1,nbasis
-            orb  (  i,iorb)=orb  (  i,iorb)+coef(m,iorb,iwf)*phin  ( m,i)
-            dorb (1,i,iorb)=dorb (1,i,iorb)+coef(m,iorb,iwf)*dphin (1,m,i)
-            dorb (2,i,iorb)=dorb (2,i,iorb)+coef(m,iorb,iwf)*dphin (2,m,i)
-            dorb (3,i,iorb)=dorb (3,i,iorb)+coef(m,iorb,iwf)*dphin (3,m,i)
-            ddorb(  i,iorb)=ddorb(  i,iorb)+coef(m,iorb,iwf)*d2phin( m,i)
-          enddo
-        enddo
-      enddo
-
            do iorb=1,norb+nadorb
-           print *, ''
              do i=1,nelec
-               print *, i, iorb
-               print *, orb   (i,iorb) , mo_vgl_qmckl(iorb,1,i)
-               print *, dorb(1,i,iorb) , mo_vgl_qmckl(iorb,2,i)
-               print *, dorb(2,i,iorb) , mo_vgl_qmckl(iorb,3,i)
-               print *, dorb(3,i,iorb) , mo_vgl_qmckl(iorb,4,i)
-               print *, ddorb (i,iorb) , mo_vgl_qmckl(iorb,5,i)
-!               orb(i,iorb) = mo_vgl_qmckl(iorb,1,i)
-!               dorb(1,i,iorb) = mo_vgl_qmckl(iorb,2,i)
-!               dorb(2,i,iorb) = mo_vgl_qmckl(iorb,3,i)
-!               dorb(3,i,iorb) = mo_vgl_qmckl(iorb,4,i)
-!               ddorb(i,iorb) = mo_vgl_qmckl(iorb,5,i)
+               orb(i,iorb) = mo_vgl_qmckl(iorb,1,i)
+               dorb(1,i,iorb) = mo_vgl_qmckl(iorb,2,i)
+               dorb(2,i,iorb) = mo_vgl_qmckl(iorb,3,i)
+               dorb(3,i,iorb) = mo_vgl_qmckl(iorb,4,i)
+               ddorb(i,iorb) = mo_vgl_qmckl(iorb,5,i)
              end do
-             pause
            end do
            deallocate(mo_vgl_qmckl)
 
