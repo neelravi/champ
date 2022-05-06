@@ -128,6 +128,7 @@ c r=a*z, i cicli doppi su n e nconf_n sono parallelizzati
 
       if(ifunc_omega.eq.0) then
 
+! AS: DGEMV possible here
       do iconf=1,nconf_n
         oz_jasci(iconf)=ddot(nparm_jasci,z,1,sr_o(1,iconf),1)
       enddo

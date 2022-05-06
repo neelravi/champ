@@ -38,6 +38,7 @@ c     real(dp), dimension(nelec,nbasis) :: d2bhin
 ccc   QMCkl
       real(dp), allocatable :: ao_vgl_qmckl(:,:,:)
       real(dp), allocatable :: mo_vgl_qmckl(:,:,:)
+      real(dp), allocatable :: mo_coef_qmckl(:,:)
       integer :: rc
       integer*8 :: n8
 ccc
@@ -111,48 +112,79 @@ c Lagrange interpolation
 c no 3d interpolation
         else
 
-c get basis functions for all electrons
-         ider=2
-         if(iforce_analy.eq.1) ider=3
-
          if (use_qmckl) then
-           if (ider == 3) then
-             stop 'QMCkl can''t do forces'
-           end if
-
+cccccc HERE ccccc
+           rc = qmckl_get_mo_basis_mo_num(qmckl_ctx, n8)
            rc = qmckl_set_electron_coord(qmckl_ctx, 'N', x, 3_8*nelec)
            if (rc /= QMCKL_SUCCESS) then
              print *, 'Error setting electron coordinates in QMCkl'
            end if
 
-      call basis_fns(1,nelec,rvec_en,r_en,ider)
-           allocate(ao_vgl_qmckl(nbasis, 5, nelec))
-           rc = qmckl_get_ao_basis_ao_vgl(qmckl_ctx,
-     &          ao_vgl_qmckl, nbasis*nelec*5_8)
+!          allocate(mo_coef_qmckl(nbasis, n8))
+!          rc = qmckl_get_mo_basis_coefficient(qmckl_ctx,
+!     &          mo_coef_qmckl, n8*nbasis)
+!          if (rc /= QMCKL_SUCCESS) then
+!            print *, 'Error getting MOs from QMCkl'
+!          end if
+!
+!          do iorb=1,norb
+!            do m=1,nbasis
+!              print '(I4,X,I4,X,F12.6, X, F12.6)', iorb, m, 
+!     &           mo_coef_qmckl(m,iorb), coef(m,iorb,iwf)
+!            end do
+!          end do
+!          stop
+
+           allocate(mo_vgl_qmckl(n8, 5, nelec))
+           rc = qmckl_get_mo_basis_mo_vgl_inplace(qmckl_ctx,
+     &          mo_vgl_qmckl, n8*nelec*5_8)
            if (rc /= QMCKL_SUCCESS) then
-             print *, 'Error getting AOs from QMCkl'
+             print *, 'Error getting MOs from QMCkl'
            end if
 
-           do i=1,nelec
-             print *, ''
-             do m=1,nbasis
-               print *, i, m
-               print *, d2phin(m,i) , ao_vgl_qmckl(m,5,i)
-               print *, phin(m,i) , ao_vgl_qmckl(m,1,i)
-               print *, dphin(1,m,i) , ao_vgl_qmckl(m,2,i)
-               print *, dphin(2,m,i) , ao_vgl_qmckl(m,3,i)
-               print *, dphin(3,m,i) , ao_vgl_qmckl(m,4,i)
-               d2phin(m,i) = ao_vgl_qmckl(m,5,i)
-               phin(m,i) = ao_vgl_qmckl(m,1,i)
-               dphin(1,m,i) = ao_vgl_qmckl(m,2,i)
-               dphin(2,m,i) = ao_vgl_qmckl(m,3,i)
-               dphin(3,m,i) = ao_vgl_qmckl(m,4,i)
+      call basis_fns(1,nelec,rvec_en,r_en,ider)
+      do iorb=1,norb+nadorb
+        do i=1,nelec
+          orb(i,iorb)=0
+          dorb(1,i,iorb)=0
+          dorb(2,i,iorb)=0
+          dorb(3,i,iorb)=0
+          ddorb(i,iorb)=0
+          do m=1,nbasis
+            orb  (  i,iorb)=orb  (  i,iorb)+coef(m,iorb,iwf)*phin  ( m,i)
+            dorb (1,i,iorb)=dorb (1,i,iorb)+coef(m,iorb,iwf)*dphin (1,m,i)
+            dorb (2,i,iorb)=dorb (2,i,iorb)+coef(m,iorb,iwf)*dphin (2,m,i)
+            dorb (3,i,iorb)=dorb (3,i,iorb)+coef(m,iorb,iwf)*dphin (3,m,i)
+            ddorb(  i,iorb)=ddorb(  i,iorb)+coef(m,iorb,iwf)*d2phin( m,i)
+          enddo
+        enddo
+      enddo
+
+           do iorb=1,norb+nadorb
+           print *, ''
+             do i=1,nelec
+               print *, i, iorb
+               print *, orb   (i,iorb) , mo_vgl_qmckl(iorb,1,i)
+               print *, dorb(1,i,iorb) , mo_vgl_qmckl(iorb,2,i)
+               print *, dorb(2,i,iorb) , mo_vgl_qmckl(iorb,3,i)
+               print *, dorb(3,i,iorb) , mo_vgl_qmckl(iorb,4,i)
+               print *, ddorb (i,iorb) , mo_vgl_qmckl(iorb,5,i)
+!               orb(i,iorb) = mo_vgl_qmckl(iorb,1,i)
+!               dorb(1,i,iorb) = mo_vgl_qmckl(iorb,2,i)
+!               dorb(2,i,iorb) = mo_vgl_qmckl(iorb,3,i)
+!               dorb(3,i,iorb) = mo_vgl_qmckl(iorb,4,i)
+!               ddorb(i,iorb) = mo_vgl_qmckl(iorb,5,i)
              end do
+             pause
            end do
-           deallocate(ao_vgl_qmckl)
-         else
-           call basis_fns(1,nelec,rvec_en,r_en,ider)
-         end if
+           deallocate(mo_vgl_qmckl)
+
+       else
+
+c get basis functions for all electrons
+         ider=2
+         if(iforce_analy.eq.1) ider=3
+         call basis_fns(1,nelec,rvec_en,r_en,ider)
 
 c in alternativa al loop 26
 c        do jbasis=1,nbasis
@@ -170,45 +202,47 @@ c        call dgemm('n','n',  nelec,norb,nbasis,1.d0,bhin,   nelec,  coef(1,1,iw
 c        call dgemm('n','n',3*nelec,norb,nbasis,1.d0,dbhin,3*nelec,  coef(1,1,iwf),nbasis,0.d0,dorb,3*nelec)
 c        call dgemm('n','n',  nelec,norb,nbasis,1.d0,d2bhin, nelec,  coef(1,1,iwf),nbasis,0.d0,ddorb, nelec)
 
+
 !        Vectorization dependent code selection
 #ifdef VECTORIZATION
-!     Following loop changed for better vectorization AVX512/AVX2
-          do iorb=1,norb+nadorb
-            do i=1,nelec
+!           Following loop changed for better vectorization AVX512/AVX2
+            do iorb=1,norb+nadorb
+              do i=1,nelec
+                orb(i,iorb)=0
+                dorb(1,i,iorb)=0
+                dorb(2,i,iorb)=0
+                dorb(3,i,iorb)=0
+                ddorb(i,iorb)=0
+                do m=1,nbasis
+                  orb  (  i,iorb)=orb  (  i,iorb)+coef(m,iorb,iwf)*phin  ( m,i)
+                  dorb (1,i,iorb)=dorb (1,i,iorb)+coef(m,iorb,iwf)*dphin (1,m,i)
+                  dorb (2,i,iorb)=dorb (2,i,iorb)+coef(m,iorb,iwf)*dphin (2,m,i)
+                  dorb (3,i,iorb)=dorb (3,i,iorb)+coef(m,iorb,iwf)*dphin (3,m,i)
+                  ddorb(  i,iorb)=ddorb(  i,iorb)+coef(m,iorb,iwf)*d2phin( m,i)
+                enddo
+              enddo
+            enddo
+#else
+!          keep the old localization code if no vectorization instructions available
+           do iorb=1,norb+nadorb
+             do i=1,nelec
               orb(i,iorb)=0
               dorb(1,i,iorb)=0
               dorb(2,i,iorb)=0
               dorb(3,i,iorb)=0
               ddorb(i,iorb)=0
-              do m=1,nbasis
-                orb  (  i,iorb)=orb  (  i,iorb)+coef(m,iorb,iwf)*phin  ( m,i)
-                dorb (1,i,iorb)=dorb (1,i,iorb)+coef(m,iorb,iwf)*dphin (1,m,i)
-                dorb (2,i,iorb)=dorb (2,i,iorb)+coef(m,iorb,iwf)*dphin (2,m,i)
-                dorb (3,i,iorb)=dorb (3,i,iorb)+coef(m,iorb,iwf)*dphin (3,m,i)
-                ddorb(  i,iorb)=ddorb(  i,iorb)+coef(m,iorb,iwf)*d2phin( m,i)
+              do m0=1,n0_nbasis(i)
+               m=n0_ibasis(m0,i)
+               orb  (  i,iorb)=orb  (  i,iorb)+coef(m,iorb,iwf)*phin  ( m,i)
+               dorb (1,i,iorb)=dorb (1,i,iorb)+coef(m,iorb,iwf)*dphin (1,m,i)
+               dorb (2,i,iorb)=dorb (2,i,iorb)+coef(m,iorb,iwf)*dphin (2,m,i)
+               dorb (3,i,iorb)=dorb (3,i,iorb)+coef(m,iorb,iwf)*dphin (3,m,i)
+               ddorb(  i,iorb)=ddorb(  i,iorb)+coef(m,iorb,iwf)*d2phin( m,i)
               enddo
-            enddo
-          enddo
-#else
-!       keep the old localization code if no vectorization instructions available
-         do iorb=1,norb+nadorb
-           do i=1,nelec
-            orb(i,iorb)=0
-            dorb(1,i,iorb)=0
-            dorb(2,i,iorb)=0
-            dorb(3,i,iorb)=0
-            ddorb(i,iorb)=0
-            do m0=1,n0_nbasis(i)
-             m=n0_ibasis(m0,i)
-             orb  (  i,iorb)=orb  (  i,iorb)+coef(m,iorb,iwf)*phin  ( m,i)
-             dorb (1,i,iorb)=dorb (1,i,iorb)+coef(m,iorb,iwf)*dphin (1,m,i)
-             dorb (2,i,iorb)=dorb (2,i,iorb)+coef(m,iorb,iwf)*dphin (2,m,i)
-             dorb (3,i,iorb)=dorb (3,i,iorb)+coef(m,iorb,iwf)*dphin (3,m,i)
-             ddorb(  i,iorb)=ddorb(  i,iorb)+coef(m,iorb,iwf)*d2phin( m,i)
-            enddo
+             enddo
            enddo
-         enddo
 #endif
+         end if
        endif
 
        if(iforce_analy.eq.1) call da_orbitals
