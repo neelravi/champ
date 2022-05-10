@@ -424,7 +424,7 @@ module multimatn
 
     implicit none
 
-    real(dp), dimension(:, :), allocatable :: aan !(MELEC,norb_tot)
+    real(dp), dimension(:), allocatable :: aan !(MELEC*norb_tot)
     real(dp), dimension(:, :), allocatable :: wfmatn !(MDET, MEXCIT**2)
 
     private
@@ -437,7 +437,7 @@ contains
         use dets, only: ndet
         use vmc_mod, only: norb_tot
         use vmc_mod, only: MEXCIT
-        if (.not. allocated(aan)) allocate (aan(nelec, norb_tot))
+        if (.not. allocated(aan)) allocate (aan(nelec*norb_tot))
         if (.not. allocated(wfmatn)) allocate (wfmatn(ndet,MEXCIT**2))
     end subroutine allocate_multimatn
 

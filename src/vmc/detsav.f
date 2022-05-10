@@ -25,6 +25,8 @@ c Written by Claudia Filippi
 
       use vmc_mod, only: MEXCIT
 
+      use const, only: nelec
+
       use precision_kinds, only: dp
       implicit none
 
@@ -54,7 +56,7 @@ c Written by Claudia Filippi
             do istate=1,nstates
                ymat(j,i,iab,istate)=ymatn(j,i,istate)
             enddo
-            aa(i,j,iab)=aan(i,j)
+            aa(i,j,iab)=aan(i+nelec*(j-1))
          enddo
       enddo
       
