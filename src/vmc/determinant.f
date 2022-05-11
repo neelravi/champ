@@ -100,15 +100,15 @@ c vectors to get (1/detup)*d(detup)/dx and (1/detup)*d2(detup)/dx**2
       if(ipr.ge.4) write(ounit,'(''detu,detd'',9d12.5)') detiab(kref,1),detiab(kref,2)
 
 c for dmc must be implemented: for each iw, must save not only kref,kref_old but also cdet etc.
-c      if(index(mode,'dmc').eq.0) then
+      if(index(mode,'dmc').eq.0) then
 
-c      icheck=icheck+1
-c      if(ndet.gt.1.and.kref.lt.ndet.and.icheck.le.10) then
-c        call check_detref(ipass,icheck,newref)
-c        if(newref.gt.0) goto 10
-c      endif
+      icheck=icheck+1
+      if(ndet.gt.1.and.kref.lt.ndet.and.icheck.le.10) then
+        call check_detref(ipass,icheck,newref)
+        if(newref.gt.0) goto 10
+      endif
 
-c      endif
+      endif
 
       return
       end
