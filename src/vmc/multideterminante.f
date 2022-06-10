@@ -51,19 +51,19 @@
 
 c temporarely copy orbn to orb
       do iorb=1,norb
-        orb_sav(iorb)=orb(iel,iorb)
-        orb(iel,iorb)=orbn(iorb)
+        orb_sav(iorb)=orb(iorb,iel)
+        orb(iorb,iel)=orbn(iorb)
       enddo
 
-      do jrep=ivirt(iab),norb
-        do irep=1,nel
 
-          dum1=0.d0
-          do i=1,nel
-           dum1=dum1+slmin(irep+(i-1)*nel)*orb(i+ish,jrep)
-          enddo
-          aan(irep+nelec*(jrep-1))=dum1
-        enddo
+      do irep=1,nel
+         do jrep=ivirt(iab),norb
+            dum1=0.d0
+            do i=1,nel
+               dum1=dum1+slmin(irep+(i-1)*nel)*orb(jrep,i+ish)
+            enddo
+            aan(irep+nelec*(jrep-1))=dum1
+         enddo
       enddo
 
 c compute wave function
@@ -135,7 +135,7 @@ c     enddo
       endif
       
       do iorb=1,norb
-        orb(iel,iorb)=orb_sav(iorb)
+        orb(iorb,iel)=orb_sav(iorb)
       enddo
       
       return

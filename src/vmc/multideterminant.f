@@ -94,9 +94,9 @@ c       do jrep=ivirt(iab),norb+nadorb
             dum2=0.d0
             dum3=0.d0
             do i=1,nel
-              dum1=dum1+slmi(irep+(i-1)*nel,iab)*orb(i+iel,jrep)
+              dum1=dum1+slmi(irep+(i-1)*nel,iab)*orb(jrep,i+iel)
               dum2=dum2+slmi(irep+(i-1)*nel,iab)*b(jrep,i+iel)
-              dum3=dum3+xmat(i+(irep-1)*nel,iab)*orb(i+iel,jrep)
+              dum3=dum3+xmat(i+(irep-1)*nel,iab)*orb(jrep,i+iel)
             enddo
             aa(irep,jrep,iab)=dum1
             tildem(irep,jrep,iab)=dum2-dum3

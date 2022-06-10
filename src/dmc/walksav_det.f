@@ -124,7 +124,7 @@ c Written by Claudia Filippi
 
        do i=1,nelec
          do iorb=1,norb
-           orbw(i,iorb,iw)=orb(i,iorb)
+           orbw(i,iorb,iw)=orb(iorb,i)
            do kk=1,3
              dorbw(kk,i,iorb,iw)=dorb(iorb,i,kk)
            enddo
@@ -184,7 +184,7 @@ c Written by Claudia Filippi
 
        do i=1,nelec
          do iorb=1,norb
-           orb(i,iorb)=orbw(i,iorb,iw)
+           orb(iorb,i)=orbw(i,iorb,iw)
            do kk=1,3
              dorb(iorb,i,kk)=dorbw(kk,i,iorb,iw)
            enddo

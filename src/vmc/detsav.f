@@ -87,7 +87,7 @@ c Written by Claudia Filippi
 
       
       do iorb=1,norb
-         orb(iel,iorb)=orbn(iorb)
+         orb(iorb,iel)=orbn(iorb)
          dorb(iorb,iel,:)=dorbn(iorb,:)
       enddo
       

@@ -556,7 +556,7 @@ module orbval
     real(dp), dimension(:, :, :), allocatable :: dorb !(norb_tot,MELEC,3)
     integer :: nadorb
     integer :: ndetorb
-    real(dp), dimension(:, :), allocatable :: orb !(MELEC,norb_tot)
+    real(dp), dimension(:, :), allocatable :: orb !(norb_tot,MELEC)
 
     private
     public :: ddorb, dorb, nadorb, ndetorb, orb
@@ -569,7 +569,7 @@ contains
         use precision_kinds, only: dp
         if (.not. allocated(ddorb)) allocate (ddorb(norb_tot, nelec))
         if (.not. allocated(dorb)) allocate (dorb(norb_tot, nelec, 3))
-        if (.not. allocated(orb)) allocate (orb(nelec, norb_tot))
+        if (.not. allocated(orb)) allocate (orb(norb_tot,nelec))
     end subroutine allocate_orbval
 
     subroutine deallocate_orbval()

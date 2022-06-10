@@ -62,8 +62,8 @@ c ns_current reset in optorb_sum
 
           if(io.ge.ivirt(iab)) then
             do i=1,nel
-              dorb_psi=dorb_psi+zmat(io,i,iab)*orb(i+ish,jo)
-              dorb_energy=dorb_energy+dzmat(io,i,iab)*orb(i+ish,jo)+zmat(io,i,iab)*b(jo,i+ish)
+              dorb_psi=dorb_psi+zmat(io,i,iab)*orb(jo,i+ish)
+              dorb_energy=dorb_energy+dzmat(io,i,iab)*orb(jo,i+ish)+zmat(io,i,iab)*b(jo,i+ish)
             enddo
           endif
           if(ideriv_ref(iterm,iab).gt.0) then
@@ -73,8 +73,8 @@ c ns_current reset in optorb_sum
             dorb_energy_ref=dorb_energy_ref+tildem(irep,jo,iab)
 
             do i=1,nel
-              dorb_psi=dorb_psi-aaz(irep,i,iab)*orb(i+ish,jo)
-              dorb_energy=dorb_energy-emz(irep,i,iab)*orb(i+ish,jo)-aaz(irep,i,iab)*b(jo,i+ish)
+              dorb_psi=dorb_psi-aaz(irep,i,iab)*orb(jo,i+ish)
+              dorb_energy=dorb_energy-emz(irep,i,iab)*orb(jo,i+ish)-aaz(irep,i,iab)*b(jo,i+ish)
             enddo
           endif
 

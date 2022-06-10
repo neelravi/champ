@@ -387,7 +387,7 @@ c Written by Claudia Filippi, modified by Cyrus Umrigar and A. Scemama
 
       integer :: ic, iel, ider, ier, iforce_analy, ii
       integer :: iorb, k, m, m0
-      integer :: nadorb_sav
+      integer :: nadorb_sav, norbs
 
       real(dp), dimension(3) :: x
       real(dp), dimension(3,nelec,ncent_tot) :: rvec_en
@@ -397,6 +397,8 @@ c Written by Claudia Filippi, modified by Cyrus Umrigar and A. Scemama
       real(dp), dimension(3,ncent_tot,*) :: da_orbn
       real(dp), dimension(3) :: dtmp
 
+      norbs=norb+nadorb
+      
       nadorb_sav=nadorb
 
       if(ioptorb.eq.0.or.method(1:3).ne.'lin') nadorb=0
@@ -430,12 +432,14 @@ c get basis functions for electron iel
 ! Vectorization dependent code selection
 #ifdef VECTORIZATION
           ! The following loop changed for better vectorization AVX512/AVX2          
-          do iorb=1,norb+nadorb
-             orbn(iorb)=0.d0
-             do m=1,nbasis
-                orbn(iorb)=orbn(iorb)+coef(m,iorb,iwf)*phin(m,iel)
-             enddo
-          enddo
+c          do iorb=1,norb+nadorb
+c             orbn(iorb)=0.d0
+c             do m=1,nbasis
+c                orbn(iorb)=orbn(iorb)+coef(m,iorb,iwf)*phin(m,iel)
+c             enddo
+c     enddo
+          call dgemm('T','N', norbs, 1, nbasis, 1.d0,  coef,  nbasis,
+     &         phin(:,iel),nbasis,0.d0,  orbn(1:norb+nadorb),  norbs)
 #else
           do iorb=1,norb+nadorb
              orbn(iorb)=0.d0

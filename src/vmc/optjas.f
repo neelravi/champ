@@ -75,15 +75,14 @@ C       enddo
            else
             ish=nup
             nel=ndn
-          endif
-          do jrep=ivirt(iab),norb
-              do irep=1,nel
-
-                dum2=0.d0
+         endif
+         do jrep=ivirt(iab),norb
+            do irep=1,nel
+               dum2=0.d0
                 dum3=0.d0
                 do i=1,nel
                  dum2=dum2+slmi(irep+(i-1)*nel,iab)*b_dj(jrep,i+ish,iparm)
-                 dum3=dum3+xmat(i+(irep-1)*nel,iab)*orb(i+ish,jrep)
+                 dum3=dum3+xmat(i+(irep-1)*nel,iab)*orb(jrep,i+ish)
                 enddo
                 dtildem(irep,jrep,iab)=dum2-dum3
 
