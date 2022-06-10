@@ -216,6 +216,11 @@ c-------------------------------------------------------------------------------
 
       real(dp), dimension(nadorb,nbasis) :: coef_t
 
+<<<<<<< HEAD
+=======
+
+      
+>>>>>>> 644c00865bf35a72257a15f0840f5b90e2c6e62c
 c compute values of extra ('virtual') orbitals needed for optorb operators
 c assuming that basis function values in phin are up to date
 
