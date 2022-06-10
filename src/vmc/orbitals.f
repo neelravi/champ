@@ -113,28 +113,46 @@ c no 3d interpolation
         else
 
          if (use_qmckl) then
+
+           ! The number of MOs in QMCkl is not necessarily the same as here.
+           ! For the moment, it is the number of MOs in the TREXIO file
+           ! which is too large. A quick fix is to store only the useful MOs in
+           ! the TREXIO file. But in a near future, we will add the possibility to
+           ! compute only a subset of MOs in QMCkl.
            rc = qmckl_get_mo_basis_mo_num(qmckl_ctx, n8)
-           rc = qmckl_set_electron_coord(qmckl_ctx, 'N', x, 3_8*nelec)
+           if (rc /= QMCKL_SUCCESS) then
+             print *, 'Error getting mo_num from QMCkl'
+             stop
+           end if
+
+           allocate(mo_vgl_qmckl(n8, 5, nelec))
+
+           ! Send electron coordinates to QMCkl to compute the MOs at these positions
+           rc = qmckl_set_point(qmckl_ctx, 'N', x, nelec*1_8)
            if (rc /= QMCKL_SUCCESS) then
              print *, 'Error setting electron coordinates in QMCkl'
            end if
 
-           allocate(mo_vgl_qmckl(n8, 5, nelec))
-           rc = qmckl_get_mo_basis_mo_vgl_inplace(qmckl_ctx,
-     &          mo_vgl_qmckl, n8*nelec*5_8)
+           ! Compute the MOs
+           rc = qmckl_get_mo_basis_mo_vgl_inplace(
+     &                  qmckl_ctx,
+     &                  mo_vgl_qmckl,
+     &                  n8*nelec*5_8)
+
            if (rc /= QMCKL_SUCCESS) then
              print *, 'Error getting MOs from QMCkl'
            end if
 
            do iorb=1,norb+nadorb
              do i=1,nelec
-               orb(i,iorb) = mo_vgl_qmckl(iorb,1,i)
-               dorb(1,i,iorb) = mo_vgl_qmckl(iorb,2,i)
-               dorb(2,i,iorb) = mo_vgl_qmckl(iorb,3,i)
-               dorb(3,i,iorb) = mo_vgl_qmckl(iorb,4,i)
-               ddorb(i,iorb) = mo_vgl_qmckl(iorb,5,i)
+               orb  (  i,iorb) = mo_vgl_qmckl(iorb,1,i)
+               dorb (1,i,iorb) = mo_vgl_qmckl(iorb,2,i)
+               dorb (2,i,iorb) = mo_vgl_qmckl(iorb,3,i)
+               dorb (3,i,iorb) = mo_vgl_qmckl(iorb,4,i)
+               ddorb(  i,iorb) = mo_vgl_qmckl(iorb,5,i)
              end do
            end do
+
            deallocate(mo_vgl_qmckl)
 
        else
