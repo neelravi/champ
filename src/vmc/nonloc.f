@@ -108,7 +108,7 @@ c           call scale_dist(r_en(i,ic),rr_en2(i,ic),2)
 !         ! make a single QMCkl call for the MOs and for the pseudo.
 !
 !         ! Send electron coordinates to QMCkl to compute the MOs at these positions
-!         rc = qmckl_set_point(qmckl_ctx, 'N', x_grid, nelec*nquad*1_8)
+!         rc = qmckl_set_point(qmckl_ctx, 'N', nelec*nquad*1_8, x_grid, nelec*nquad*3_8)
 !         if (rc /= QMCKL_SUCCESS) then
 !           print *, 'Error setting electron coordinates in QMCkl'
 !         end if
@@ -122,7 +122,7 @@ c           call scale_dist(r_en(i,ic),rr_en2(i,ic),2)
 !         allocate(mo_vgl_qmckl(n8, 5, nelec))
 !
 !         ! Send electron coordinates to QMCkl to compute the MOs at these positions
-!         rc = qmckl_set_point(qmckl_ctx, 'N', x, nelec*1_8)
+!         rc = qmckl_set_point(qmckl_ctx, 'N', nelec*1_8, x, nelec*3_8)
 !         if (rc /= QMCKL_SUCCESS) then
 !           print *, 'Error setting electron coordinates in QMCkl'
 !         end if

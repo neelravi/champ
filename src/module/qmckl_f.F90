@@ -484,6 +484,30 @@ interface
 end interface
 
 interface
+   integer(c_int32_t) function qmckl_get_ao_basis_ao_value (context, &
+        ao_value, size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     implicit none
+     integer (c_int64_t) , intent(in)  , value :: context
+     double precision,     intent(out)         :: ao_value(*)
+     integer (c_int64_t) , intent(in)  , value :: size_max
+   end function qmckl_get_ao_basis_ao_value
+end interface
+
+interface
+   integer(c_int32_t) function qmckl_get_ao_basis_ao_value_inplace (context, &
+        ao_value, size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     implicit none
+     integer (c_int64_t) , intent(in)  , value :: context
+     double precision,     intent(out)         :: ao_value(*)
+     integer (c_int64_t) , intent(in)  , value :: size_max
+   end function qmckl_get_ao_basis_ao_value_inplace
+end interface
+
+interface
    integer(c_int32_t) function qmckl_ao_gaussian_vgl(context, &
         X, R, n, A, VGL, ldv) bind(C)
      use, intrinsic :: iso_c_binding
@@ -909,8 +933,33 @@ interface
     implicit none
     integer (c_int64_t) , intent(in)  , value :: context
     double precision, intent(out)             :: coefficient(*)
-    integer (c_int64_t) , intent(in)  , value :: size_max
+    integer (c_int64_t) , intent(in), value   :: size_max
   end function qmckl_get_mo_basis_coefficient
+end interface
+
+interface
+   integer(c_int32_t) function qmckl_get_mo_basis_mo_value (context, &
+        mo_value, size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     implicit none
+
+     integer (c_int64_t) , intent(in)  , value :: context
+     double precision,     intent(out)         :: mo_value(*)
+     integer (c_int64_t) , intent(in)  , value :: size_max
+   end function qmckl_get_mo_basis_mo_value
+end interface
+
+interface
+   integer(c_int32_t) function qmckl_get_mo_basis_mo_value_inplace (context, &
+        mo_value, size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     implicit none
+     integer (c_int64_t) , intent(in)  , value :: context
+     double precision,     intent(out)         :: mo_value(*)
+     integer (c_int64_t) , intent(in)  , value :: size_max
+   end function qmckl_get_mo_basis_mo_value_inplace
 end interface
 
 interface
@@ -1086,12 +1135,12 @@ interface
 end interface
 
 interface
-   integer (qmckl_exit_code) function qmckl_numprec_set_range(context, range) bind(C)
+   integer (qmckl_exit_code) function qmckl_set_numprec_range(context, range) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer (qmckl_context), intent(in), value :: context
      integer (c_int32_t), intent(in), value :: range
-   end function qmckl_numprec_set_range
+   end function qmckl_set_numprec_range
 end interface
 
 interface
@@ -1135,15 +1184,16 @@ end interface
 
 interface
   integer(c_int32_t) function qmckl_set_point(context, &
-       transp, coord, num) bind(C)
+       transp, num, coord, size_max) bind(C)
     use, intrinsic :: iso_c_binding
     import
     implicit none
 
     integer (c_int64_t) , intent(in)  , value :: context
     character(c_char)   , intent(in)  , value :: transp
-    real    (c_double ) , intent(in)          :: coord(*)
     integer (c_int64_t) , intent(in)  , value :: num
+    real    (c_double ) , intent(in)          :: coord(*)
+    integer (c_int64_t) , intent(in)  , value :: size_max
   end function
 end interface
 ! Fortran interface                                               :noexport:

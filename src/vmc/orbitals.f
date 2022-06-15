@@ -128,7 +128,7 @@ c no 3d interpolation
            allocate(mo_vgl_qmckl(n8, 5, nelec))
 
            ! Send electron coordinates to QMCkl to compute the MOs at these positions
-           rc = qmckl_set_point(qmckl_ctx, 'N', x, nelec*1_8)
+           rc = qmckl_set_point(qmckl_ctx, 'N', nelec*1_8, x, nelec*3_8)
            if (rc /= QMCKL_SUCCESS) then
              print *, 'Error setting electron coordinates in QMCkl'
            end if
