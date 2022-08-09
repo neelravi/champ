@@ -74,7 +74,8 @@ integer(qmckl_exit_code), parameter :: QMCKL_ALLOCATION_FAILED        = 104
 integer(qmckl_exit_code), parameter :: QMCKL_DEALLOCATION_FAILED      = 105
 integer(qmckl_exit_code), parameter :: QMCKL_NOT_PROVIDED             = 106
 integer(qmckl_exit_code), parameter :: QMCKL_OUT_OF_BOUNDS            = 107
-integer(qmckl_exit_code), parameter :: QMCKL_INVALID_EXIT_CODE        = 108
+integer(qmckl_exit_code), parameter :: QMCKL_ALREADY_SET              = 108
+integer(qmckl_exit_code), parameter :: QMCKL_INVALID_EXIT_CODE        = 109
 ! Fortran interface
 
 
@@ -859,24 +860,14 @@ interface
 end interface
 
 interface
-  integer(c_int32_t) function qmckl_set_electron_walk_num(context, walk_num) bind(C)
-    use, intrinsic :: iso_c_binding
-    import
-    implicit none
-
-    integer (c_int64_t) , intent(in)  , value :: context
-    integer (c_int64_t) , intent(in)  , value :: walk_num
-  end function
-end interface
-
-interface
-  integer(c_int32_t) function qmckl_set_electron_coord(context, transp, coord, size_max) bind(C)
+  integer(c_int32_t) function qmckl_set_electron_coord(context, transp, walk_num, coord, size_max) bind(C)
     use, intrinsic :: iso_c_binding
     import
     implicit none
 
     integer (c_int64_t) , intent(in)  , value :: context
     character           , intent(in)  , value :: transp
+    integer (c_int64_t) , intent(in)  , value :: walk_num
     double precision    , intent(in)          :: coord(*)
     integer (c_int64_t) , intent(in)  , value :: size_max
   end function

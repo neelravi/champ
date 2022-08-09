@@ -153,7 +153,9 @@ c no 3d interpolation
 
 
 !     Send electron coordinates to QMCkl to compute the MOs at these positions                                                                                                                
-            rc = qmckl_set_point(qmckl_ctx, 'N', nelec*1_8, x, nelec*3_8)                                                                                                                     
+            rc = qmckl_set_point(qmckl_ctx, 'N', nelec*1_8, x, nelec*3_8)
+            
+            
             if (rc /= QMCKL_SUCCESS) then
                print *, 'Error setting electron coordinates in QMCkl'
             end if
@@ -391,8 +393,8 @@ c get basis functions for electron iel
            if(iflag.gt.0) ider=2
            
            
-!           if (use_qmckl) then
-           if (0) then
+           if (use_qmckl) then
+!           if (0) then
               
 !     compute only a subset of MOs in QMCkl.
               
@@ -405,9 +407,13 @@ c get basis functions for electron iel
               allocate(mo_vgl_qmckl(n8, 5, 1))
               
 !     Send electron coordinates to QMCkl to compute the MOs at these positions                                                                                                                
-              rc = qmckl_set_point(qmckl_ctx, 'N', 1_8, x(:,iel), 3_8)                                                                                                                     
+!     rc = qmckl_set_point(qmckl_ctx, 'N', 1_8, x(:,iel), 3_8)
+              
+!! set one electron coordinates
+              rc = qmckl_set_electron_coord(qmckl_ctx, 'N', 1_8, x(:,iel), 3_8)                                                                                                       
+              
               if (rc /= QMCKL_SUCCESS) then
-                 print *, 'Error setting electron coordinates in QMCkl'
+                 print *, 'Error setting electron coords orbitalse'
               end if
               
 !     Compute the MOs                                                                                                                                                                         
