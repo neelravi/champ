@@ -196,6 +196,10 @@ contains
         ! Get all the command line arguments
 ! The next line is commented as all mpi processes read this information. old style
 
+        file_error = ''
+        file_input = ''
+        file_output = ''
+
         argcount = command_argument_count()
         if ( .not. allocated(arg)) allocate(arg(12))
         arg = ""
