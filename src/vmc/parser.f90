@@ -1583,18 +1583,6 @@ subroutine parser
         call abort()
      end if
    
-     iostat = qmckl_set_electron_num(qmckl_ctx, nup*1_8, ndn*1_8)
-     if (iostat /= QMCKL_SUCCESS) then
-        print *, 'Error: Unable to set the number of electrons in QMCkl'
-        call abort()
-     end if
-     
-!     iostat = qmckl_set_electron_walk_num(qmckl_ctx, 1_8) ! Only one walker is used in CHAMP
-!     if (iostat /= QMCKL_SUCCESS) then
-!        print *, 'Error: Unable to set the number of electrons in QMCkl'
-!        call abort()
-!     end if
-     
   end if
 
 
