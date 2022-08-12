@@ -191,7 +191,7 @@ c loop quadrature points
               call dist_quad(i,ic,iq,x(1,i),r_en,rvec_en,rshift,rr_en,rr_en2,dd1)
 
               iel=i
-              call orbitals_quad(iel,x,rvec_en,r_en,orbn,dorbn,da_orbn,iforce_analy)
+              call orbitals_quad(iel,x(1:3,iel),rvec_en,r_en,orbn,dorbn,da_orbn,iforce_analy)
 
               call nonlocd(iel,orbn,detiab(1,1),detiab(1,2),slmi(1,1),slmi(1,2),det_ratio)
               if(ioptjas.gt.0) then
@@ -417,7 +417,8 @@ c-----------------------------------------------------------------------
 c Written by Claudia Filippi, modified by Cyrus Umrigar and A. Scemama
 
       use atom, only: iwctype, ncent, ncent_tot
-      use const, only: nelec
+!     !use const, only: nelec
+      use const                 !, only: nelec, ipr, use_qmckl, qmckl_ctx
       use phifun, only: dphin, n0_ibasis, n0_ic, n0_nbasis
       use phifun, only: phin
       use wfsec, only: iwf
@@ -432,6 +433,11 @@ c Written by Claudia Filippi, modified by Cyrus Umrigar and A. Scemama
       use method_opt, only: method
       use optwf_contrl, only: ioptorb
       use vmc_mod, only: norb_tot
+
+#ifdef QMCKL_FOUND
+      use qmckl
+#endif
+
       
       implicit none
 
@@ -447,6 +453,18 @@ c Written by Claudia Filippi, modified by Cyrus Umrigar and A. Scemama
       real(dp), dimension(3,ncent_tot,*) :: da_orbn
       real(dp), dimension(3) :: dtmp
 
+ccc   QMCkl
+      real(dp), allocatable :: mo_value_qmckl(:,:)
+!      real(dp), allocatable :: mo_value_qmckl(:)
+      real(dp), allocatable :: mo_vgl_qmckl(:,:,:)
+      integer :: rc
+      integer*8 :: n8
+      character*(1024) :: err_message = ''
+ccc 
+
+
+
+      
       nadorb_sav=nadorb
 
       if(ioptorb.eq.0.or.method(1:3).ne.'lin') nadorb=0
@@ -475,27 +493,122 @@ c get the value from the 3d-interpolated orbitals
 c get basis functions for electron iel
           ider=0
           if(iforce_analy.gt.0) ider=1
-          call basis_fns(iel,iel,rvec_en,r_en,ider)
 
-! Vectorization dependent code selection
+
+!          if(0) then
+          if (use_qmckl) then
+             
+!             print*, "get in here for qmckl"
+
+!     get mo_num                                                                                                                                                                              
+             rc = qmckl_get_mo_basis_mo_num(qmckl_ctx, n8)
+             if (rc /= QMCKL_SUCCESS) then
+                print *, 'Error getting mo_num from QMCkl'
+                stop
+             end if
+
+
+
+!     print*,"n8",n8,"norb",norb,"nadorb",nadorb,"norb+nadorb", norb+nadorb
+             
+!     Send electron coordinates to QMCkl to compute the MOs at these positions
+             rc = qmckl_set_point(qmckl_ctx, 'N', 1_8, x, 3_8)
+
+             if (rc /= QMCKL_SUCCESS) then
+                print *, 'Error setting electron coords orbitalse'
+                call qmckl_last_error(qmckl_ctx,err_message)
+                print *, trim(err_message)
+                call abort()
+             end if
+
+!     Compute the MOs values just
+
+             allocate(mo_value_qmckl(n8, 1))
+!     allocate(mo_value_qmckl(n8))
+             
+             rc = qmckl_get_mo_basis_mo_value(
+     &            qmckl_ctx,
+     &            mo_value_qmckl,
+     &            n8*1_8)
+
+             if (rc /= QMCKL_SUCCESS) then
+                print *, 'Error getting MOs from QMCkl'
+                call abort()
+             end if
+
+! compute vgl mo's 
+             
+             allocate(mo_vgl_qmckl(n8, 5, 1))
+
+!     Compute the MOs                                                                                                                                                                         
+             rc = qmckl_get_mo_basis_mo_vgl(
+     &            qmckl_ctx,
+     &            mo_vgl_qmckl,
+     &            n8*5_8)
+
+             if (rc /= QMCKL_SUCCESS) then
+                print *, 'Error getting MOs from QMCkl'
+                call abort()
+             end if
+
+             
+
+             call basis_fns(iel,iel,rvec_en,r_en,ider)
+             do iorb=1,norb+nadorb
+                orbn(iorb)=0.d0
+                do m=1,nbasis
+                   orbn(iorb)=orbn(iorb)+coef(m,iorb,iwf)*phin(m,iel)
+                enddo
+             enddo
+
+!     print*,"iel",iel, "iorb", "orbn-champ", "orbn-qmckl"
+             print*,"iel",iel
+             do iorb=1,norb+nadorb
+                print*,"iorb", iorb,orbn(iorb), mo_value_qmckl(iorb,1), mo_vgl_qmckl(iorb,1,1)
+!                print*,"iorb", iorb,orbn(iorb), mo_value_qmckl(iorb), mo_vgl_qmckl(iorb,1,1)
+             enddo
+
+             
+             
+             do iorb=1,norb+nadorb
+!     orbn(iorb)=mo_value_qmckl(iorb,1)
+!     orbn(iorb)=mo_value_qmckl(iorb)
+                orbn(iorb)=mo_vgl_qmckl(iorb,1,1)
+             enddo
+
+
+             
+
+             
+                          
+
+             
+          else
+             
+             call basis_fns(iel,iel,rvec_en,r_en,ider)
+
+!     Vectorization dependent code selection
 #ifdef VECTORIZATION
-          ! The following loop changed for better vectorization AVX512/AVX2          
-          do iorb=1,norb+nadorb
-             orbn(iorb)=0.d0
-             do m=1,nbasis
-                orbn(iorb)=orbn(iorb)+coef(m,iorb,iwf)*phin(m,iel)
+! The following loop changed for better vectorization AVX512/AVX2          
+             do iorb=1,norb+nadorb
+                orbn(iorb)=0.d0
+                do m=1,nbasis
+                   orbn(iorb)=orbn(iorb)+coef(m,iorb,iwf)*phin(m,iel)
+                enddo
              enddo
-          enddo
 #else
-          do iorb=1,norb+nadorb
-             orbn(iorb)=0.d0
-             do m0=1,n0_nbasis(iel)
-                m=n0_ibasis(m0,iel)
-                orbn(iorb)=orbn(iorb)+coef(m,iorb,iwf)*phin(m,iel)
+             do iorb=1,norb+nadorb
+                orbn(iorb)=0.d0
+                do m0=1,n0_nbasis(iel)
+                   m=n0_ibasis(m0,iel)
+                   orbn(iorb)=orbn(iorb)+coef(m,iorb,iwf)*phin(m,iel)
+                enddo
              enddo
-          enddo
 #endif
-
+             
+          endif
+       
+          
           if(iforce_analy.gt.0) then
             do iorb=1,norb
               do ic=1,ncent

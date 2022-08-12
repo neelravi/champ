@@ -173,6 +173,7 @@ c         do 25 i=1,nelec
 c           do 25 k=1,3
 c  25         write(ounit,'(''vj'',2e18.11)') vj(k,i)
           if(ipr.ge.3) write(ounit,'(''energy'',9f16.10)') energy(istate)
+          if(ipr.ge.3) print*,"Energy", energy(istate)
         endif
 
       enddo
