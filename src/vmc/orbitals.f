@@ -138,24 +138,24 @@ c no 3d interpolation
 
          if (use_qmckl) then
 
+
 !     The number of MOs in QMCkl is not necessarily the same as here.
 !     For the moment, it is the number of MOs in the TREXIO file
 !     which is too large. A quick fix is to store only the useful MOs in
 !     the TREXIO file. But in a near future, we will add the possibility to
 !     compute only a subset of MOs in QMCkl.
 
-            rc = qmckl_get_mo_basis_mo_num(qmckl_ctx, n8)
-            if (rc /= QMCKL_SUCCESS) then
-               print *, 'Error getting mo_num from QMCkl'
-               stop
-            end if
+         rc = qmckl_get_mo_basis_mo_num(qmckl_ctx, n8)
+         if (rc /= QMCKL_SUCCESS) then
+            print *, 'Error getting mo_num from QMCkl'
+            stop
+         end if
 
-            allocate(mo_vgl_qmckl(n8, 5, nelec))
+         allocate(mo_vgl_qmckl(n8, 5, nelec))
 
 
 !     Send electron coordinates to QMCkl to compute the MOs at these positions
             rc = qmckl_set_point(qmckl_ctx, 'N', nelec*1_8, x, nelec*3_8)
-
 
             if (rc /= QMCKL_SUCCESS) then
                print *, 'Error setting electron coordinates in QMCkl'
@@ -171,7 +171,7 @@ c no 3d interpolation
                print *, 'Error getting MOs from QMCkl'
             end if
 
-
+            
 
             do i=1,nelec
                do iorb=1,norb+nadorb
@@ -395,7 +395,8 @@ c get basis functions for electron iel
            if(iflag.gt.0) ider=2
 
 
-           if (use_qmckl) then
+      if (use_qmckl) then
+           
 !           if (0) then
 
 !     compute only a subset of MOs in QMCkl.
@@ -405,14 +406,14 @@ c get basis functions for electron iel
                  print *, 'Error getting mo_num from QMCkl'
                  stop
               end if
-
+              
               allocate(mo_vgl_qmckl(n8, 5, 1))
 
 !     Send electron coordinates to QMCkl to compute the MOs at these positions
 !     rc = qmckl_set_point(qmckl_ctx, 'N', 1_8, x(:,iel), 3_8)
 
 !! set one electron coordinates
-              rc = qmckl_set_point(qmckl_ctx, 'N', 1_8, x(:,iel), 3_8)
+              rc = qmckl_set_point(qmckl_ctx, 'N', 1_8, x(1:3,iel), 3_8)
 
               if (rc /= QMCKL_SUCCESS) then
                  print *, 'Error setting electron coords orbitalse'
@@ -420,6 +421,7 @@ c get basis functions for electron iel
                  print *, trim(err_message)
                  call abort()
               end if
+             
 
 !     Compute the MOs
               rc = qmckl_get_mo_basis_mo_vgl(
@@ -433,45 +435,31 @@ c get basis functions for electron iel
               end if
 
 
-!     to compare against champ
-              call basis_fns(iel,iel,rvec_en,r_en,ider)
+              if(iflag.gt.0) then
 
-
-              do iorb=1,norb
-                 orbn(iorb)=0
-                 dorbn(iorb,1)=0
-                 dorbn(iorb,2)=0
-                 dorbn(iorb,3)=0
-                 ddorbn(iorb)=0
-                 do m=1,nbasis
-                    orbn(iorb)=orbn(iorb)+coef(m,iorb,iwf)*phin(m,iel)
-                    dorbn(iorb,1)=dorbn(iorb,1)+coef(m,iorb,iwf)*dphin(m,iel,1)
-                    dorbn(iorb,2)=dorbn(iorb,2)+coef(m,iorb,iwf)*dphin(m,iel,2)
-                    dorbn(iorb,3)=dorbn(iorb,3)+coef(m,iorb,iwf)*dphin(m,iel,3)
-
-                    if(iflag.gt.0) ddorbn(iorb)=ddorbn(iorb)+coef(m,iorb,iwf)*d2phin(m,iel)
+                 do iorb=1,norb
+                    orbn(iorb)=mo_vgl_qmckl(iorb,1,1)
+                    dorbn(iorb,1)=mo_vgl_qmckl(iorb,2,1)
+                    dorbn(iorb,2)=mo_vgl_qmckl(iorb,3,1)
+                    dorbn(iorb,3)=mo_vgl_qmckl(iorb,4,1)
+                    ddorbn(iorb)=mo_vgl_qmckl(iorb,5,1)
                  enddo
+
+                 
+              else
+
+                 do iorb=1,norb
+                    orbn(iorb)=mo_vgl_qmckl(iorb,1,1)
+                    dorbn(iorb,1)=mo_vgl_qmckl(iorb,2,1)
+                    dorbn(iorb,2)=mo_vgl_qmckl(iorb,3,1)
+                    dorbn(iorb,3)=mo_vgl_qmckl(iorb,4,1)
               enddo
 
-
-!comparing champ and qmckl orbitals
-              do iorb=1,norb
-                 print*,orbn(iorb),mo_vgl_qmckl(iorb,1,1)
-                 print*,dorbn(iorb,1),mo_vgl_qmckl(iorb,2,1)
-                 print*,dorbn(iorb,2),mo_vgl_qmckl(iorb,3,1)
-                 print*,dorbn(iorb,3),mo_vgl_qmckl(iorb,4,1)
-                 if(iflag.gt.0) print*,ddorbn(iorb),mo_vgl_qmckl(iorb,5,1)
-              enddo
-
-
-
-              do iorb=1,norb
-                 orbn(iorb)=mo_vgl_qmckl(iorb,1,1)
-                 dorbn(iorb,1)=mo_vgl_qmckl(iorb,2,1)
-                 dorbn(iorb,2)=mo_vgl_qmckl(iorb,3,1)
-                 dorbn(iorb,3)=mo_vgl_qmckl(iorb,4,1)
-                 if(iflag.gt.0) ddorbn(iorb)=mo_vgl_qmckl(iorb,5,1)
-              enddo
+                 
+                 
+              endif
+                 
+              
 
               deallocate(mo_vgl_qmckl)
 
