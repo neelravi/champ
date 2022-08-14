@@ -454,9 +454,7 @@ c Written by Claudia Filippi, modified by Cyrus Umrigar and A. Scemama
       real(dp), dimension(3) :: dtmp
 
 ccc   QMCkl
-      real(dp), allocatable :: mo_value_qmckl(:,:)
-!      real(dp), allocatable :: mo_value_qmckl(:)
-      real(dp), allocatable :: mo_vgl_qmckl(:,:,:)
+      real(dp), allocatable :: mo_value_qmckl(:)
       integer :: rc
       integer*8 :: n8
       character*(1024) :: err_message = ''
@@ -523,8 +521,7 @@ c get basis functions for electron iel
 
 !     Compute the MOs values just
 
-             allocate(mo_value_qmckl(n8, 1))
-!     allocate(mo_value_qmckl(n8))
+             allocate(mo_value_qmckl(n8))
              
              rc = qmckl_get_mo_basis_mo_value(
      &            qmckl_ctx,
@@ -535,52 +532,12 @@ c get basis functions for electron iel
                 print *, 'Error getting MOs from QMCkl'
                 call abort()
              end if
-
-! compute vgl mo's 
-             
-             allocate(mo_vgl_qmckl(n8, 5, 1))
-
-!     Compute the MOs                                                                                                                                                                         
-             rc = qmckl_get_mo_basis_mo_vgl(
-     &            qmckl_ctx,
-     &            mo_vgl_qmckl,
-     &            n8*5_8)
-
-             if (rc /= QMCKL_SUCCESS) then
-                print *, 'Error getting MOs from QMCkl'
-                call abort()
-             end if
-
-             
-
-             call basis_fns(iel,iel,rvec_en,r_en,ider)
-             do iorb=1,norb+nadorb
-                orbn(iorb)=0.d0
-                do m=1,nbasis
-                   orbn(iorb)=orbn(iorb)+coef(m,iorb,iwf)*phin(m,iel)
-                enddo
-             enddo
-
-!     print*,"iel",iel, "iorb", "orbn-champ", "orbn-qmckl"
-             print*,"iel",iel
-             do iorb=1,norb+nadorb
-                print*,"iorb", iorb,orbn(iorb), mo_value_qmckl(iorb,1), mo_vgl_qmckl(iorb,1,1)
-!                print*,"iorb", iorb,orbn(iorb), mo_value_qmckl(iorb), mo_vgl_qmckl(iorb,1,1)
-             enddo
-
              
              
              do iorb=1,norb+nadorb
-!     orbn(iorb)=mo_value_qmckl(iorb,1)
-!     orbn(iorb)=mo_value_qmckl(iorb)
-                orbn(iorb)=mo_vgl_qmckl(iorb,1,1)
+                orbn(iorb)=mo_value_qmckl(iorb)
              enddo
 
-
-             
-
-             
-                          
 
              
           else
