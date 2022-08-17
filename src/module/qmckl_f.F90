@@ -939,6 +939,21 @@ interface
   end function qmckl_get_mo_basis_coefficient
 end interface
 
+! Fortran interface
+
+
+interface
+  integer(c_int32_t) function qmckl_mo_basis_select_mo (context, &
+       keep, size_max) bind(C)
+    use, intrinsic :: iso_c_binding
+    import
+    implicit none
+    integer (c_int64_t) , intent(in), value :: context
+    integer (c_int32_t) , intent(in)        :: keep(*)
+    integer (c_int64_t) , intent(in), value :: size_max
+  end function qmckl_mo_basis_select_mo
+end interface
+
 interface
    integer(c_int32_t) function qmckl_get_mo_basis_mo_value (context, &
         mo_value, size_max) bind(C)

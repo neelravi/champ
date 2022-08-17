@@ -197,7 +197,7 @@ subroutine parser
   use const,      only: use_qmckl, qmckl_ctx
 #endif
 
-  
+
 !
   implicit none
 
@@ -1582,11 +1582,11 @@ subroutine parser
         print *, 'Error: Unable to read TREXIO file '//trim(file_trexio)
         call abort()
      end if
-   
+
   end if
 
 
-  
+
   ! The following portion can be shifted to another subroutine.
   ! It does the processing of the input read so far and initializes some
   ! arrays if something is missing.

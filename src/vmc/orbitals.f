@@ -171,7 +171,7 @@ c no 3d interpolation
                print *, 'Error getting MOs from QMCkl'
             end if
 
-            
+
 
             do i=1,nelec
                do iorb=1,norb+nadorb
@@ -358,6 +358,7 @@ c-------------------------------------------------------------------------------
 
 ccc   QMCkl
       real(dp), allocatable :: mo_vgl_qmckl(:,:,:)
+      integer , allocatable :: keep(:)
       integer :: rc
       integer*8 :: n8
       character*(1024) :: err_message = ''
@@ -396,17 +397,63 @@ c get basis functions for electron iel
 
 
       if (use_qmckl) then
-           
-!           if (0) then
 
-!     compute only a subset of MOs in QMCkl.
+!           if (0) then
 
               rc = qmckl_get_mo_basis_mo_num(qmckl_ctx, n8)
               if (rc /= QMCKL_SUCCESS) then
                  print *, 'Error getting mo_num from QMCkl'
                  stop
               end if
-              
+
+!     -------------
+!     TODO: This block of code should probably be put somewhere else,
+!     after the wave functions have been initialized.
+
+!     Select only a subset of MOs in QMCkl: the norb first MOs.
+
+              if (n8 > norb) then
+
+!     /!\ TODO: The following code is minimal and might not be always
+!     correct: it is possible that only the occupied MOs and a subset of
+!     virtual MOs are selected if the MOs are being optimized.
+!
+!     To select a MO, use '1' and to remove it use '0'.
+!     QMCkl will return a contiguous block of MOs. For example, if only
+!     MOs 2 and 4 are kept, QMCkl will return a contiguous array of 2
+!     orbitals containing orbital 2 and then orbital 4.
+!
+!     Note: removing MOs is iirreversible, so if you need sometimes a
+!     small subset of MOs and sometimes a larger set, the simplest way
+!     is to create 2 different contexts.
+
+                  allocate(keep(n8))
+
+                  keep(1:norb) = 1
+                  keep(norb+1:n8) = 0
+
+                  rc = qmckl_mo_basis_select_mo(qmckl_ctx, keep, n8)
+                  if (rc /= QMCKL_SUCCESS) then
+                    print *, 'Error selecting MOs in QMCkl'
+                    stop
+                  end if
+
+                  deallocate(keep)
+
+                  rc = qmckl_get_mo_basis_mo_num(qmckl_ctx, n8)
+                  if (rc /= QMCKL_SUCCESS) then
+                    print *, 'Error getting mo_num from QMCkl'
+                    stop
+                  end if
+                  if (n8 /= norb) then
+                    print *, 'Bug in MO selection in QMCkl'
+                    stop
+                  end if
+
+              end if
+!     -------------
+
+
               allocate(mo_vgl_qmckl(n8, 5, 1))
 
 !     Send electron coordinates to QMCkl to compute the MOs at these positions
@@ -421,7 +468,7 @@ c get basis functions for electron iel
                  print *, trim(err_message)
                  call abort()
               end if
-             
+
 
 !     Compute the MOs
               rc = qmckl_get_mo_basis_mo_vgl(
@@ -434,7 +481,6 @@ c get basis functions for electron iel
                  call abort()
               end if
 
-
               if(iflag.gt.0) then
 
                  do iorb=1,norb
@@ -445,7 +491,7 @@ c get basis functions for electron iel
                     ddorbn(iorb)=mo_vgl_qmckl(iorb,5,1)
                  enddo
 
-                 
+
               else
 
                  do iorb=1,norb
@@ -455,11 +501,11 @@ c get basis functions for electron iel
                     dorbn(iorb,3)=mo_vgl_qmckl(iorb,4,1)
               enddo
 
-                 
-                 
+
+
               endif
-                 
-              
+
+
 
               deallocate(mo_vgl_qmckl)
 
