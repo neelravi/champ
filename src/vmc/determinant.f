@@ -10,7 +10,7 @@
 c Written by Cyrus Umrigar starting from Kevin Schmidt's routine
 c Modified by A. Scemama
 
-      use const, only: ipr
+!      use const, only: ipr
       use dets, only: ndet
       use elec, only: ndn, nup
       use multidet, only: kref, kchange, kref_fixed
@@ -19,8 +19,9 @@ c Modified by A. Scemama
 
       use orbval, only: ddorb, dorb, orb
       use slater, only: d2dx2, ddx, fp, fpp, slmi
-      use const, only: nelec
-
+!      use const, only: nelec
+      use const !, only: nelec, ipr, use_qmckl, qmckl_ctx
+      
       use multislater, only: detiab, allocate_multislater
       use atom, only: ncent_tot
       use precision_kinds, only: dp
@@ -35,6 +36,13 @@ c Modified by A. Scemama
       use orbval, only: nadorb
       use vmc_mod, only: norb_tot
 
+#ifdef QMCKL_FOUND
+      use qmckl
+      use error, only: fatal_error
+#endif
+
+      
+
       implicit none
 
       integer :: i, iab, icheck, ii, ik
@@ -46,6 +54,14 @@ c Modified by A. Scemama
       real(dp), parameter :: one = 1.d0
       real(dp), parameter :: half = 0.5d0
 
+
+ccc   QMCkl
+#ifdef QMCKL_FOUND      
+      integer :: rc
+      integer*8 :: n8
+#endif      
+ccc
+      
 
 c compute orbitals
       call orbitals(x,rvec_en,r_en)
@@ -117,9 +133,27 @@ c reshuffling determinants just if the new kref was accepted
             if(newref.eq.0 .and. kchange.gt.0) then
                call multideterminants_define(kchange,icheck)
                if (ioptorb.ne.0) then
+                  write(ounit,*) "***norb", norb
+                  write(ounit,*) "***nadorb", nadorb 
                   norb=norb+nadorb
-                  write(ounit, *) norb
+                  write(ounit,*)"***norb****", norb
                   call optorb_define
+!     ! proof fail if norb changed
+                  if (use_qmckl) then
+                     write(ounit,*) "iniside determinant sub"                    
+                     rc = qmckl_get_mo_basis_mo_num(qmckl_ctx, n8)
+                     if (rc /= QMCKL_SUCCESS) then
+                        print *,"Error qmckl mo's inside determinant.f"
+                        stop
+                     end if
+                     if (n8 .lt. norb) then
+                        write(ounit,*) 'q n8',n8
+                        write(ounit,*) 'q norb',norb
+                        write(ounit,*) 'q nadorb',nadorb
+                        call fatal_error('boom!! n8 < norb ')
+                     endif
+                  endif
+
                endif
             endif
 
@@ -129,9 +163,26 @@ c reshuffling determinants if the maximum number of iterations looking for kref 
          if (kchange.eq.10) then
             call multideterminants_define(kchange,icheck)
             if (ioptorb.ne.0) then
+               write(ounit,*) "***norb", norb
+               write(ounit,*) "***nadorb", nadorb
                norb=norb+nadorb
-               write(ounit, *) norb
+              write(ounit,*) "***norb****", norb
                call optorb_define
+               if (use_qmckl) then
+                  write(ounit,*) "exhausting dets determinant sub"                    
+                  rc = qmckl_get_mo_basis_mo_num(qmckl_ctx, n8)
+                  if (rc /= QMCKL_SUCCESS) then
+                     write(ounit,*) "Error qmckl mo's determinant.f"
+                     stop
+                  end if
+                  if (n8 .lt. norb) then
+                     write(ounit,*) 't n8',n8
+                     write(ounit,*) 't norb',norb
+                     write(ounit,*) 't nadorb',nadorb
+                     call fatal_error('boom!! n8 < norb ')                
+                  endif
+               endif
+               
             endif
             write(ounit, *) "kref changed but it is not optimal"
          endif

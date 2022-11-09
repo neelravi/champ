@@ -686,6 +686,42 @@ end interface
 
 
 
+
+! #+CALL: generate_f_interface(table=qmckl_dgemm_safe_args,rettyp="qmckl_exit_code",fname="qmckl_dgemm_safe")
+
+! #+RESULTS:
+
+interface
+  integer(c_int32_t) function qmckl_dgemm_safe &
+      (context, TransA, TransB, m, n, k, alpha, A, size_A, lda, B, size_B, ldb, beta, C, size_C, ldc) &
+      bind(C)
+    use, intrinsic :: iso_c_binding
+    import
+    implicit none
+
+    integer (c_int64_t) , intent(in)  , value :: context
+    character           , intent(in)  , value :: TransA
+    character           , intent(in)  , value :: TransB
+    integer (c_int64_t) , intent(in)  , value :: m
+    integer (c_int64_t) , intent(in)  , value :: n
+    integer (c_int64_t) , intent(in)  , value :: k
+    real    (c_double ) , intent(in)  , value :: alpha
+    real    (c_double ) , intent(in)          :: A(lda,*)
+    integer (c_int64_t) , intent(in)  , value :: size_A
+    integer (c_int64_t) , intent(in)  , value :: lda
+    real    (c_double ) , intent(in)          :: B(ldb,*)
+    integer (c_int64_t) , intent(in)  , value :: size_B
+    integer (c_int64_t) , intent(in)  , value :: ldb
+    real    (c_double ) , intent(in)  , value :: beta
+    real    (c_double ) , intent(out)         :: C(ldc,*)
+    integer (c_int64_t) , intent(in)  , value :: size_C
+    integer (c_int64_t) , intent(in)  , value :: ldc
+
+  end function qmckl_dgemm_safe
+end interface
+
+
+
 ! #+CALL: generate_f_interface(table=qmckl_adjugate_args,rettyp="qmckl_exit_code",fname="qmckl_adjugate")
 
 ! #+RESULTS:
@@ -707,6 +743,33 @@ interface
     real    (c_double ) , intent(inout)        :: det_l
 
   end function qmckl_adjugate
+end interface
+
+
+
+! #+CALL: generate_f_interface(table=qmckl_adjugate_safe_args,rettyp="qmckl_exit_code",fname="qmckl_adjugate_safe")
+
+! #+RESULTS:
+
+interface
+  integer(c_int32_t) function qmckl_adjugate_safe &
+      (context, n, A, size_A, lda, B, size_B, ldb, det_l) &
+      bind(C)
+    use, intrinsic :: iso_c_binding
+    import
+    implicit none
+
+    integer (c_int64_t) , intent(in)  , value :: context
+    integer (c_int64_t) , intent(in)  , value :: n
+    real    (c_double ) , intent(in)          :: A(lda,*)
+    integer (c_int64_t) , intent(in)  , value :: lda
+    integer (c_int64_t) , intent(in)  , value :: size_A
+    real    (c_double ) , intent(out)         :: B(ldb,*)
+    integer (c_int64_t) , intent(in)  , value :: ldb
+    integer (c_int64_t) , intent(in)  , value :: size_B 
+    real    (c_double ) , intent(inout)        :: det_l
+
+  end function qmckl_adjugate_safe
 end interface
 interface
    integer (qmckl_context) function qmckl_context_create() bind(C)
@@ -913,6 +976,17 @@ interface
      character, intent(out) :: string(*)
    end subroutine qmckl_last_error
 end interface
+
+interface
+   function qmckl_check (context, rc) bind(C, name='qmckl_check')
+     use, intrinsic :: iso_c_binding
+     import
+     implicit none
+     integer(qmckl_exit_code) :: qmckl_check
+     integer (c_int64_t) , intent(in), value :: context
+     integer(qmckl_exit_code), intent(in) :: rc
+   end function qmckl_check
+end interface
 ! Fortran interfaces
 
 
@@ -1027,17 +1101,6 @@ interface
 end interface
 
 interface
-  integer(c_int32_t) function qmckl_get_nucleus_rescale_factor(context, kappa) &
-    bind(C)
-    use, intrinsic :: iso_c_binding
-    import
-    implicit none
-    integer (c_int64_t) , intent(in)  , value :: context
-    real    (c_double)  , intent(out)         :: kappa
-  end function qmckl_get_nucleus_rescale_factor
-end interface
-
-interface
   integer(c_int32_t) function qmckl_get_nucleus_coord(context, transp, coord, size_max) &
     bind(C)
     use, intrinsic :: iso_c_binding
@@ -1087,17 +1150,6 @@ interface
 end interface
 
 interface
-  integer(c_int32_t) function qmckl_set_nucleus_rescale_factor(context, kappa) &
-    bind(C)
-    use, intrinsic :: iso_c_binding
-    import
-    implicit none
-    integer (c_int64_t) , intent(in)  , value :: context
-    real    (c_double)  , intent(in)  , value :: kappa
-  end function qmckl_set_nucleus_rescale_factor
-end interface
-
-interface
   integer(c_int32_t) function qmckl_get_nucleus_nn_distance(context, distance, size_max) &
     bind(C)
     use, intrinsic :: iso_c_binding
@@ -1105,18 +1157,6 @@ interface
     implicit none
     integer (c_int64_t) , intent(in)  , value :: context
     real    (c_double ) , intent(out)         :: distance(*)
-    integer (c_int64_t) , intent(in)  , value :: size_max
-  end function
-end interface
-
-interface
-  integer(c_int32_t) function qmckl_get_nucleus_nn_distance_rescaled(context, distance_rescaled, size_max) &
-    bind(C)
-    use, intrinsic :: iso_c_binding
-    import
-    implicit none
-    integer (c_int64_t) , intent(in)  , value :: context
-    real    (c_double ) , intent(out)         :: distance_rescaled(*)
     integer (c_int64_t) , intent(in)  , value :: size_max
   end function
 end interface
