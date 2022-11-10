@@ -328,6 +328,24 @@ if (MPI_Fortran_FOUND)
       ${CMAKE_CURRENT_SOURCE_DIR}/dumper_hdf5.f90)
   endif()
 
+  set_property(
+  SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/dumper_hdf5.f90
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS
+  COMPILER=\"${CMAKE_Fortran_COMPILER}\"
+  COMPILER_VERSION=\"${CMAKE_Fortran_COMPILER_VERSION}\"
+  GIT_HEAD_BRANCH=\"${GIT_HEAD_BRANCH}\"
+  GIT_REVISION_HASH=\"${GIT_REVISION_HASH}\"
+  HDF5_VERSION=\"${HDF5_VERSION}\"
+  )
+
+  set_property(
+  SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/vmc.f
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS
+  HDF5_FOUND=\"${HDF5_FOUND}\"
+  )
+
   # Compile these two files with hdf5 flags if HDF5 is found
   set_source_files_properties(
     ${CMAKE_CURRENT_SOURCE_DIR}/utils_hdf5.f90

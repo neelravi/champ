@@ -109,13 +109,42 @@ module dumper_hdf5_mod
         call bcast(yq)
         call bcast(zq)
 
-
+        ! Only the master process will write the data to the HDF5 file
+        if (wid) then
         ! Open the HDF5 file
         call hdf5_file_create(restart_filename, file_id)
 
         call hdf5_group_create(file_id, "Metadata", group_id)
         call hdf5_group_open(file_id, "Metadata", group_id)
+
+        call get_environment_variable ("USER", author)
         call hdf5_write(file_id, group_id, "Author", trim(author))
+        call hdf5_write(file_id, group_id, " Code Compilation Date ", __DATE__)
+        call hdf5_write(file_id, group_id, " Code Compilation Time ", __TIME__)
+
+#if defined(GIT_HEAD_BRANCH)
+        call hdf5_write(file_id, group_id, " Git Branch ", GIT_HEAD_BRANCH)
+#endif
+
+#if defined(GIT_REVISION_HASH)
+        call hdf5_write(file_id, group_id, " Git Commit Hash ", GIT_REVISION_HASH)
+#endif
+
+#if defined(CMAKE_Fortran_COMPILER)
+        call hdf5_write(file_id, group_id, " Compiler ", CMAKE_Fortran_COMPILER)
+#endif
+
+#if defined(CMAKE_Fortran_COMPILER_VERSION)
+        call hdf5_write(file_id, group_id, " Compiler Version ", CMAKE_Fortran_COMPILER_VERSION)
+#endif
+
+#if defined(TARGET_ARCHITECTURE)
+        call hdf5_write(file_id, group_id, " Vectorization Instructions ", TARGET_ARCHITECTURE)
+#endif
+
+#if defined(HDF5_VERSION)
+        call hdf5_write(file_id, group_id, " HDF5 Version ", HDF5_VERSION)
+#endif
         call hdf5_group_close(group_id)
 
         call hdf5_group_create(file_id, "Electrons", group_id)
@@ -211,6 +240,7 @@ module dumper_hdf5_mod
 
         call hdf5_file_close(file_id)
         ! Close the HDF5 file
+        endif
 
         end subroutine dumper_hdf5
 end module dumper_hdf5_mod
