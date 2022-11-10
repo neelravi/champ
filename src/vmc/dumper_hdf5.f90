@@ -1,6 +1,6 @@
 module dumper_hdf5_mod
         contains
-        subroutine dumper_hdf5
+        subroutine dumper_hdf5(restart_filename)
         !> @brief Dumps the data to a HDF5 file
         !> @details This subroutine dumps the data to a HDF5 file for restarting purposes
         !> @author Ravindra Shinde
@@ -12,6 +12,7 @@ module dumper_hdf5_mod
         use branch,  only: eest,eigv,ff,fprod,nwalk,wdsumo,wgdsumo,wt
         use branch,  only: wtgen
         use coefs,   only: nbasis
+        use csfs,    only: ncsf, nstates, ccsf
         use config,  only: xold_dmc
         use constants, only: hb
         use contrl_file, only: ounit
@@ -62,8 +63,7 @@ module dumper_hdf5_mod
         implicit none
 
         ! HDF5 related variables
-        character(len=20), parameter   ::  restart_file_dmc = "restart_dmc.hdf5"
-        character(len=20), parameter   ::  restart_file_vmc = "restart_dmc.hdf5"
+        character(len=*), intent(in)   ::  restart_filename
         integer(hid_t)                 ::  file_id
         integer(hid_t)                 ::  group_id
         integer(hid_t)                 ::  plist_id
@@ -72,29 +72,46 @@ module dumper_hdf5_mod
         integer(hid_t)                 ::  memspace_id
         integer(hid_t)                 ::  filespace
         integer                        ::  error
-        ! integer                        ::  nup, ndn, nelec
         character(len=20)              ::  author = "Ravindra Shinde", read_author
 
-        ! integer :: i, ib, ic, id, ierr
-        ! integer :: ifr, irequest, iw, j
-        ! integer :: k, nscounts
-        ! integer, dimension(4, 0:nproc) :: irn
-        ! integer, dimension(MPI_STATUS_SIZE) :: istatus
-        ! integer, dimension(4, 0:nproc) :: irn_tmp
+        integer :: i, ib, ic, id, ierr
+        integer :: ifr, irequest, iw, j
+        integer :: k, nscounts
+        integer, dimension(4, 0:nproc) :: irn
+        integer, dimension(MPI_STATUS_SIZE) :: istatus
+        integer, dimension(4, 0:nproc) :: irn_tmp
 
-        real, parameter :: zero = 0.0
-        double precision, parameter :: one = 1.0d0
-        real, dimension(2)  :: zero_array = (/0.0, 0.0/)
-        integer, dimension(4)  :: int_array = (/-5, 4, 3, 10000/)
-        double precision, dimension(2) :: one_array = (/1.0d0, 1.0d0/)
-        real, dimension(3,3) :: real_2d_array = reshape((/ 1., 2., 3., 4., 5., 6., 7., 8., 9. /), shape(real_2d_array))
-        logical, parameter :: debug = 0
-        ! real(dp), parameter :: small = 1.e-6
-        nup = 4
-        ndn = 4
-        nelec = 8
+        real(dp), parameter             :: zero = 0.0d0
+        real(dp), parameter             :: one  = 1.0d0
+        real(dp), parameter             :: small = 1.0d-6
 
-        call hdf5_file_create(restart_file_dmc, file_id)
+        if(nforce.gt.1) call strech(xold_dmc,xold_dmc,ajacob,1,0)
+
+        call savern(irn(1,idtask))
+
+        nscounts=4
+        call mpi_gather(irn(1,idtask),nscounts,mpi_integer,irn_tmp,nscounts,mpi_integer,0,MPI_COMM_WORLD,ierr)
+
+        ! Bradcast the data which is spread across the processors
+        call bcast(nwalk)
+        call bcast(xold_dmc)
+        call bcast(wt)
+        call bcast(ff(0))
+        call bcast(fprod)
+        call bcast(fratio)
+        call bcast(eigv)
+        call bcast(eest)
+        call bcast(wdsumo)
+        call bcast(iage)
+        call bcast(ioldest)
+        call bcast(ioldestmx)
+        call bcast(xq)
+        call bcast(yq)
+        call bcast(zq)
+
+
+        ! Open the HDF5 file
+        call hdf5_file_create(restart_filename, file_id)
 
         call hdf5_group_create(file_id, "Metadata", group_id)
         call hdf5_group_open(file_id, "Metadata", group_id)
@@ -103,19 +120,20 @@ module dumper_hdf5_mod
 
         call hdf5_group_create(file_id, "Electrons", group_id)
         call hdf5_group_open(file_id, "Electrons", group_id)
-        call hdf5_write(file_id, group_id, "nup", nup)
-        call hdf5_write(file_id, group_id, "ndn", ndn)
-        call hdf5_write(file_id, group_id, "nelec", nelec)
+        call hdf5_write(file_id, group_id, "Number of Up-Spin Electrons", nup)
+        call hdf5_write(file_id, group_id, "Number of Down-Spin Electrons", ndn)
+        call hdf5_write(file_id, group_id, "Total Number of Electrons", nelec)
         call hdf5_group_close(group_id)
 
         call hdf5_group_create(file_id, "System", group_id)
         call hdf5_group_open(file_id, "System", group_id)
-        call hdf5_write(file_id, group_id, "zero sp", zero)
-        call hdf5_write(file_id, group_id, "one dp", one)
-        call hdf5_write(file_id, group_id, "zero array", zero_array)
-        call hdf5_write(file_id, group_id, "one array", one_array)
-        call hdf5_write(file_id, group_id, "integer 1d array", int_array)
-        call hdf5_write(file_id, group_id, "real 2d 1d array", real_2d_array)
+        call hdf5_write(file_id, group_id, "Number of Center Types", nctype)
+        call hdf5_write(file_id, group_id, "Number of Centers", ncent)
+        call hdf5_write(file_id, group_id, "Center Coordinates", cent)
+        call hdf5_write(file_id, group_id, "Number of Ghost Center Types", newghostype)
+        call hdf5_write(file_id, group_id, "Number of Ghost Centers", nghostcent)
+        call hdf5_write(file_id, group_id, "Index of Which Center Type", iwctype)
+        call hdf5_write(file_id, group_id, "PE Centers", pecent)
         call hdf5_group_close(group_id)
 
         call hdf5_group_create(file_id, "ECP", group_id)
@@ -124,30 +142,43 @@ module dumper_hdf5_mod
 
         call hdf5_group_create(file_id, "Basis", group_id)
         call hdf5_group_open(file_id, "Basis", group_id)
+        call hdf5_write(file_id, group_id, "Zex", zex)
+        call hdf5_write(file_id, group_id, "nquad", nquad)
+        call hdf5_write(file_id, group_id, "xq", xq)
+        call hdf5_write(file_id, group_id, "yq", yq)
+        call hdf5_write(file_id, group_id, "zq", zq)
+        call hdf5_write(file_id, group_id, "wq", wq)
         call hdf5_group_close(group_id)
 
         call hdf5_group_create(file_id, "AO", group_id)
         call hdf5_group_open(file_id, "AO", group_id)
+        call hdf5_write(file_id, group_id, "Number of Basis", nbasis)
+        call hdf5_write(file_id, group_id, "Number of S Type AOs", ns)
+        call hdf5_write(file_id, group_id, "Number of P Type AOs", np)
+        call hdf5_write(file_id, group_id, "Number of D Type AOs", nd)
+        call hdf5_write(file_id, group_id, "Number of F Type AOs", nf)
+        call hdf5_write(file_id, group_id, "Number of G Type AOs", ng)
         call hdf5_group_close(group_id)
 
         call hdf5_group_create(file_id, "MO", group_id)
         call hdf5_group_open(file_id, "MO", group_id)
+        call hdf5_write(file_id, group_id, "MO Coefficients", coef)
         call hdf5_group_close(group_id)
 
         call hdf5_group_create(file_id, "Determinants", group_id)
         call hdf5_group_open(file_id, "Determinants", group_id)
+        call hdf5_write(file_id, group_id, "Number of Determinants", ndet)
+        call hdf5_write(file_id, group_id, "Determinant Coefficients", cdet)
         call hdf5_group_close(group_id)
 
         call hdf5_group_create(file_id, "CSFs", group_id)
         call hdf5_group_open(file_id, "CSFs", group_id)
-        call hdf5_group_close(group_id)
-
-        call hdf5_group_create(file_id, "CSFmap", group_id)
-        call hdf5_group_open(file_id, "CSFmap", group_id)
+        call hdf5_write(file_id, group_id, "Number of CSFs", ncsf)
         call hdf5_group_close(group_id)
 
         call hdf5_group_create(file_id, "States", group_id)
         call hdf5_group_open(file_id, "States", group_id)
+        call hdf5_write(file_id, group_id, "Number of States", nstates)
         call hdf5_group_close(group_id)
 
         call hdf5_group_create(file_id, "UnitCell", group_id)
@@ -160,19 +191,26 @@ module dumper_hdf5_mod
 
         call hdf5_group_create(file_id, "QMC", group_id)
         call hdf5_group_open(file_id, "QMC", group_id)
+        call hdf5_write(file_id, group_id, "Number of Processors", nproc)
+        call hdf5_write(file_id, group_id, "Number of Walkers", nwalk)
+        call hdf5_write(file_id, group_id, "xold_dmc", xold_dmc)
+        call hdf5_write(file_id, group_id, "nfprod", nfprod)
+        call hdf5_write(file_id, group_id, "ff", ff)
+        call hdf5_write(file_id, group_id, "wt", wt)
+        call hdf5_write(file_id, group_id, "fprod", fprod)
+        call hdf5_write(file_id, group_id, "eigv", eigv)
+        call hdf5_write(file_id, group_id, "eest", eest)
+        call hdf5_write(file_id, group_id, "wdsumo", wdsumo)
+        call hdf5_write(file_id, group_id, "iage", iage)
+        call hdf5_write(file_id, group_id, "ioldest", ioldest)
+        call hdf5_write(file_id, group_id, "ioldestmx", ioldestmx)
+        call hdf5_write(file_id, group_id, "nforce", nforce)
+        call hdf5_write(file_id, group_id, "fratio", fratio)
         call hdf5_group_close(group_id)
 
 
         call hdf5_file_close(file_id)
-
-
-        ! call hdf5_file_open(restart_file_dmc, file_id)
-        ! call hdf5_group_open(file_id, "Metadata", group_id)
-        ! call hdf5_read(file_id, group_id, "Author", read_author)
-        ! call hdf5_group_close(group_id)
-
-
-        ! call hdf5_file_close(file_id)
+        ! Close the HDF5 file
 
         end subroutine dumper_hdf5
 end module dumper_hdf5_mod

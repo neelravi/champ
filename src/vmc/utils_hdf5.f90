@@ -8,7 +8,7 @@ module hdf5_utils
 
     use hdf5
     use iso_c_binding,  only:   c_loc
-    ! use contrl_file,    only:   errunit
+    use contrl_file,    only:   errunit
 
     implicit none
 
@@ -90,14 +90,14 @@ module hdf5_utils
         ! Initilize HDF5 Fortran
         call h5open_f(ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 library could not be initialized."
+            write(errunit,*) "Error: HDF5 library could not be initialized."
             stop
         end if
 
         ! create file
         call h5fcreate_f(filename, H5F_ACC_TRUNC_F, file_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 file could not be created."
+            write(errunit,*) "Error: HDF5 file could not be created."
             stop
         end if
 
@@ -117,14 +117,14 @@ module hdf5_utils
         ! Initilize HDF5 Fortran
         call h5open_f(ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 library could not be initialized."
+            write(errunit,*) "Error: HDF5 library could not be initialized."
             stop
         end if
 
         ! open file for reading and writing
         call h5fopen_f(filename, H5F_ACC_RDWR_F, file_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 file could not be opened."
+            write(errunit,*) "Error: HDF5 file could not be opened."
             stop
         end if
 
@@ -141,14 +141,14 @@ module hdf5_utils
         ! close file
         call h5fclose_f(file_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 file could not be closed."
+            write(errunit,*) "Error: HDF5 file could not be closed."
             stop
         end if
 
         ! close HDF5 Fortran
         call h5close_f(ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 library could not be closed."
+            write(errunit,*) "Error: HDF5 library could not be closed."
             stop
         end if
 
@@ -170,7 +170,7 @@ module hdf5_utils
         ! create group
         call h5gcreate_f(file_id, group_name, group_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 group could not be created."
+            write(errunit,*) "Error: HDF5 group could not be created."
             stop
         end if
 
@@ -192,7 +192,7 @@ module hdf5_utils
         ! open group
         call h5gopen_f(file_id, group_name, group_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 group could not be opened."
+            write(errunit,*) "Error: HDF5 group could not be opened."
             stop
         end if
 
@@ -210,7 +210,7 @@ module hdf5_utils
         ! close group
         call h5gclose_f(group_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 group could not be closed."
+            write(errunit,*) "Error: HDF5 group could not be closed."
             stop
         end if
 
@@ -238,35 +238,35 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SCALAR_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_INTEGER, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_INTEGER, data, [0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -297,7 +297,7 @@ module hdf5_utils
         call h5tcopy_f(H5T_FORTRAN_S1, type_id, ierr)
         call h5tset_size_f(type_id, len(data, SIZE_T), ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 could not obtain size of a string."
+            write(errunit,*) "Error: HDF5 could not obtain size of a string."
             stop
         end if
 
@@ -305,35 +305,35 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SCALAR_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, type_id, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, type_id, data, [0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*), "Error: HDF5 dataspace could not be closed."
+            write(errunit,*), "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -365,35 +365,35 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SCALAR_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_REAL, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_REAL, data, [0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -420,35 +420,35 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SCALAR_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_DOUBLE, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_DOUBLE, data, [0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -479,42 +479,42 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SIMPLE_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! set dimensions
         call h5sset_extent_simple_f(dataspace_id, 1, [data_size], [data_size], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be set."
+            write(errunit,*) "Error: HDF5 dataspace could not be set."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_REAL, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_REAL, data, [0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -546,42 +546,42 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SIMPLE_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! set dimensions
         call h5sset_extent_simple_f(dataspace_id, 2, [data_shape(1), data_shape(2)], [data_shape(1), data_shape(2)], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be set."
+            write(errunit,*) "Error: HDF5 dataspace could not be set."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_REAL, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_REAL, data, [0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -613,42 +613,42 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SIMPLE_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! set dimensions
         call h5sset_extent_simple_f(dataspace_id, 3, [data_shape(1), data_shape(2), data_shape(3)], [data_shape(1), data_shape(2), data_shape(3)], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be set."
+            write(errunit,*) "Error: HDF5 dataspace could not be set."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_REAL, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_REAL, data, [0_HSIZE_T,0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -680,42 +680,42 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SIMPLE_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! set dimensions
         call h5sset_extent_simple_f(dataspace_id, 4, [data_shape(1), data_shape(2), data_shape(3), data_shape(4)], [data_shape(1), data_shape(2), data_shape(3), data_shape(4)], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be set."
+            write(errunit,*) "Error: HDF5 dataspace could not be set."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_REAL, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_REAL, data, [0_HSIZE_T,0_HSIZE_T,0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -746,42 +746,42 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SIMPLE_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! set dimensions
         call h5sset_extent_simple_f(dataspace_id, 1, [data_shape(1)], [data_shape(1)], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be set."
+            write(errunit,*) "Error: HDF5 dataspace could not be set."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_DOUBLE, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_DOUBLE, data, [0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -813,42 +813,42 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SIMPLE_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! set dimensions
         call h5sset_extent_simple_f(dataspace_id, 2, [data_shape(1), data_shape(2)], [data_shape(1), data_shape(2)], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be set."
+            write(errunit,*) "Error: HDF5 dataspace could not be set."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_DOUBLE, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_DOUBLE, data, [0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -879,42 +879,42 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SIMPLE_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! set dimensions
         call h5sset_extent_simple_f(dataspace_id, 3, [data_shape(1), data_shape(2), data_shape(3)], [data_shape(1), data_shape(2), data_shape(3)], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be set."
+            write(errunit,*) "Error: HDF5 dataspace could not be set."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_DOUBLE, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_DOUBLE, data, [0_HSIZE_T,0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -945,42 +945,42 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SIMPLE_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! set dimensions
         call h5sset_extent_simple_f(dataspace_id, 4, [data_shape(1), data_shape(2), data_shape(3), data_shape(4)], [data_shape(1), data_shape(2), data_shape(3), data_shape(4)], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be set."
+            write(errunit,*) "Error: HDF5 dataspace could not be set."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_DOUBLE, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_DOUBLE, data, [0_HSIZE_T,0_HSIZE_T,0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -1011,42 +1011,42 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SIMPLE_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! set dimensions
         call h5sset_extent_simple_f(dataspace_id, 1, [data_size], [data_size], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be set."
+            write(errunit,*) "Error: HDF5 dataspace could not be set."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_INTEGER, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_INTEGER, data, [0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -1078,42 +1078,42 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SIMPLE_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! set dimensions
         call h5sset_extent_simple_f(dataspace_id, 2, [data_shape(1), data_shape(2)], [data_shape(1), data_shape(2)], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be set."
+            write(errunit,*) "Error: HDF5 dataspace could not be set."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_INTEGER, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_INTEGER, data, [0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -1144,42 +1144,42 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SIMPLE_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! set dimensions
         call h5sset_extent_simple_f(dataspace_id, 3, [data_shape(1), data_shape(2), data_shape(3)], [data_shape(1), data_shape(2), data_shape(3)], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be set."
+            write(errunit,*) "Error: HDF5 dataspace could not be set."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_INTEGER, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_INTEGER, data, [0_HSIZE_T,0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -1210,42 +1210,42 @@ module hdf5_utils
         ! create dataspace
         call h5screate_f(H5S_SIMPLE_F, dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be created."
+            write(errunit,*) "Error: HDF5 dataspace could not be created."
             stop
         end if
 
         ! set dimensions
         call h5sset_extent_simple_f(dataspace_id, 4, [data_shape(1), data_shape(2), data_shape(3), data_shape(4)], [data_shape(1), data_shape(2), data_shape(3), data_shape(4)], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be set."
+            write(errunit,*) "Error: HDF5 dataspace could not be set."
             stop
         end if
 
         ! create dataset
         call h5dcreate_f(group_id, dataset_name, H5T_NATIVE_INTEGER, dataspace_id, dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be created."
+            write(errunit,*) "Error: HDF5 dataset could not be created."
             stop
         end if
 
         ! write data
         call h5dwrite_f(dataset_id, H5T_NATIVE_INTEGER, data, [0_HSIZE_T,0_HSIZE_T,0_HSIZE_T,0_HSIZE_T], ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be written."
+            write(errunit,*) "Error: HDF5 dataset could not be written."
             stop
         end if
 
         ! close dataset
         call h5dclose_f(dataset_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataset could not be closed."
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
             stop
         end if
 
         ! close dataspace
         call h5sclose_f(dataspace_id, ierr)
         if (ierr /= 0) then
-            write(*,*) "Error: HDF5 dataspace could not be closed."
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
             stop
         end if
 
@@ -1278,14 +1278,14 @@ module hdf5_utils
         ! ! open dataset
         ! call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
         ! if (ierr /= 0) then
-        !     write(*,*) "Error: HDF5 dataset could not be opened."
+        !     write(errunit,*) "Error: HDF5 dataset could not be opened."
         !     stop
         ! end if
 
         ! ! get dataspace
         ! call h5dget_space_f(dataset_id, dataspace_id, ierr)
         ! if (ierr /= 0) then
-        !     write(*,*) "Error: HDF5 dataspace could not be obtained."
+        !     write(errunit,*) "Error: HDF5 dataspace could not be obtained."
         !     stop
         ! end if
 
@@ -1293,7 +1293,7 @@ module hdf5_utils
         ! call h5tcopy_f(H5T_FORTRAN_S1, type_id, ierr)
         ! call h5tset_size_f(type_id, len(data, SIZE_T), ierr)
         ! if (ierr /= 0) then
-        !     write(*,*) "Error: HDF5 could not obtain size of a string."
+        !     write(errunit,*) "Error: HDF5 could not obtain size of a string."
         !     stop
         ! end if
 
@@ -1301,28 +1301,28 @@ module hdf5_utils
         ! ! ! get dimensions
         ! ! call h5sget_simple_extent_dims_f(dataspace_id, data_shape, data_dims, ierr)
         ! ! if (ierr /= 0) then
-        ! !     write(*,*) "Error: HDF5 dataspace dimensions could not be obtained."
+        ! !     write(errunit,*) "Error: HDF5 dataspace dimensions could not be obtained."
         ! !     stop
         ! ! end if
 
         ! ! read data
         ! call h5dread_f(dataset_id, type_id, data, [0_HSIZE_T], ierr)
         ! if (ierr /= 0) then
-        !     write(*,*) "Error: HDF5 dataset could not be read."
+        !     write(errunit,*) "Error: HDF5 dataset could not be read."
         !     stop
         ! end if
 
         ! ! close dataset
         ! call h5dclose_f(dataset_id, ierr)
         ! if (ierr /= 0) then
-        !     write(*,*) "Error: HDF5 dataset could not be closed."
+        !     write(errunit,*) "Error: HDF5 dataset could not be closed."
         !     stop
         ! end if
 
         ! ! close dataspace
         ! call h5sclose_f(dataspace_id, ierr)
         ! if (ierr /= 0) then
-        !     write(*,*) "Error: HDF5 dataspace could not be closed."
+        !     write(errunit,*) "Error: HDF5 dataspace could not be closed."
         !     stop
         ! end if
 

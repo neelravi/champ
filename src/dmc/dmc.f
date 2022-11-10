@@ -29,7 +29,7 @@ c    C.J. Umrigar, M.P. Nightingale and K.J. Runge, J. Chem. Phys., 99, 2865 (19
       use rotqua_mod, only: rotqua
       use strech_mod, only: setup_force
       use zerest_mod, only: zerest
-!      use contrl, only: idump, irstar, nblk, nblkeq, nconf, nstep
+      ! use dumper_hdf5_mod, only: dumper_hdf5
 
 
       implicit none
@@ -197,7 +197,11 @@ c             call dmc_good
       call finwrt
       call elapsed_time("DMC : all CP : ")
 
-      if (dmc_idump.eq.1) call dumper
+      if (dmc_idump.eq.1) then
+            call dumper
+            ! call dumper_hdf5("restart_dmc.hdf5")
+      endif
+
       close (unit=9)
       if (dmc_nconf.ne.0) close (unit=7)
       call elapsed_time("dumping restart files : ")

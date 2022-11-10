@@ -188,7 +188,7 @@ c if dump flag is on then dump out data for a restart
         open(10,form='unformatted',file='restart_vmc')
         rewind 10
         call dumper
-        call dumper_hdf5
+        call dumper_hdf5("restart_vmc.hdf5")
         close(10)
         call elapsed_time("dumping restart files : ")
       endif
