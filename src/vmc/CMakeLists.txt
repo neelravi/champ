@@ -317,6 +317,25 @@ if (MPI_Fortran_FOUND)
   endif()
 
 
+  # if HDF5 is found compile the utils_hdf5.f90 with HDF5 support
+  if (HDF5_FOUND)
+    list(APPEND SHARED_OBJECTS
+      ${CMAKE_CURRENT_SOURCE_DIR}/utils_hdf5.f90)
+  endif()
+
+  if (HDF5_FOUND)
+    list(APPEND SHARED_OBJECTS
+      ${CMAKE_CURRENT_SOURCE_DIR}/dumper_hdf5.f90)
+  endif()
+
+  # Compile these two files with hdf5 flags if HDF5 is found
+  set_source_files_properties(
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils_hdf5.f90
+    ${CMAKE_CURRENT_SOURCE_DIR}/dumper_hdf5.f90
+    APPEND
+    PROPERTY
+    COMPILE_FLAGS "-lhdf5_fortran -lhdf5")
+
 
   add_library(shared_objects OBJECT ${SHARED_OBJECTS})
 
@@ -324,6 +343,12 @@ if (MPI_Fortran_FOUND)
   target_include_directories(shared_objects
   PUBLIC
   ${CMAKE_BINARY_DIR}/src/module
+  )
+
+  #  Add headers
+  target_include_directories(shared_objects
+  PUBLIC
+  ${HDF5_INCLUDE_DIRS}
   )
 
   target_compile_options(shared_objects
@@ -355,6 +380,14 @@ if (MPI_Fortran_FOUND)
   # Compile and link executable:
   # --------------------------------------------------------------------
 
+  #give hdf5 include directories to shared_objects
+  if (HDF5_FOUND)
+    target_include_directories(shared_objects
+    PUBLIC
+    ${HDF5_INCLUDE_DIRS})
+    target_link_libraries(shared_objects ${HDF5_LIBRARIES})
+  endif()
+
   add_executable(vmc.mov1
     $<TARGET_OBJECTS:shared_modules>
     $<TARGET_OBJECTS:shared_objects>
@@ -365,7 +398,9 @@ if (MPI_Fortran_FOUND)
   #  Add headers
   target_include_directories(vmc.mov1
   PUBLIC
+  ${CMAKE_BINARY_DIR}/src/vmc
   ${CMAKE_BINARY_DIR}/src/module
+  ${HDF5_INCLUDE_DIRS}
   )
 
 
@@ -383,7 +418,8 @@ if (MPI_Fortran_FOUND)
       parser
       ${LINEAR_ALGEBRA}
       ${TREXIO_LIBRARY}
-      MPI::MPI_Fortran)
+      MPI::MPI_Fortran
+      HDF5::HDF5)
   else()
     target_link_libraries(vmc.mov1
       PRIVATE

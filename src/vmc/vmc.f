@@ -31,7 +31,7 @@ c and sa, pa, da asymptotic functions
       use slater,  only: coef
       use strech_mod, only: setup_force
       use system,  only: nelec
-!      use contrl, only: idump, irstar, nconf, nblk, nblkeq, nconf_new, nstep
+      use dumper_hdf5_mod
 
       implicit none
 
@@ -188,6 +188,7 @@ c if dump flag is on then dump out data for a restart
         open(10,form='unformatted',file='restart_vmc')
         rewind 10
         call dumper
+        call dumper_hdf5
         close(10)
         call elapsed_time("dumping restart files : ")
       endif

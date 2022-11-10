@@ -86,7 +86,7 @@ link_libraries(${LINEAR_ALGEBRA})
 
 # Find HDF5 library
 if (ENABLE_TREXIO)
-find_package(HDF5 QUIET)
+find_package(HDF5 REQUIRED COMPONENTS Fortran QUIET)
 if (HDF5_FOUND)
   message(STATUS "Is HDF5 library found            :: " ${HDF5_VERSION})
   message(STATUS "Is HDF5 library parallel         :: " ${HDF5_IS_PARALLEL})

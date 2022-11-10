@@ -52,7 +52,9 @@ target_include_directories(dmc.mov1
   PUBLIC
   ${CMAKE_BINARY_DIR}/src/vmc
   ${CMAKE_BINARY_DIR}/src/module
+  ${HDF5_INCLUDE_DIRS}
   )
+
 
 # compilation
 target_compile_options(dmc.mov1
@@ -68,7 +70,8 @@ if (TREXIO_FOUND)
     parser
     ${LINEAR_ALGEBRA}
     ${TREXIO_LIBRARY}
-    MPI::MPI_Fortran)
+    MPI::MPI_Fortran
+    HDF5::HDF5)
 else()
   target_link_libraries(dmc.mov1
     PRIVATE
