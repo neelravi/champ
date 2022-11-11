@@ -192,6 +192,7 @@ module trexio_read_data
         !! number of molecular and atomic orbitals and their corresponding coefficients.
         !! @author Ravindra Shinde (r.l.shinde@utwente.nl)
         !! @date 12 October 2021
+        use basis, only: ns, np, nd, nf, ng
         use custom_broadcast, only: bcast
         use mpiconf, only: wid
         use contrl_file, only: ounit, errunit
@@ -212,8 +213,9 @@ module trexio_read_data
         use multiple_geo,       only: nwftype
         use general,            only: pooldir
         use optwf_control,      only: method
-        use precision_kinds, only: dp
+        use precision_kinds,    only: dp
         use slater,             only: coef
+        use write_orb_loc_mod,  only: write_orb_loc
 
 
         use error, only: trexio_error
@@ -234,7 +236,7 @@ module trexio_read_data
         character(len=120)              :: temp3, file_trexio_path
         integer                         :: iunit, iostat, iwft
         integer                         :: iorb, ibasis, i, j, k, l, ic, it
-        integer                         :: counter, count0, count1, count2, count3, summ
+        integer                         :: counter, count0, count1, count2, count3, summ, count
         integer                         :: index_ao, index_nrad
         integer                         :: lower_range, upper_range
         integer                         :: count_s, count_p, count_d, count_f, count_g
@@ -244,10 +246,12 @@ module trexio_read_data
         logical                         :: skip = .true.
 
 !       trexio
-        integer, allocatable            :: basis_nucleus_index(:), ao_index(:), ao_frequency(:), unique_index(:)
-        integer, allocatable            :: compare(:), ao_index_per_cent(:)
+        integer, allocatable            :: basis_nucleus_index(:)
+        integer, allocatable            :: ao_index_per_cent(:)
         integer, allocatable            :: local_array_s(:,:), local_array_p(:,:), local_array_d(:,:), local_array_f(:,:), local_array_g(:,:)
         real(dp), allocatable           :: unshuffled_coef(:,:,:)
+        integer, dimension(:), allocatable :: atom_index(:), nshells_per_atom(:)
+
 
         !   Formatting
         character(len=100)               :: int_format     = '(A, T60, I0)'
@@ -301,12 +305,17 @@ module trexio_read_data
         ! Do the allocations based on the number of shells and primitives
         if (.not. allocated(basis_nucleus_index))    allocate(basis_nucleus_index(basis_num_shell))
         if (.not. allocated(basis_shell_ang_mom))    allocate(basis_shell_ang_mom(basis_num_shell))
-        if (.not. allocated(compare))    allocate(compare(basis_num_shell))
         if (.not. allocated(index_slm))              allocate(index_slm(nbasis))
         if (.not. allocated(num_rad_per_cent))       allocate(num_rad_per_cent(ncent_tot))
         if (.not. allocated(num_ao_per_cent))        allocate(num_ao_per_cent(ncent_tot))
-        ! if (.not. allocated(ao_index)) allocate (ao_index(35), source=0)            ! ao upto g orbitals
-        if (.not. allocated(ao_index_per_cent)) allocate (ao_index_per_cent(ncent_tot))            ! ao upto g orbitals
+
+        ! Do the allocation of number of types of radial functions per center
+        allocate (ns(nctype_tot))
+        allocate (np(nctype_tot))
+        allocate (nd(nctype_tot))
+        allocate (nf(nctype_tot))
+        allocate (ng(nctype_tot))
+
 
         ! Read the orbitals
         if (wid) then
@@ -350,13 +359,16 @@ module trexio_read_data
         !       +-----------------------------------------------------------------------------
         !          xxxx xxxy xxxz xxyy xxyz xxzz xyyy xyyz xyzz xzzz yyyy yyyz yyzz yzzz zzzz
 
-        counter = 0; count1 = 1; count2 = 0; count3 = 0
+        ! Do the allocation
+        if (.not. allocated(iwlbas)) allocate (iwlbas(nbasis, nctype_tot))
+
+        counter = 0; count1 = 1; count2 = 0
         cum_rad_per_cent = 0
         cum_ao_per_cent  = 0
         index_ao = 0; jj = 1
         ! The following loop will generate the index_slm array which tells
         ! which AO is of which type (from the above list)
-        compare = 0
+
         do l = 1, basis_num_shell
             k = basis_shell_ang_mom(l)
 
@@ -370,17 +382,6 @@ module trexio_read_data
 
                 cum_ao_per_cent = cum_ao_per_cent + 1
             end do
-
-            if (k == 0) then
-                count3 = count2 - 1
-            else
-                count3 = count2 - 2
-            endif
-
-            do ii = 1, count2
-                count3 = count3 + 1
-                ao_index = [ao_index, count3]
-            enddo
 
             jj = jj + 1
 
@@ -405,11 +406,8 @@ module trexio_read_data
         allocate (nbastyp(nctype_tot))
 
         ! Obtain the index of radials for each unique center (iwrwf)
-        if (.not. allocated(iwlbas)) allocate (iwlbas(nbasis, nctype_tot))
         if (.not. allocated(nrbas)) allocate (nrbas(nctype_tot), source=0)
         if (.not. allocated(iwrwf))  allocate (iwrwf(nbasis, nctype_tot))
-        if (.not. allocated(ao_frequency)) allocate (ao_frequency(35), source=0)          ! ao upto g orbitals
-        if (.not. allocated(unique_index)) allocate (unique_index(35), source=0)    ! ao upto g orbitals
 
         do i = 1, ncent_tot
             if (numr .gt. 0) then
@@ -418,17 +416,34 @@ module trexio_read_data
             endif
         enddo
 
-        ! Generate iwlbas and iwrwf
+        ! Slice the arrays iwlbas and iwrwf per center type
         lower_range = 1; lower_rad_range = 1
         do ic=1,ncent+nghostcent
             it=iwctype(ic)
             upper_range = lower_range + num_ao_per_cent(ic) - 1
             upper_rad_range = lower_rad_range + num_rad_per_cent(ic) - 1
-            iwlbas(1:num_ao_per_cent(iwctype(ic)), it) = ao_index(lower_range:upper_range)
+            iwlbas(1:num_ao_per_cent(iwctype(ic)), it) = index_slm(lower_range:upper_range)
             iwrwf(1:num_ao_per_cent(iwctype(ic)), it) = ao_radial_index(lower_range:upper_range)
+
+            ! The following if loop is for counting the number of different types (s,p,d...) of radial functions per center
+            allocate(nshells_per_atom(nrbas(it)))
+            allocate(atom_index(nrbas(it)))
+            allocate(ao_index_per_cent(nrbas(it)))
+            call unique_elements(nrbas(it), basis_shell_ang_mom(lower_rad_range:upper_rad_range), atom_index, count, nshells_per_atom, ao_index_per_cent)
+            ! loop over s, p, d, f, g functions to copy from nshells_per_atom to ns, np, nd, nf, ng
+            ns(it) = nshells_per_atom(1)
+            np(it) = nshells_per_atom(2)
+            nd(it) = nshells_per_atom(3)
+            nf(it) = nshells_per_atom(4)
+            ng(it) = nshells_per_atom(5)
+            deallocate(nshells_per_atom)
+            deallocate(atom_index)
+            deallocate(ao_index_per_cent)
+
             lower_range = upper_range + 1
             lower_rad_range = upper_rad_range + 1
         enddo
+
 
 #if defined(TREXIO_FOUND)
         if (wid) rc = trexio_close(trex_orbitals_file)
@@ -439,7 +454,11 @@ module trexio_read_data
         write(ounit,int_format) " Number of basis functions ", nbasis
         write(ounit,int_format) " Number of lcao orbitals ", norb
         write(ounit,int_format) " Type of wave functions ", iwft
+
+        call write_trexio_basis_num_info_file(file_trexio)
+
         write(ounit,*) "Orbital coefficients are written to the output.log file"
+        call write_orb_loc()
 
         write(ounit,*)
         ilcao = ilcao + 1
