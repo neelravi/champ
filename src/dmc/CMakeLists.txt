@@ -55,6 +55,13 @@ target_include_directories(dmc.mov1
   ${HDF5_INCLUDE_DIRS}
   )
 
+  set_property(
+  SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/dmc.f
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS
+  HDF5_FOUND=\"${HDF5_FOUND}\"
+  )
+
 
 # compilation
 target_compile_options(dmc.mov1

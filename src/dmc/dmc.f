@@ -29,7 +29,9 @@ c    C.J. Umrigar, M.P. Nightingale and K.J. Runge, J. Chem. Phys., 99, 2865 (19
       use rotqua_mod, only: rotqua
       use strech_mod, only: setup_force
       use zerest_mod, only: zerest
-      ! use dumper_hdf5_mod, only: dumper_hdf5
+#if defined(HDF5_FOUND)
+      use dumper_hdf5_mod, only: dumper_hdf5
+#endif
 
 
       implicit none
@@ -199,7 +201,9 @@ c             call dmc_good
 
       if (dmc_idump.eq.1) then
             call dumper
-            ! call dumper_hdf5("restart_dmc.hdf5")
+#if defined(HDF5_FOUND)
+            call dumper_hdf5("restart_dmc.hdf5")
+#endif
       endif
 
       close (unit=9)
