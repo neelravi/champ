@@ -95,6 +95,7 @@ module dumper_hdf5_mod
         call mpi_gather(irn(1,idtask),nscounts,mpi_integer,irn_tmp,nscounts,mpi_integer,0,MPI_COMM_WORLD,ierr)
 
         ! Bradcast the data which is spread across the processors
+        call bcast(irn)
         call bcast(nwalk)
         call bcast(xold_dmc)
         call bcast(wt)
@@ -263,15 +264,16 @@ module dumper_hdf5_mod
                 call hdf5_write(file_id, group_id2, "wfcm2", wfcm2)
                 call hdf5_write(file_id, group_id2, "wdcm2", wdcm2)
                 call hdf5_write(file_id, group_id2, "wgdcm2", wgdcm2)
-                call hdf5_write(file_id, group_id2, "wcm21/nproc", wcm21/nproc)
-                call hdf5_write(file_id, group_id2, "wfcm21/nproc", wfcm21/nproc)
-                call hdf5_write(file_id, group_id2, "wgcm21(i)/nproc", wgcm21(1:nforce)/nproc)
+                ! call hdf5_write(file_id, group_id2, "wcm21/nproc", wcm21/nproc)
+                ! call hdf5_write(file_id, group_id2, "wfcm21/nproc", wfcm21/nproc)
+                ! call hdf5_write(file_id, group_id2, "wgcm21(i)/nproc", wgcm21(1:nforce)/nproc)
                 call hdf5_write(file_id, group_id2, "wdcm21", wdcm21)
                 call hdf5_write(file_id, group_id2, "ecm2_dmc", ecm2_dmc)
                 call hdf5_write(file_id, group_id2, "efcm2", efcm2)
-                call hdf5_write(file_id, group_id2, "ecm21_dmc/nproc", ecm21_dmc/nproc)
-                call hdf5_write(file_id, group_id2, "efcm21/nproc", efcm21/nproc)
-                call hdf5_write(file_id, group_id2, "egcm21(i)/nproc", egcm21(1:nforce)/nproc)
+
+                ! call hdf5_write(file_id, group_id2, "ecm21_dmc/nproc", ecm21_dmc/nproc)
+                ! call hdf5_write(file_id, group_id2, "efcm21/nproc", efcm21/nproc)
+                ! call hdf5_write(file_id, group_id2, "egcm21(i)/nproc", egcm21(1:nforce)/nproc)
                 call hdf5_write(file_id, group_id2, "ei1cm2", ei1cm2)
                 call hdf5_write(file_id, group_id2, "ei2cm2", ei2cm2)
                 call hdf5_write(file_id, group_id2, "ei3cm2", ei3cm2)
@@ -282,6 +284,8 @@ module dumper_hdf5_mod
                 call hdf5_write(file_id, group_id2, "derivcum(k,i)", derivcum(1:3,1:nforce))
                 call hdf5_write(file_id, group_id2, "derivcm2(i)", derivcm2(1:nforce))
                 call hdf5_write(file_id, group_id2, "derivtotave_num_old(i)", derivtotave_num_old(1:nforce))
+
+
 
                 call hdf5_write(file_id, group_id2, "rprob(i)", rprob(1:nrad)/nproc)
                 call hdf5_write(file_id, group_id2, "rprobup(i)", rprobup(1:nrad))
