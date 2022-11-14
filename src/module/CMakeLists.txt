@@ -12,6 +12,7 @@ if (MPI_Fortran_FOUND)
     m_common.f90
     m_periodic_table.F90
     m_atom.f90
+    m_fssd.f90
     m_timer.f90
     m_det.f90
     m_coefs.f90
@@ -26,6 +27,7 @@ if (MPI_Fortran_FOUND)
     m_sr.f90
     m_dmc.f90
     m_vmc.f90
+    m_vd.f90
     m_grid.f90
     m_pcm.f90
     m_ewald.f90

@@ -256,6 +256,7 @@ if (MPI_Fortran_FOUND)
     ${CMAKE_CURRENT_SOURCE_DIR}/bxmatrices.f
     ${CMAKE_CURRENT_SOURCE_DIR}/deriv_nonlpsi.f
     ${CMAKE_CURRENT_SOURCE_DIR}/force_analytic.f
+    ${CMAKE_CURRENT_SOURCE_DIR}/force_analy_reduce.f # added by Jacopo
     ${CMAKE_CURRENT_SOURCE_DIR}/nonlpsi.f
     ${CMAKE_CURRENT_SOURCE_DIR}/psi.f
     ${CMAKE_CURRENT_SOURCE_DIR}/rotqua.f

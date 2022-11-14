@@ -95,6 +95,7 @@ subroutine parser
   use dorb_m, 		      only: iworbd
   use contrl_per, 	    only: iperiodic, ibasis
   use force_analy, 	    only: iforce_analy, iuse_zmat, alfgeo
+  use fssd,                 only: ifssd, norm_fssd, div_fssd, alfa_dfssd, errbar_fssd, iset
   use force_dmc, 	      only: itausec, nwprod
   use forcestr,         only: delc
   use wfsec,            only: iwftype
@@ -178,6 +179,7 @@ subroutine parser
   use cuspinit4_mod,    only: cuspinit4
   use optci_mod,        only: optci_define
   use optorb_f_mod,     only: optorb_define
+  use vd_mod,           only: dmc_ivd
   use verify_orbitals_mod, only: verify_orbitals
   use grid3d_orbitals,  only: setup_3dsplorb, setup_3dlagorb
   use grid3d,           only: setup_grid
@@ -257,7 +259,7 @@ subroutine parser
 
 ! local counter variables
   integer                    :: i,j,k, iostat
-  integer                    :: ic, iwft
+  integer                    :: ic, iwft, ib
   type(atom_t)               :: atoms
   character(len=2), allocatable   :: unique(:)
 
@@ -325,6 +327,13 @@ subroutine parser
     alfgeo      = fdf_get('alfgeo', 1.0d0)
   endif
   iroot_geo   = fdf_get('iroot_geo', 0)
+  ifssd       = fdf_get('ifssd', 0)
+  norm_fssd   = fdf_get('norm_fssd', 1)
+  div_fssd    = fdf_get('div_fssd', 1)
+  alfa_dfssd  = fdf_get('alfa_dfssd', 1.d0/2.718281828459)
+  errbar_fssd = fdf_get('errbar_fssd', 0.01)
+  iset        = fdf_get('iset', 0)
+  dmc_ivd     = fdf_get('dmc_ivd', 0) !only for dmc
 
 ! %module gradients
   delgrdxyz   = fdf_get('delgrdxyz', 0.001d0)
@@ -742,7 +751,7 @@ subroutine parser
 
     if (dmc_node_cutoff.gt.0) write(ounit,real_format) " enode cutoff = ", dmc_eps_node_cutoff
 
-    if (idmc.ne.2) call fatal_error('INPUT: only idmc=2 supported')
+    if (abs(idmc).ne.2) call fatal_error('INPUT: only idmc=2 supported')
 
     if (nloc.eq.0) call fatal_error('INPUT: no all-electron DMC calculations supported')
   else
@@ -1089,9 +1098,13 @@ subroutine parser
       if (.not. allocated(zex)) allocate (zex(nbasis, 3))
     else
       if (.not. allocated(zex)) allocate (zex(nbasis, nwftype))
-    endif
+   endif
+!   write (ounit, *) 'nbasis, nwftype', nbasis, nwftype
     zex = 1   ! debug check condition about numr == 0
-  endif
+ endif
+ !do iwft=1,nwftype
+ !   write(ounit,*) 'zex(iwft)',  (zex(ib,iwft), ib=1,nbasis)
+ !enddo
   iexponents = iexponents + 1
 
 
