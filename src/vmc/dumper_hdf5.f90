@@ -59,7 +59,7 @@ module dumper_hdf5_mod
         use hdf5
         use hdf5_utils, only: hdf5_file_create, hdf5_file_close, hdf5_file_open
         use hdf5_utils, only: hdf5_group_create, hdf5_group_close, hdf5_group_open
-        use hdf5_utils, only: hdf5_write!, hdf5_read
+        use hdf5_utils, only: hdf5_write, hdf5_read
 
 
         implicit none
@@ -86,6 +86,9 @@ module dumper_hdf5_mod
         real(dp), parameter             :: zero = 0.0d0
         real(dp), parameter             :: one  = 1.0d0
         real(dp), parameter             :: small = 1.0d-6
+
+        integer ::   temporary_integer
+        integer ::   temporary_integer_array(ncent)
 
         if(nforce.gt.1) call strech(xold_dmc,xold_dmc,ajacob,1,0)
 
@@ -306,6 +309,25 @@ module dumper_hdf5_mod
 
         call hdf5_file_close(file_id)
         ! Close the HDF5 file
+
+        ! Reading section trial
+
+        ! Open hdf5 file for reading data
+        call hdf5_file_open(restart_filename, file_id)
+        ! Open the group
+        call hdf5_group_open(file_id, "System", group_id)
+        ! Read the data
+        call hdf5_read(file_id, group_id, "Number of Centers", temporary_integer)
+        print*, " Number of Centers read from hdf5 ", temporary_integer
+        call hdf5_read(file_id, group_id, "Index of Which Center Type", temporary_integer_array)
+        print*, " Number of Centers types read from hdf5 ", temporary_integer_array
+        ! Close the group
+        call hdf5_group_close(group_id)
+        ! Close the file
+        call hdf5_file_close(file_id)
+
+
+
         endif   ! master thread
 
         end subroutine dumper_hdf5

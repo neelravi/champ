@@ -22,7 +22,7 @@ module hdf5_utils
     public :: hdf5_group_close
 
     public :: hdf5_write
-    ! public :: hdf5_read
+    public :: hdf5_read
 
     public :: hid_t
 
@@ -53,25 +53,25 @@ module hdf5_utils
     interface hdf5_read
         ! scalar variables
         ! module procedure hdf5_read_string
-        ! module procedure hdf5_read_integer
-        ! module procedure hdf5_read_real
-        ! module procedure hdf5_read_double
+        module procedure hdf5_read_integer
+        module procedure hdf5_read_real
+        module procedure hdf5_read_double
         ! ! one dimensional arrays
-        ! module procedure hdf5_read_array_integer_1d
-        ! module procedure hdf5_read_array_real_1d
-        ! module procedure hdf5_read_array_double_1d
+        module procedure hdf5_read_array_integer_1d
+        module procedure hdf5_read_array_real_1d
+        module procedure hdf5_read_array_double_1d
         ! ! two dimensional arrays
-        ! module procedure hdf5_read_array_integer_2d
-        ! module procedure hdf5_read_array_real_2d
-        ! module procedure hdf5_read_array_double_2d
+        module procedure hdf5_read_array_integer_2d
+        module procedure hdf5_read_array_real_2d
+        module procedure hdf5_read_array_double_2d
         ! ! three dimensional arrays
-        ! module procedure hdf5_read_array_integer_3d
-        ! module procedure hdf5_read_array_real_3d
-        ! module procedure hdf5_read_array_double_3d
+        module procedure hdf5_read_array_integer_3d
+        module procedure hdf5_read_array_real_3d
+        module procedure hdf5_read_array_double_3d
         ! ! four dimensional arrays
-        ! module procedure hdf5_read_array_integer_4d
-        ! module procedure hdf5_read_array_real_4d
-        ! module procedure hdf5_read_array_double_4d
+        module procedure hdf5_read_array_integer_4d
+        module procedure hdf5_read_array_real_4d
+        module procedure hdf5_read_array_double_4d
     end interface hdf5_read
 
     contains
@@ -1254,6 +1254,178 @@ module hdf5_utils
 
     ! The Following ste of subroutines are used for reading the data from a HDF5 file
 
+    ! The following subroutine reads an integer from a HDF5 file
+    subroutine hdf5_read_integer(file_id, group_id, dataset_name, data)
+        !> @brief Read an integer from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        integer, intent(out)                    :: data
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(1)
+        integer                                 :: ierr
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, data, [0_HSIZE_T], ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_integer
+
+    ! The following subroutine reads a real from a HDF5 file
+    subroutine hdf5_read_real(file_id, group_id, dataset_name, data)
+        !> @brief Read a real from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        real, intent(out)                       :: data
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(1)
+        integer                                 :: ierr
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_REAL, data, [0_HSIZE_T], ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_real
+
+    ! The following subroutine reads a double precision real from a HDF5 file
+    subroutine hdf5_read_double(file_id, group_id, dataset_name, data)
+        !> @brief Read a double precision real from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        real(kind=8), intent(out)               :: data
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(1)
+        integer                                 :: ierr
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, data, [0_HSIZE_T], ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_double
+
+
     ! The following subroutine reads a string from a HDF5 file
     subroutine hdf5_read_string(file_id, group_id, dataset_name, data)
         !> @brief Read a string from a HDF5 file
@@ -1270,62 +1442,753 @@ module hdf5_utils
         integer(hid_t), intent(in)              :: group_id
         integer(hid_t)                          :: dataset_id
         integer(hid_t)                          :: dataspace_id
-        integer(hid_t)                          :: type_id
         integer(HSIZE_T)                        :: data_dims
         integer(HSIZE_T)                        :: data_shape(1)
         integer                                 :: ierr
 
-        ! ! open dataset
-        ! call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
-        ! if (ierr /= 0) then
-        !     write(errunit,*) "Error: HDF5 dataset could not be opened."
-        !     stop
-        ! end if
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
 
-        ! ! get dataspace
-        ! call h5dget_space_f(dataset_id, dataspace_id, ierr)
-        ! if (ierr /= 0) then
-        !     write(errunit,*) "Error: HDF5 dataspace could not be obtained."
-        !     stop
-        ! end if
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
 
-        ! ! get length of data string
-        ! call h5tcopy_f(H5T_FORTRAN_S1, type_id, ierr)
-        ! call h5tset_size_f(type_id, len(data, SIZE_T), ierr)
-        ! if (ierr /= 0) then
-        !     write(errunit,*) "Error: HDF5 could not obtain size of a string."
-        !     stop
-        ! end if
+        ! read data
+        call h5dread_f(dataset_id, H5T_C_S1, data, [0_HSIZE_T], ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
 
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
 
-        ! ! ! get dimensions
-        ! ! call h5sget_simple_extent_dims_f(dataspace_id, data_shape, data_dims, ierr)
-        ! ! if (ierr /= 0) then
-        ! !     write(errunit,*) "Error: HDF5 dataspace dimensions could not be obtained."
-        ! !     stop
-        ! ! end if
-
-        ! ! read data
-        ! call h5dread_f(dataset_id, type_id, data, [0_HSIZE_T], ierr)
-        ! if (ierr /= 0) then
-        !     write(errunit,*) "Error: HDF5 dataset could not be read."
-        !     stop
-        ! end if
-
-        ! ! close dataset
-        ! call h5dclose_f(dataset_id, ierr)
-        ! if (ierr /= 0) then
-        !     write(errunit,*) "Error: HDF5 dataset could not be closed."
-        !     stop
-        ! end if
-
-        ! ! close dataspace
-        ! call h5sclose_f(dataspace_id, ierr)
-        ! if (ierr /= 0) then
-        !     write(errunit,*) "Error: HDF5 dataspace could not be closed."
-        !     stop
-        ! end if
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
 
     end subroutine hdf5_read_string
+
+    ! The following subroutine reads a 1D array of integers from a HDF5 file
+    subroutine hdf5_read_array_integer_1d(file_id, group_id, dataset_name, data)
+        !> @brief Read a 1D array of integers from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        integer, intent(out)                    :: data(:)
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(1)
+        integer                                 :: ierr
+
+        data_shape = shape(data)
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, data, data_shape, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_array_integer_1d
+
+    ! The following subroutine reads a 2D array of integers from a HDF5 file
+    subroutine hdf5_read_array_integer_2d(file_id, group_id, dataset_name, data)
+        !> @brief Read a 2D array of integers from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        integer, intent(out)                    :: data(:,:)
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(2)
+        integer                                 :: ierr
+
+        data_shape = shape(data)
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, data, data_shape, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_array_integer_2d
+
+    ! The following subroutine reads a 3D array of integers from a HDF5 file
+    subroutine hdf5_read_array_integer_3d(file_id, group_id, dataset_name, data)
+        !> @brief Read a 3D array of integers from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        integer, intent(out)                    :: data(:,:,:)
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(3)
+        integer                                 :: ierr
+
+        data_shape = shape(data)
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, data, data_shape, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_array_integer_3d
+
+    ! The following subroutine reads a 4D array of integers from a HDF5 file
+    subroutine hdf5_read_array_integer_4d(file_id, group_id, dataset_name, data)
+        !> @brief Read a 4D array of integers from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        integer, intent(out)                    :: data(:,:,:,:)
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(4)
+        integer                                 :: ierr
+
+        data_shape = shape(data)
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_INTEGER, data, data_shape, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_array_integer_4d
+
+    ! The following subroutine reads a 1D array of reals from a HDF5 file
+    subroutine hdf5_read_array_real_1d(file_id, group_id, dataset_name, data)
+        !> @brief Read a 1D array of reals from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        real, intent(out)                       :: data(:)
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(1)
+        integer                                 :: ierr
+
+        data_shape = shape(data)
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_REAL, data, data_shape, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_array_real_1d
+
+    ! The following subroutine reads a 2D array of reals from a HDF5 file
+    subroutine hdf5_read_array_real_2d(file_id, group_id, dataset_name, data)
+        !> @brief Read a 2D array of reals from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        real, intent(out)                       :: data(:,:)
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(2)
+        integer                                 :: ierr
+
+        data_shape = shape(data)
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_REAL, data, data_shape, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_array_real_2d
+
+    ! The following subroutine reads a 3D array of reals from a HDF5 file
+    subroutine hdf5_read_array_real_3d(file_id, group_id, dataset_name, data)
+        !> @brief Read a 3D array of reals from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        real, intent(out)                       :: data(:,:,:)
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(3)
+        integer                                 :: ierr
+
+        data_shape = shape(data)
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_REAL, data, data_shape, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_array_real_3d
+
+    ! The following subroutine reads a 4D array of reals from a HDF5 file
+    subroutine hdf5_read_array_real_4d(file_id, group_id, dataset_name, data)
+        !> @brief Read a 4D array of reals from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        real, intent(out)                       :: data(:,:,:,:)
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(4)
+        integer                                 :: ierr
+
+        data_shape = shape(data)
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_REAL, data, data_shape, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_array_real_4d
+
+    ! The following subroutine reads a 1D array of double precision reals from a HDF5 file
+    subroutine hdf5_read_array_double_1d(file_id, group_id, dataset_name, data)
+        !> @brief Read a 1D array of double precision reals from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        double precision, intent(out)           :: data(:)
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(1)
+        integer                                 :: ierr
+
+        data_shape = shape(data)
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, data, data_shape, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_array_double_1d
+
+    ! The following subroutine reads a 2D array of double precision reals from a HDF5 file
+    subroutine hdf5_read_array_double_2d(file_id, group_id, dataset_name, data)
+        !> @brief Read a 2D array of double precision reals from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        double precision, intent(out)           :: data(:,:)
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(2)
+        integer                                 :: ierr
+
+        data_shape = shape(data)
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, data, data_shape, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_array_double_2d
+
+    ! The following subroutine reads a 3D array of double precision reals from a HDF5 file
+    subroutine hdf5_read_array_double_3d(file_id, group_id, dataset_name, data)
+        !> @brief Read a 3D array of double precision reals from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        double precision, intent(out)           :: data(:,:,:)
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(3)
+        integer                                 :: ierr
+
+        data_shape = shape(data)
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, data, data_shape, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_array_double_3d
+
+    ! The following subroutine reads a 4D array of double precision reals from a HDF5 file
+    subroutine hdf5_read_array_double_4d(file_id, group_id, dataset_name, data)
+        !> @brief Read a 4D array of double precision reals from a HDF5 file
+        !> @param file_id       File id of the file from which the data is read
+        !> @param group_id      Group id from which the data is read
+        !> @param dataset_name  Name of the dataset from which the data is read
+        !> @param data          Data to be read
+        !> @author  Ravindra Shinde
+        !> @email r.l.shinde@utwente.nl
+
+        integer(hid_t), intent(in)              :: file_id
+        character(len=*), intent(in)            :: dataset_name
+        double precision, intent(out)           :: data(:,:,:,:)
+        integer(hid_t), intent(in)              :: group_id
+        integer(hid_t)                          :: dataset_id
+        integer(hid_t)                          :: dataspace_id
+        integer(HSIZE_T)                        :: data_dims
+        integer(HSIZE_T)                        :: data_shape(4)
+        integer                                 :: ierr
+
+        data_shape = shape(data)
+
+        ! open dataset
+        call h5dopen_f(group_id, dataset_name, dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be opened."
+            stop
+        end if
+
+        ! get dataspace
+        call h5dget_space_f(dataset_id, dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be obtained."
+            stop
+        end if
+
+        ! read data
+        call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, data, data_shape, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be read."
+            stop
+        end if
+
+        ! close dataset
+        call h5dclose_f(dataset_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataset could not be closed."
+            stop
+        end if
+
+        ! close dataspace
+        call h5sclose_f(dataspace_id, ierr)
+        if (ierr /= 0) then
+            write(errunit,*) "Error: HDF5 dataspace could not be closed."
+            stop
+        end if
+
+    end subroutine hdf5_read_array_double_4d
 
 end module hdf5_utils
