@@ -140,6 +140,8 @@ c is precisely what is being reflected when we get T_corr < 1.
       tcsq=eerr/eerr1s
       sigma=eerr1s*rtpass
 
+      write(ounit,'(''wcum(1,1) '', f20.7)') wcum(1,1)
+      
       if(istate.eq.1) then
         write(ounit,'(a12,2x,a20)') mode,title
         write(ounit,'(''results after '',f12.0,'' passes,  nstep, nblk ='',3i6)')

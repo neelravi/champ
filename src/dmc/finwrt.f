@@ -118,7 +118,9 @@ c     evalg_eff=nconf*rn_eff(wgcum1(1),wgcm21(1))
       write(ounit,'(''passes,eval,pass_proc,eval_proc,eval_eff,
      &evalf_eff,evalg_eff'',19f9.0)')
      & passes,eval,pass_proc,eval_proc,eval_eff,evalf_eff,
-     & evalg_eff
+     &     evalg_eff
+      write(ounit,'(''wgcum, wgcm2, wgcum**2/wgcm2'', 3f20.7)') wgcum(1), wgcm2(1), rn_eff(wgcum(1),wgcm2(1))
+c      write(ounit,'(''iblk '', f9.0)') iblk
 
       if(mode.eq.'mpi_one_mpi2') then
 
@@ -222,6 +224,9 @@ c    & f10.5)') dr2ac/trymove
       write(ounit,'(''nconf*passes'',t19,''passes  nconf nstep  nblk nblkeq  nproc  tau    taueff'',
      &/,2f12.0,5i6,2f9.5)')
      &eval,passes,dmc_nconf,dmc_nstep,iblk,dmc_nblkeq,nproc,tau,taucum(1)/wgcum(1)
+      
+      write(ounit, '(''wcum_dmc = '', f20.5, '',  wcm2 = '', f20.5 )') wcum_dmc, wcm2
+
       write(ounit,'(''physical variable         average     rms error   sigma*T_cor  sigma   T_cor'')')
       if(idmc.ge.0) then
         write(ounit,'(''weights ='',t22,f14.7,'' +-'',f11.7,2f9.5,f8.2)')

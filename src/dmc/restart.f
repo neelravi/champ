@@ -4,7 +4,7 @@
 
       use vmc_mod, only: norb_tot
       use vmc_mod, only: nrad
-      use basis, only: zex
+      use basis, only: zex, ns, npx, npy, npz, ndxx, ndxy, ndxz, ndyy, ndyz, ndzz
       use const, only: hb, ipr, nelec
       use forcest, only: fgcm2, fgcum
       use forcepar, only: istrech, nforce
@@ -55,6 +55,7 @@
       use pcm_mod,         only: pcm_init, pcm_rstrt
       use properties_mod,  only: prop_init, prop_rstrt
       use mmpol_dmc,       only: mmpol_save
+      use force_analytic,  only: force_analy_save, force_analy_init, force_analy_rstrt
       use pcm_dmc,         only: pcm_save
       use prop_dmc,        only: prop_save_dmc
       use nonloc_grid_mod, only: t_vpsp_sav
@@ -79,6 +80,8 @@
       real(dp) :: wq_id, wt_id, xold_dmc_id, xq_id
       real(dp) :: yq_id, zq_id
       real(dp), dimension(nbasis, norb_tot) :: coefx
+      integer, dimension(:), allocatable :: nsx, npxx, npyx, npzx
+      integer, dimension(:), allocatable :: ndxxx, ndxyx, ndxzx, ndyyx, ndyzx, ndzzx
       real(dp), dimension(nbasis) :: zexx
       real(dp), dimension(3, ncent_tot) :: centx
       real(dp), dimension(ncent_tot) :: znucx
@@ -101,11 +104,13 @@
       endif
 
       write(ounit,'(1x,''attempting restart from unit 10'')')
-      rewind 10
+      rewind 10  ! debug ravindra remove after checking
       read(10) nprock
+      write(*,*) nprock
       if(nprock.ne.nproc) call fatal_error('STARTR: different num procs')
       do id=0,idtask
         read(10) nwalk
+        write(*,*) nwalk
         read(10) (((xold_dmc(ic,i,iw,1),ic=1,3),i=1,nelec),iw=1,nwalk)
         read(10) nfprod,(ff(i),i=0,nfprod),(wt(i),i=1,nwalk),fprod
      &  ,eigv,eest,wdsumo
@@ -169,6 +174,7 @@ c    &,(((wthist(i,l,j),i=1,nwalk),l=0,nwprod-1),j=1,nforce)
       call prop_rstrt(10)
       call pcm_rstrt(10)
       call mmpol_rstrt(10)
+      call force_analy_rstrt(10)
       read(10) ((coefx(ib,i),ib=1,nbasis),i=1,norb)
       read(10) nbasx
       do j=1,norb
@@ -186,13 +192,52 @@ c    &,(((wthist(i,l,j),i=1,nwalk),l=0,nwprod-1),j=1,nforce)
       if (ncentx.ne.ncent) call fatal_error('STARTR: ncent')
       if (nctypex.ne.nctype) call fatal_error('STARTR: nctype')
       do i=1,nbasis
-      if (dabs(zexx(i)-zex(i,1)).gt.small) call fatal_error('STARTR: zex')
+c         write(ounit, *) 'zex', (zex(ib,1), ib=1,nbasis)
+         if (dabs(zexx(i)-zex(i,1)).gt.small) call fatal_error('STARTR: zex')
       enddo
       do i=1,ncent+nghostcent
       do k=1,3
       if (dabs(cent(k,i)-centx(k,i)).gt.small) call fatal_error('STARTR: cent')
       enddo
       enddo
+
+        if (.not. allocated(nsx)) allocate(nsx(nctype))
+        if (.not. allocated(npxx)) allocate(npxx(nctype))
+        if (.not. allocated(npyx)) allocate(npyx(nctype))
+        if (.not. allocated(npzx)) allocate(npzx(nctype))
+        if (.not. allocated(ndxxx)) allocate(ndxxx(nctype))
+        if (.not. allocated(ndxyx)) allocate(ndxyx(nctype))
+        if (.not. allocated(ndxzx)) allocate(ndxzx(nctype))
+        if (.not. allocated(ndyyx)) allocate(ndyyx(nctype))
+        if (.not. allocated(ndyzx)) allocate(ndyzx(nctype))
+        if (.not. allocated(ndzzx)) allocate(ndzzx(nctype))
+
+
+        read(10) (nsx(i),i=1,nctype)
+        read(10) (npxx(i),i=1,nctype)
+        read(10) (npyx(i),i=1,nctype)
+        read(10) (npzx(i),i=1,nctype)
+        read(10) (ndxxx(i),i=1,nctype)
+        read(10) (ndxyx(i),i=1,nctype)
+        read(10) (ndxzx(i),i=1,nctype)
+        read(10) (ndyyx(i),i=1,nctype)
+        read(10) (ndyzx(i),i=1,nctype)
+        read(10) (ndzzx(i),i=1,nctype)
+
+        do i = 1, nctype
+         if (nsx(i) .ne. ns(i)) call fatal_error('STARTR: ns')
+         if (npxx(i) .ne. npx(i)) call fatal_error('STARTR: npx')
+         if (npyx(i) .ne. npy(i)) call fatal_error('STARTR: npy')
+         if (npzx(i) .ne. npz(i)) call fatal_error('STARTR: npz')
+         if (ndxxx(i) .ne. ndxx(i)) call fatal_error('STARTR: ndxx')
+         if (ndxyx(i) .ne. ndxy(i)) call fatal_error('STARTR: ndxy')
+         if (ndxzx(i) .ne. ndxz(i)) call fatal_error('STARTR: ndxz')
+         if (ndyyx(i) .ne. ndyy(i)) call fatal_error('STARTR: ndyy')
+         if (ndyzx(i) .ne. ndyz(i)) call fatal_error('STARTR: ndyz')
+         if (ndzzx(i) .ne. ndzz(i)) call fatal_error('STARTR: ndzz')
+        enddo
+
+
 
       read(10) (cdetx(i),i=1,ndet)
       read(10) ndetx,nupx,ndnx
@@ -243,6 +288,7 @@ c           call t_vpsp_sav(iw)
             call prop_save_dmc(iw)
             call pcm_save(iw)
             call mmpol_save(iw)
+            call force_analy_save
           endif
         enddo
       enddo
@@ -275,6 +321,7 @@ c zero out xsum variables for metrop
       call prop_init(1)
       call pcm_init(1)
       call mmpol_init(1)
+      call force_analy_init(1)
 
       if(ipr.ge.-2) then
         if(idtask.le.9) then

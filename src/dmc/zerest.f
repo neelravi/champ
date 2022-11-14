@@ -35,6 +35,7 @@ c Written by Cyrus Umrigar, modified by Claudia Filippi
       use optx_jas_orb,    only: optx_jas_orb_init
       use optx_jas_ci,     only: optx_jas_ci_init
       use optx_orb_ci,     only: optx_orb_ci_init
+      use force_analytic,  only: force_analy_init
       implicit none
 
       integer :: i, ifr, k
@@ -159,6 +160,7 @@ c Zero out estimators for charge density of atom.
       call prop_init(0)
       call pcm_init(0)
       call mmpol_init(0)
+      call force_analy_init(0)
 
       return
       end

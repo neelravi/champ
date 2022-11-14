@@ -19,7 +19,7 @@ c MPI version written by Claudia Filippi
       use mpi
       use custom_broadcast,   only: bcast
       use precision_kinds, only: dp
-
+      
       use force_analytic, only: force_analy_fin
       use force_analy_reduce_mod, only: force_analy_reduce
       use optjas_reduce_mod, only: optjas_reduce
@@ -151,7 +151,7 @@ c reduce mmpol properties
 c reduce analytical forces
       call force_analy_reduce
 
-      if(wid) call force_analy_fin(wcum(1,1),iblk,efin)
+      if(wid) call force_analy_fin(wcum(1,1),dble(iblk),efin)
 
       return
       end

@@ -22,6 +22,11 @@ c routine to accumulate estimators for energy etc.
 !      use contrl, only: nconf
       use control_dmc, only: dmc_nconf
       use mpi
+      use atom, only: ncent     ![Jacopo]
+      use force_analy, only: iforce_analy ![Jacopo]
+      use vd_mod, only: deriv_eold, esnake, ehist, dmc_ivd   ![Jacopo]
+      use force_analytic, only: force_analy_save ![Jacopo]
+      use da_energy_now, only: da_energy ![Jacopo]
 
       use precision_kinds, only: dp
 
@@ -37,9 +42,10 @@ c routine to accumulate estimators for energy etc.
       use walksav_det_mod, only: walksav_det
       use walksav_jas_mod, only: walksav_jas
       use determinante_mod,only: compute_determinante_grad
+      
       implicit none
 
-      integer :: i, ie, ifr, ip, iw
+      integer :: i, ie, ifr, ip, iw, ic
       integer :: k
 
       real(dp), parameter :: zero = 0.d0
@@ -99,7 +105,21 @@ c           call t_vpsp_sav(iw)
             call prop_save_dmc(iw)
             call pcm_save(iw)
             call mmpol_save(iw)
-          endif
+            if(iforce_analy.eq.1) then
+               call force_analy_save
+               if(dmc_ivd.gt.0) then
+                  do ic=1,ncent
+                     do k=1,3
+                        esnake(k,ic,iw)=zero
+                        deriv_eold(k,ic,iw)=da_energy(k,ic)
+                        do ip=0,nwprod-1
+                           ehist(k,ic,iw,ip)=zero
+                        enddo
+                     enddo
+                  enddo                  
+               endif
+            endif
+         endif
           pwt(iw,ifr)=0
           do ip=0,nwprod-1
             wthist(iw,ip,ifr)=0

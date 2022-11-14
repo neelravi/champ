@@ -48,7 +48,7 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       use forcepar, only: istrech, nforce
       use age, only: iage, ioldest, ioldestmx
       use contrldmc, only: iacc_rej, icross, icut_br, icut_e, idmc, ipq, nfprod, rttau, tau
-      use atom, only: cent
+      use atom, only: cent, ncent ! Jacopo added ncent
       use estcum, only: ipass
       use config, only: d2o, peo_dmc, psido_dmc, psijo_dmc, vold_dmc, xold_dmc
       use stats, only: acc, dfus2ac, dfus2un, dr2ac, dr2un, nacc, nodecr, trymove
@@ -68,6 +68,9 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       use inputflags, only: node_cutoff, eps_node_cutoff, icircular, idrifdifgfunc
       use precision_kinds, only: dp
       use contrl_file,    only: ounit
+      use da_energy_now, only: da_energy, da_psi !intro by Jacopo for calculation of forces
+      use force_fin, only: da_energy_ave !intro by Jacopo for calculation of forces
+      use da_energy_sumcum, only: da_energy_sum !intro by Jacopo to check when da_E is calculated
 
       use distances_mod,  only: distances
       use strech_mod,     only: strech
@@ -87,6 +90,8 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       use optorb_f_mod,   only: optorb_sum
       use optjas_mod,     only: optjas_sum
       use mmpol_dmc,      only: mmpol_sum, mmpol_save
+      use force_analytic, only: force_analy_sum, force_analy_save ![Jacopo]
+      use force_analy,    only: iforce_analy  ![Jacopo]
       use pcm_dmc,        only: pcm_sum, pcm_save
       use prop_dmc,       only: prop_sum_dmc, prop_save_dmc
       use determinante_mod,only: compute_determinante_grad
@@ -97,7 +102,8 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       use distances_mod,  only: distancese_restore
       use rannyu_mod,     only: rannyu
       use gauss_mod,      only: gauss
-
+      use vd_mod,         only: dmc_ivd, da_branch, deriv_eold, esnake, ehist ![Jacopo]
+      
       implicit none
 
       integer :: i, iaccept, iel
@@ -105,6 +111,7 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       integer :: imove, ipmod, ipmod2, iw
       integer :: iwmod, j, jel, k
       integer :: ncall, ncount_casula, nmove_casula
+      integer :: ic ! added by Jacopo
       integer, dimension(nelec) :: itryo
       integer, dimension(nelec) :: itryn
       integer, dimension(nelec) :: iacc_elec
@@ -113,6 +120,7 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       real(dp) :: dmin1, dr2, drifdif, drifdifgfunc
       real(dp) :: drifdifr, drifdifs, drift, dwt
       real(dp) :: dx, e_cutoff, enew(1)
+      real(dp) :: ecuto, ecutn ![Jacopo]
       real(dp) :: ewtn, ewto, expon, ffi
       real(dp) :: ffn, fration, ginv
       real(dp) :: p, pen, pp, psi2savo
@@ -130,6 +138,8 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       real(dp), dimension(3) :: xbac
       real(dp), dimension(3, nelec) :: xdriftedn
       real(dp), dimension(nelec) :: unacp
+      real(dp), dimension(10, 3, ncent) :: deriv_esum
+      real(dp), dimension(3, ncent) :: deriv_energy_new ![Jacopo]
       real(dp), parameter :: zero = 0.d0
       real(dp), parameter :: one = 1.d0
       real(dp), parameter :: two = 2.d0
@@ -432,6 +442,7 @@ c Primary configuration
             if(nforce.gt.1)
      &      call strech(xold_dmc(1,1,iw,1),xold_dmc(1,1,iw,1),ajacob,1,0)
             call hpsi(xold_dmc(1,1,iw,1),psidn(1),psijn,enew,ipass,1)
+            deriv_energy_new=da_energy
             call walksav_det(iw)
             call walksav_jas(iw)
             if(icasula.lt.0) call multideterminant_tmove(psidn(1),0)
@@ -501,31 +512,39 @@ c Use more accurate formula for the drift and tau secondary in drift
             do k=1,3
               xdriftedn(k,i)=xold_dmc(k,i,iw,ifr)+vold_dmc(k,i,iw,ifr)*vavvt
             enddo
-          enddo
-          fration=dsqrt(vav2sumn/v2sumn)
+         enddo
+         
+         fration=dsqrt(vav2sumn/v2sumn)         
+            
+         taunow=tauprim*drifdifr
 
-          taunow=tauprim*drifdifr
+         if(ipr.ge.1)write(ounit,'(''wt'',9f10.5)') wt(iw),etrial,eest
 
-          if(ipr.ge.1)write(ounit,'(''wt'',9f10.5)') wt(iw),etrial,eest
-
-          if(icut_e.eq.0) then
+         if(icut_e.eq.0) then
             ewto=eest-(eest-eold(iw,ifr))*fratio(iw,ifr)
             ewtn=eest-(eest-enew(1))*fration
-           else
+!     ewto=etrial-eest+(eest-eold(iw,ifr))*fratio(iw,ifr)
+!     ewtn=etrial-eest+(eest-enew)*fration
+         else
             deo=eest-eold(iw,ifr)
             den=eest-enew(1)
-            ewto=eest-sign(1.d0,deo)*min(e_cutoff,dabs(deo))
-            ewtn=eest-sign(1.d0,den)*min(e_cutoff,dabs(den))
-          endif
+            ecuto=min(e_cutoff,dabs(deo))
+            ecutn=min(e_cutoff,dabs(den))
+            ewto=eest-sign(1.d0,deo)*ecuto
+            ewtn=eest-sign(1.d0,den)*ecutn
+!     ewto=etrial-eest+sign(1.d0,deo)*min(e_cutoff,dabs(deo)) from champ-max
+!     ewtn=etrial-eest+sign(1.d0,den)*min(e_cutoff,dabs(den)) from champ-max
+            
+         endif
 
-          if(idmc.gt.0) then
+         if(idmc.gt.0) then
             expon=(etrial-half*(ewto+ewtn))*taunow
             if(icut_br.le.0) then
-              dwt=dexp(expon)
-             else
-              dwt=0.5d0+1/(1+exp(-4*expon))
+               dwt=dexp(expon)
+            else
+               dwt=0.5d0+1/(1+exp(-4*expon))
             endif
-          endif
+         endif
 
 c If we are using weights rather than accept/reject
           if(iacc_rej.eq.0) dwt=dwt*pp
@@ -615,6 +634,7 @@ c         if(idrifdifgfunc.eq.0)wtnow=wtnow/rnorm_nodes**2
           call prop_save_dmc(iw)
           call pcm_save(iw)
           call mmpol_save(iw)
+          call force_analy_save 
 
           if(ifr.eq.1) then
             if(iaccept.eq.0) then
@@ -636,14 +656,54 @@ c         if(idrifdifgfunc.eq.0)wtnow=wtnow/rnorm_nodes**2
             if(idrifdifgfunc.gt.0) then
               derivsum(2,ifr)=derivsum(2,ifr)+wtg(1)*eold(iw,ifr)*pwt(iw,ifr)
               derivsum(3,ifr)=derivsum(3,ifr)+wtg(1)*pwt(iw,ifr)
-             else
+            else
               derivsum(2,ifr)=derivsum(2,ifr)+wtg(1)*eold(iw,ifr)*(pwt(iw,ifr)+psi2savo)
               derivsum(3,ifr)=derivsum(3,ifr)+wtg(1)*(pwt(iw,ifr)+psi2savo)
             endif
 
+c     HERE I SHOULD START CALCULATE FORCES [Jacopo]
+!write(ounit,'(''Jacopo`s attempt at calculating forces'')')
+            if(iforce_analy.eq.1) then
+               if (dmc_ivd.gt.0) then  
+                  if(ecutn.eq.e_cutoff) deriv_energy_new=zero
+                  if(ecuto.eq.e_cutoff) then
+                     do ic=1,ncent
+                        do k=1,3
+                           deriv_eold(k,ic,iw)=zero
+                        enddo
+                     enddo
+                  endif
+                  
+                  if (dmc_ivd.gt.0) then  
+                     do ic=1,ncent
+                        do k=1,3
+                           
+                           esnake(k,ic,iw)=esnake(k,ic,iw)+deriv_energy_new(k,ic)
+     &                          +deriv_eold(k,ic,iw)-ehist(k,ic,iw,iwmod)
+!                          write(*,*) 'esnake', esnake(k,ic,iw)
+!                           write(*,*) 'deriv_eold', deriv_eold(k,ic,iw)
+                           ehist(k,ic,iw,iwmod)=deriv_eold(k,ic,iw)+deriv_energy_new(k,ic)
+!                           write(*,*) 'ehist', ehist(k,ic,iw,iwmod)
+                           da_branch(k,ic)=-half*tau*esnake(k,ic,iw)
+!                           write(*,*) 'branch/snake', da_branch(k,ic)/esnake(k,ic,iw)
+!     da_branch is the derivative of branching term wrt atomic coordinates;
+                        enddo
+                     enddo
+                  endif
+                  
+                  do ic=1,ncent
+                     do k=1,3
+                        deriv_eold(k,ic,iw)=deriv_energy_new(k,ic)
+                     enddo
+                  enddo
+               endif
+            endif
+            
+
             call prop_sum_dmc(0.d0,wtg(1),iw)
             call pcm_sum(0.d0,wtg(1),iw)
             call mmpol_sum(0.d0,wtg(1),iw)
+            call force_analy_sum(wtg(1),0.d0,eold(iw,1),0.0d0) ![Jacopo]
 
             call optjas_sum(wtg,zero_1d,eold(iw,1),eold(iw,1),0)
             call optorb_sum(wtg,zero_1d,eold(iw,1),eold(iw,1),0)
@@ -694,6 +754,8 @@ c       write(*,*)'prima ',wtg,eold(iw,2),pwt(iw,2),ajacold(iw,2),psido_dmc(iw,2
 c       call deriv(wtg,eold(iw,1),pwt(iw,1),ajacold(iw,1),psido_dmc(iw,1),psijo_dmc(iw,1),idrifdifgfunc)
 c       call deriv(wtg,eold,pwt,ajacold,psido_dmc,psijo_dmc,idrifdifgfunc,iw,mwalk)
 
+
+        
         if(icasula.eq.-1) then
 
 c Set nuclear coordinates (0 flag = no strech e-coord)
@@ -764,7 +826,7 @@ c 290         vold_dmc(k,iel,iw,1)=vnew(k,iel)
           egsum1(ifr)=esum1_dmc(ifr)
         endif
       enddo
-
+      
       call splitj
       if(icasula.eq.0) ncount_casula=1
       if(ipr.gt.-2) write(11,'(i8,f9.6,f12.5,f11.6,i5,f11.5)') ipass,ffn,

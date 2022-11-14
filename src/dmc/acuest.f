@@ -27,6 +27,9 @@ c routine to accumulate estimators for energy etc.
       use mpi
       use contrl_file,    only: ounit
       use precision_kinds, only: dp
+      use force_analytic,   only: force_analy_init, force_analy_cum ![Jacopo]
+      use da_energy_sumcum, only: da_energy_cm2 ![Jacopo]
+      use atom,             only: ncent ![Jacopo]
 
       use acuest_gpop_mod, only: acuest_gpop
 
@@ -47,6 +50,7 @@ c routine to accumulate estimators for energy etc.
       integer :: i, iderivgerr, iegerr, ierr, ifgerr
       integer :: ifr, ipeerr, itjfer, itpber
       integer :: k, npass
+      integer :: ic, kc
       real(dp) :: delta_derivtotave_num, derivgerr, derivtotave, derivtotave_num, e2collect
       real(dp) :: e2sum, ecollect, ef2collect, ef2sum
       real(dp) :: efcollect, efnow, egave, egave1
@@ -211,6 +215,7 @@ c xerr = current error of x
       call optjas_cum(wgsum(1),egnow)
       call optorb_cum(wgsum(1),egsum(1))
       call optci_cum(wgsum(1))
+      call force_analy_cum(wgsum(1),egcum(1)/wgcum(1),wgcum(1)) ![Jacopo]
 
       call prop_reduce(wgsum(1))
       call pcm_reduce(wgsum(1))
@@ -350,6 +355,10 @@ c zero out xsum variables for metrop
       call prop_init(1)
       call pcm_init(1)
       call mmpol_init(1)
+      call force_analy_init(1)
+
+      
+c      write(ounit,'(''iblk in acuest is '', f5.2)') iblk
 
       return
       end

@@ -60,6 +60,7 @@
       use determinante_mod,only: compute_determinante_grad
       use walksav_det_mod, only: walksav_det
       use walksav_jas_mod, only: walksav_jas
+      use force_analytic, only: force_analy_init, force_analy_save ![Jacopo]
       implicit none
 
       integer :: i, iage_id, ib, ic, id
@@ -223,6 +224,7 @@ c           call t_vpsp_sav(iw)
             call prop_save_dmc(iw)
             call pcm_save(iw)
             call mmpol_save(iw)
+            call force_analy_save
           endif
         enddo
       enddo
@@ -255,6 +257,7 @@ c zero out xsum variables for metrop
       call prop_init(1)
       call pcm_init(1)
       call mmpol_init(1)
+      call force_analy_init(1)
 
       if(ipr.ge.-2) then
         if(idtask.le.9) then

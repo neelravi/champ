@@ -19,6 +19,9 @@ c    C.J. Umrigar, M.P. Nightingale and K.J. Runge, J. Chem. Phys., 99, 2865 (19
       use control_dmc, only: dmc_nconf, dmc_nstep
       use mpitimer,    only: elapsed_time
       use contrl_file,    only: ounit
+      use force_fin, only: da_energy_ave !intro by Jacopo to check when da_E is calculated
+      use da_energy_sumcum, only: da_energy_cm2 !intro by Jacopo
+      use atom, only: ncent ! Jacopo added ncent
 
       use strech_mod,     only: setup_force
       use dumper_mod,     only: dumper
@@ -35,7 +38,7 @@ c    C.J. Umrigar, M.P. Nightingale and K.J. Runge, J. Chem. Phys., 99, 2865 (19
       use finwrt_mod,     only: finwrt
       implicit none
 
-      integer :: i, j
+      integer :: i, j, kc, ic
       real(dp), parameter :: one = 1.d0
       real(dp), parameter :: four = 4.d0
 

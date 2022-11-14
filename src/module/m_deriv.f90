@@ -16,12 +16,14 @@ module da_energy_sumcum
     save
 contains
     subroutine allocate_da_energy_sumcum()
-        use atom, only: ncent_tot
+      use atom, only: ncent_tot
         if (.not. allocated(da_energy_cm2)) allocate (da_energy_cm2(3, ncent_tot))
         if (.not. allocated(da_energy_cum)) allocate (da_energy_cum(3, ncent_tot))
         if (.not. allocated(da_energy_sum)) allocate (da_energy_sum(3, ncent_tot))
         if (.not. allocated(da_psi_cum)) allocate (da_psi_cum(3, ncent_tot))
         if (.not. allocated(da_psi_sum)) allocate (da_psi_sum(3, ncent_tot))
+       
+        
     end subroutine allocate_da_energy_sumcum
 
     subroutine deallocate_da_energy_sumcum()
@@ -145,7 +147,7 @@ module da_energy_now
     real(dp), dimension(:, :), allocatable :: da_psi !(3, MCENT)
 
     private
-    public   ::  da_energy, da_psi
+    public   ::  da_energy, da_psi 
     public :: allocate_da_energy_now, deallocate_da_energy_now
     save
 contains

@@ -117,7 +117,7 @@ c Write out configuration for optimization/dmc/gfmc here
      &        int(sign(1.d0,psido_dmc(iwalk,1))),log(dabs(psido_dmc(iwalk,1)))+psijo_dmc(iwalk,1),eold(iwalk,1)
             enddo
           endif
-
+          
       return
       end
       end module

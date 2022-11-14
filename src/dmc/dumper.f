@@ -56,9 +56,10 @@ c job where it left off
       use properties_mod,  only: prop_dump
       use rannyu_mod,      only: savern
       use strech_mod,      only: strech
+      use force_analytic,  only: force_analy_dump ![Jacopo]
       implicit none
 
-      integer :: i, ib, ic, id, ierr
+      integer :: i, ib, ic, id, ierr, iostat
       integer :: ifr, irequest, iw, j
       integer :: k, nscounts
       integer, dimension(4, 0:nproc) :: irn
@@ -118,6 +119,7 @@ c job where it left off
      &  ,15,MPI_COMM_WORLD,irequest,ierr)
        else
         open(unit=10,status='unknown',form='unformatted',file='restart_dmc')
+c        open(unit=10,status='unknown',form='formatted',file='restart_dmc')
         write(10) nproc
         write(10) nwalk
         write(10) (((xold_dmc(ic,i,iw,1),ic=1,3),i=1,nelec),iw=1,nwalk)
@@ -204,6 +206,7 @@ c    &    ,(((wthist(i,l,j),i=1,nwalk),l=0,nwprod-1),j=1,nforce)
       call prop_dump(10)
       call pcm_dump(10)
       call mmpol_dump(10)
+      call force_analy_dump(10)
       write(10) ((coef(ib,i,1),ib=1,nbasis),i=1,norb)
       write(10) nbasis
       write(10) (zex(ib,1),ib=1,nbasis)
@@ -223,7 +226,7 @@ c    &    ,(((wthist(i,l,j),i=1,nwalk),l=0,nwprod-1),j=1,nforce)
       write(10) (ndzz(i),i=1,nctype)
       write(10) (cdet(i,1,1),i=1,ndet)
       write(10) ndet,nup,ndn
-      close (unit=10)
+      close (unit=10, iostat=iostat)
       write(ounit,'(1x,''successful dump to unit 10'')')
 
       return

@@ -38,7 +38,8 @@ c routine to accumulate estimators for energy etc.
       use pcm_dmc,         only: pcm_prt, pcm_cum
       use prop_dmc,        only: prop_prt_dmc
       use properties_mod,  only: prop_cum
-
+      
+      use force_analytic, only: force_analy_init ![Jacopo]
       implicit none
 
       integer :: i, iegerr, ierr, ifgerr, ifr
@@ -266,7 +267,8 @@ c zero out xsum variables for metrop
       call prop_init(1)
       call pcm_init(1)
       call mmpol_init(1)
-
+      call force_analy_init(1)
+      
       return
       end
       end module

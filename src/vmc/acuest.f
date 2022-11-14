@@ -70,7 +70,7 @@ c routine to accumulate estimators for energy etc.
       implicit none
 
       integer :: i, ic, ifr, istate, jel
-      integer :: k
+      integer :: k, kc ! kc added by Jacopo
       real(dp) :: ajacob, distance_node, penow
       real(dp) :: psidg, r2now, rnorm_nodes, tjfnow
       real(dp) :: tpbnow

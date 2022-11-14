@@ -233,6 +233,7 @@ c-----------------------------------------------------------------------
       use atom, only: ncent
       use da_energy_sumcum, only: da_energy_cm2, da_energy_cum, da_energy_sum, da_psi_cum, da_psi_sum
       use force_analy, only: iforce_analy
+      use vd_mod, only: dmc_ivd, da_branch_sum, da_branch_cum
 
       implicit none
 
@@ -244,6 +245,7 @@ c-----------------------------------------------------------------------
         do k=1,3
           da_psi_sum(k,ic)=0.0d0
           da_energy_sum(k,ic)=0.0d0
+          if (dmc_ivd.gt.0) da_branch_sum(k,ic)=0.d0
         enddo
       enddo
 
@@ -254,6 +256,7 @@ c-----------------------------------------------------------------------
           da_psi_cum(k,ic)=0.0d0
           da_energy_cum(k,ic)=0.0d0
           da_energy_cm2(k,ic)=0.0d0
+          if (dmc_ivd.gt.0) da_branch_cum(k,ic)=0.d0
         enddo
       enddo
 
@@ -267,6 +270,7 @@ c-----------------------------------------------------------------------
       use da_energy_now, only: da_energy, da_psi
       use da_energy_sumcum, only: da_energy_sum, da_psi_sum
       use force_analy, only: iforce_analy
+      use vd_mod, only: dmc_ivd, da_branch_sum, da_branch
       use precision_kinds, only: dp
 
       implicit none
@@ -277,10 +281,19 @@ c-----------------------------------------------------------------------
       if(iforce_analy.eq.0) return
 
       do ic=1,ncent
-        do k=1,3
-          da_energy(k,ic)=da_energy(k,ic)+2*eloc*da_psi(k,ic)
-          da_psi_sum(k,ic)= da_psi_sum(k,ic)+p*da_psi(k,ic)
-          da_energy_sum(k,ic)= da_energy_sum(k,ic)+p*da_energy(k,ic)
+         do k=1,3
+            if (dmc_ivd.gt.0) then  
+               da_energy(k,ic)=da_energy(k,ic)+2*eloc*da_psi(k,ic)+eloc*da_branch(k,ic)
+               
+               da_branch_sum(k,ic) = da_branch_sum(k,ic) + p*da_branch(k,ic)
+               da_psi_sum(k,ic)= da_psi_sum(k,ic)+p*da_psi(k,ic)
+               da_energy_sum(k,ic)= da_energy_sum(k,ic)+p*da_energy(k,ic)
+            else
+               da_energy(k,ic)=da_energy(k,ic)+2*eloc*da_psi(k,ic)
+               
+               da_psi_sum(k,ic)= da_psi_sum(k,ic)+p*da_psi(k,ic)
+               da_energy_sum(k,ic)= da_energy_sum(k,ic)+p*da_energy(k,ic)
+            endif
         enddo
       enddo
 
@@ -292,6 +305,7 @@ c-----------------------------------------------------------------------
       use atom, only: ncent
       use da_energy_sumcum, only: da_energy_cm2, da_energy_cum, da_energy_sum, da_psi_cum, da_psi_sum
       use force_analy, only: iforce_analy
+      use vd_mod, only: dmc_ivd, da_branch_sum, da_branch_cum
       use precision_kinds, only: dp
 
       implicit none
@@ -302,43 +316,63 @@ c-----------------------------------------------------------------------
       if(iforce_analy.eq.0) return
 
       do ic=1,ncent
-        do k=1,3
-          da_energy_now=(da_energy_sum(k,ic)-2*eave*da_psi_sum(k,ic))/wsum
-          da_energy_cm2(k,ic)=da_energy_cm2(k,ic)+wsum*da_energy_now**2
-          da_psi_cum(k,ic)=da_psi_cum(k,ic)+da_psi_sum(k,ic)
-          da_energy_cum(k,ic)=da_energy_cum(k,ic)+da_energy_sum(k,ic)
+         do k=1,3
+            if (dmc_ivd.gt.0) then 
+               da_energy_now=(da_energy_sum(k,ic)-2*eave*da_psi_sum(k,ic)-eave*da_branch_sum(k,ic))/wsum
+               da_energy_cm2(k,ic)=da_energy_cm2(k,ic)+wsum*da_energy_now**2
+               
+               da_branch_cum(k,ic)=da_branch_cum(k,ic)+da_branch_sum(k,ic)
+               da_psi_cum(k,ic)=da_psi_cum(k,ic)+da_psi_sum(k,ic)
+               da_energy_cum(k,ic)=da_energy_cum(k,ic)+da_energy_sum(k,ic)
+            else
+               da_energy_now=(da_energy_sum(k,ic)-2*eave*da_psi_sum(k,ic))/wsum
+               da_energy_cm2(k,ic)=da_energy_cm2(k,ic)+wsum*da_energy_now**2
+               
+               da_psi_cum(k,ic)=da_psi_cum(k,ic)+da_psi_sum(k,ic)
+               da_energy_cum(k,ic)=da_energy_cum(k,ic)+da_energy_sum(k,ic)
+            endif
         enddo
       enddo
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine force_analy_fin(wcum,iblk,eave)
+      subroutine force_analy_fin(wcum,iblk_eff,eave)
 
       use atom, only: ncent
       use force_fin, only: da_energy_ave
       use da_energy_sumcum, only: da_energy_cm2, da_energy_cum, da_psi_cum
       use force_analy, only: iforce_analy
+      use vd_mod, only: dmc_ivd, da_branch_cum
       use precision_kinds, only: dp
+      use contrl_file,    only: ounit
 
       implicit none
 
+      real(dp) :: iblk_eff
       integer :: iblk, ic, k
       real(dp) :: eave, err, rtpass, wcum, x
       real(dp) :: x2
       real(dp), dimension(3) :: da_energy_err
 
-      err(x,x2)=dsqrt(abs(x2/wcum-(x/wcum)**2)/iblk)
+      err(x,x2)=dsqrt(abs(x2/wcum-(x/wcum)**2)/iblk_eff)
 
       if(iforce_analy.eq.0) return
 
       rtpass=dsqrt(wcum)
 
+      write(ounit, *) 'iblk_eff in force_analy_fin is ', iblk_eff
+      write(ounit, *) 'da_energy_cm2 ', (da_energy_cm2(k,1), k=1,3)
       open(80,file='force_analytic',form='formatted',status='unknown')
       do ic=1,ncent
-        do k=1,3
-          da_energy_ave(k,ic)=(da_energy_cum(k,ic)-2*eave*da_psi_cum(k,ic))/wcum
-          da_energy_err(k)=err(da_energy_ave(k,ic),da_energy_cm2(k,ic))
+         do k=1,3
+             if (dmc_ivd.gt.0) then 
+                da_energy_ave(k,ic)=(da_energy_cum(k,ic)-2*eave*da_psi_cum(k,ic)-eave*da_branch_cum(k,ic))/wcum
+                da_energy_err(k)=err(da_energy_ave(k,ic),da_energy_cm2(k,ic))
+             else
+                da_energy_ave(k,ic)=(da_energy_cum(k,ic)-2*eave*da_psi_cum(k,ic))/wcum
+                da_energy_err(k)=err(da_energy_ave(k,ic),da_energy_cm2(k,ic))
+             endif
         enddo
         write(80,'(i5,1p6e14.5)') ic,(da_energy_ave(k,ic),k=1,3),(da_energy_err(k),k=1,3)
       enddo
@@ -355,6 +389,7 @@ c-----------------------------------------------------------------------
       use atom, only: ncent
       use da_energy_sumcum, only: da_energy_cm2, da_energy_cum, da_psi_cum
       use force_analy, only: iforce_analy
+      use contrl_file, only: ounit
 
       implicit none
 
@@ -363,6 +398,7 @@ c-----------------------------------------------------------------------
       if(iforce_analy.eq.0) return
 
       write(iu) ((da_energy_cum(k,ic),da_psi_cum(k,ic),da_energy_cm2(k,ic),k=1,3),ic=1,ncent)
+c      write(ounit,*) "force analy", ((da_energy_cum(k,ic),da_psi_cum(k,ic),da_energy_cm2(k,ic),k=1,3),ic=1,ncent)
 
       return
       end

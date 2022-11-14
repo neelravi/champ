@@ -14,6 +14,9 @@ c Written by Cyrus Umrigar
       use branch, only: wthist
       use jacobsave, only: ajacold
       use velratio, only: fratio, xdrifted
+      use vd_mod, only: esnake, ehist, deriv_eold, dmc_ivd ![Jacopo]
+      use atom, only: ncent     ![Jacopo]
+      use force_analy, only: iforce_analy  ![Jacopo]
       use precision_kinds, only: dp
 
       use mmpol_dmc,      only: mmpol_splitj
@@ -26,7 +29,7 @@ c Written by Cyrus Umrigar
 
       implicit none
 
-      integer :: i, ifr, ip, ipair, iunder
+      integer :: i, ifr, ip, ipair, iunder, ic
       integer :: iw, iw2, j, k
       integer :: nwalk2
       integer, dimension(MWALK) :: iwundr
@@ -89,6 +92,19 @@ c         call t_vpsp_splitj(iw,iw2)
           call prop_splitj(iw,iw2)
           call pcm_splitj(iw,iw2)
           call mmpol_splitj(iw,iw2)
+          if(iforce_analy.eq.1) then
+             if(dmc_ivd.gt.0) then
+                do ic=1,ncent
+                   do k=1,3
+                      esnake(k,ic,iw2)=esnake(k,ic,iw)
+                      deriv_eold(k,ic,iw2)=deriv_eold(k,ic,iw)
+                      do ip=0,nwprod-1
+                         ehist(k,ic,iw2,ip)=ehist(k,ic,iw,ip)
+                      enddo
+                   enddo
+                enddo
+             endif
+          endif
           do ifr=1,nforce
             ajacold(iw2,ifr)=ajacold(iw,ifr)
             eold(iw2,ifr)=eold(iw,ifr)
@@ -124,6 +140,19 @@ c       call t_vpsp_splitj(iw,iw2)
         call prop_splitj(iw,iw2)
         call pcm_splitj(iw,iw2)
         call mmpol_splitj(iw,iw2)
+        if(iforce_analy.eq.1) then
+           if(dmc_ivd.gt.0) then
+              do ic=1,ncent
+                 do k=1,3
+                    esnake(k,ic,iw2)=esnake(k,ic,iw)
+                    deriv_eold(k,ic,iw2)=deriv_eold(k,ic,iw)
+                    do ip=0,nwprod-1
+                       ehist(k,ic,iw2,ip)=ehist(k,ic,iw,ip)
+                    enddo
+                 enddo
+              enddo
+           endif
+        endif
         do ifr=1,nforce
           ajacold(iw2,ifr)=ajacold(iw,ifr)
           eold(iw2,ifr)=eold(iw,ifr)
