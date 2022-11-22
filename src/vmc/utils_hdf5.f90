@@ -52,7 +52,7 @@ module hdf5_utils
 
     interface hdf5_read
         ! scalar variables
-        ! module procedure hdf5_read_string
+        module procedure hdf5_read_string
         module procedure hdf5_read_integer
         module procedure hdf5_read_real
         module procedure hdf5_read_double
@@ -97,7 +97,7 @@ module hdf5_utils
         ! create file
         call h5fcreate_f(filename, H5F_ACC_TRUNC_F, file_id, ierr)
         if (ierr /= 0) then
-            write(errunit,*) "Error: HDF5 file could not be created."
+            write(errunit,*) "Error: HDF5 file could not be created.", ierr, filename
             stop
         end if
 
@@ -111,7 +111,7 @@ module hdf5_utils
         !> @email   r.l.shinde@utwente.nl
 
         character(len=*), intent(in)        :: filename
-        integer(hid_t), intent(out)            :: file_id
+        integer(hid_t), intent(out)         :: file_id
         integer                             :: ierr
 
         ! Initilize HDF5 Fortran

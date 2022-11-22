@@ -30,7 +30,7 @@ c    C.J. Umrigar, M.P. Nightingale and K.J. Runge, J. Chem. Phys., 99, 2865 (19
       use strech_mod, only: setup_force
       use zerest_mod, only: zerest
 #if defined(HDF5_FOUND)
-      use dumper_hdf5_mod, only: dumper_hdf5
+      ! use dumper_hdf5_mod, only: dumper_hdf5
 #endif
 
 
@@ -202,7 +202,7 @@ c             call dmc_good
       if (dmc_idump.eq.1) then
             call dumper
 #if defined(HDF5_FOUND)
-            call dumper_hdf5("restart_dmc.hdf5")
+            ! call dumper_hdf5("restart_dmc.hdf5")
 #endif
       endif
 
