@@ -94,10 +94,10 @@ module hdf5_utils
             stop
         end if
 
-        ! create file
+        ! create hdf5 file safely
         call h5fcreate_f(filename, H5F_ACC_TRUNC_F, file_id, ierr)
         if (ierr /= 0) then
-            write(errunit,*) "Error: HDF5 file could not be created.", ierr, filename
+            write(errunit,*) "Error: HDF5 file could not be created."
             stop
         end if
 

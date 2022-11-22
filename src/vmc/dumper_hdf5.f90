@@ -7,12 +7,12 @@ module dumper_hdf5_mod
         !> @date 2022-11-03
         !> @email r.l.shinde@utwente.nl
 
-        use mpi
-        use hdf5
+        use hdf5, only: hid_t
         use custom_broadcast, only: bcast
         use hdf5_utils, only: hdf5_file_create, hdf5_file_close, hdf5_file_open
         use hdf5_utils, only: hdf5_group_create, hdf5_group_close, hdf5_group_open
         use hdf5_utils, only: hdf5_write, hdf5_read
+        use mpi
 
         ! init routines
         use mmpol,   only: mmpol_init
@@ -115,6 +115,14 @@ module dumper_hdf5_mod
         use optwf_control, only: ioptjas
         use optwf_parms, only: nparmj
 
+        ! optx_jas_orb
+        use mix_jas_orb, only: de_o,dj_ho,dj_o,dj_oe
+
+        ! optx_orb_ci
+        use mix_jas_ci, only: de_o_ci,dj_de_ci,dj_o_ci,dj_oe_ci
+
+        ! optx_orb_ci
+        use mix_orb_ci, only: ci_de_o,ci_o_ho,ci_o_o,ci_o_oe
 
         implicit none
 
@@ -398,7 +406,7 @@ module dumper_hdf5_mod
         endif
 
         ! Force Analytical
-        if (iforce_analytical.ne.0) then
+        if (iforce_analy.ne.0) then
                 call hdf5_group_create(file_id, "Force Analytical", group_id)
                 call hdf5_group_open(file_id, "Force Analytical", group_id)
                 call hdf5_write(file_id, group_id, "da_energy_cum", da_energy_cum(1:3,1:ncent))
@@ -433,36 +441,45 @@ module dumper_hdf5_mod
         endif
 
 
+        ! Opt Jas Orb
+        if (.not. (ioptjas.eq.0.or.ioptorb.eq.0.or.method.eq.'sr_n'.or.method.eq.'lin_d')) then
+                call hdf5_group_create(file_id, "Optx_Jas_Orb", group_id)
+                call hdf5_group_open(file_id, "Optx_Jas_Orb", group_id)
+                call hdf5_write(file_id, group_id, "dj_o", dj_o(1:nparmj,1:nreduced,1:nstates))
+                call hdf5_write(file_id, group_id, "dj_oe", dj_oe(1:nparmj,1:nreduced,1:nstates))
+                call hdf5_write(file_id, group_id, "dj_ho", dj_ho(1:nparmj,1:nreduced,1:nstates))
+                call hdf5_write(file_id, group_id, "de_o", de_o(1:nparmj,1:nreduced,1:nstates))
+                call hdf5_group_close(group_id)
+        endif
+
+
+        ! Opt Jas CI
+        if (.not. (ioptjas.eq.0.or.ioptci.eq.0)) then
+                call hdf5_group_create(file_id, "Optx_Jas_CI", group_id)
+                call hdf5_group_open(file_id, "Optx_Jas_CI", group_id)
+                call hdf5_write(file_id, group_id, "dj_o_ci", dj_o_ci(1:nparmj,1:nciterm))
+                call hdf5_write(file_id, group_id, "dj_oe_ci", dj_oe_ci(1:nparmj,1:nciterm))
+                call hdf5_write(file_id, group_id, "dj_de_ci", dj_de_ci(1:nparmj,1:nciterm))
+                call hdf5_write(file_id, group_id, "de_o_ci", de_o_ci(1:nparmj,1:nciterm))
+                call hdf5_group_close(group_id)
+        endif
 
 
 
-
-        ! call optx_jas_orb_dump(10)
-        ! call optx_jas_ci_dump(10)
-        ! call optx_orb_ci_dump(10)
-
+        ! Opt Orb CI
+        if (.not. (ioptorb.eq.0.or.ioptci.eq.0.or.method.eq.'sr_n'.or.method.eq.'lin_d')) then
+                call hdf5_group_create(file_id, "Optx_Orb_CI", group_id)
+                call hdf5_group_open(file_id, "Optx_Orb_CI", group_id)
+                call hdf5_write(file_id, group_id, "ci_o_o", ci_o_o(1:nciterm,1:nreduced))
+                call hdf5_write(file_id, group_id, "ci_o_oe", ci_o_oe(1:nciterm,1:nreduced))
+                call hdf5_write(file_id, group_id, "ci_o_ho", ci_o_ho(1:nciterm,1:nreduced))
+                call hdf5_write(file_id, group_id, "ci_de_o", ci_de_o(1:nciterm,1:nreduced))
+                call hdf5_group_close(group_id)
+        endif
 
 
         call hdf5_file_close(file_id)
         ! Close the HDF5 file
-
-        ! Reading section trial
-
-        ! Open hdf5 file for reading data
-        ! call hdf5_file_open(restart_filename, file_id)
-        ! ! Open the group
-        ! call hdf5_group_open(file_id, "System", group_id)
-        ! ! Read the data
-        ! call hdf5_read(file_id, group_id, "Number of Centers", temporary_integer)
-        ! print*, " Number of Centers read from hdf5 ", temporary_integer
-        ! call hdf5_read(file_id, group_id, "Index of Which Center Type", temporary_integer_array)
-        ! print*, " Number of Centers types read from hdf5 ", temporary_integer_array
-        ! ! Close the group
-        ! call hdf5_group_close(group_id)
-        ! ! Close the file
-        ! call hdf5_file_close(file_id)
-
-
 
         endif   ! master thread
 
