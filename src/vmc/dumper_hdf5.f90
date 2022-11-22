@@ -75,6 +75,46 @@ module dumper_hdf5_mod
         use strech_mod, only: setup_force,strech
         use vmc_mod, only: norb_tot,nrad
 
+        ! optorb
+        use optorb_cblock, only: nefp_blocks,norb_f_bcum,norbprim,norbterm
+        use optorb_cblock, only: nreduced
+        use optwf_control, only: iapprox,ioptorb
+        use orb_mat_003, only: orb_o_cum
+        use orb_mat_004, only: orb_oe_cum
+        use orb_mat_005, only: orb_ho_cum
+        use orb_mat_006, only: orb_oo_cum
+        use orb_mat_007, only: orb_oho_cum
+        use orb_mat_024, only: orb_f_bcm2,orb_f_bcum
+        use orb_mat_030, only: orb_ecum,orb_wcum
+
+        ! optci
+        use ci000,   only: nciprim,nciterm
+        use ci005_blk, only: ci_o_cum
+        use ci008_blk, only: ci_oe_cm2,ci_oe_cum
+        use ci009_blk, only: ci_oo_cm2,ci_oo_cum
+        use ci010_blk, only: ci_ooe_cum
+        use optwf_control, only: ioptci,method
+
+        ! properties
+        use prp000,  only: iprop,nprop
+        use prp003,  only: vprop_cm2,vprop_cum
+
+        ! efficiency
+        use mstates2, only: effcm2,effcum
+        use mstates_ctrl, only: iefficiency,nstates_psig
+
+        ! force analytic
+        use da_energy_sumcum, only: da_energy_cm2,da_energy_cum,da_psi_cum
+        use m_force_analytic, only: iforce_analy
+
+        ! Jastrow optimization
+        use gradhessj, only: d2j,d2j_e,de,de_de,de_e,dj,dj_de,dj_dj
+        use gradhessj, only: dj_dj_e,dj_e,dj_e2,e2
+        use gradjerr, only: grad_jas_bcm2,grad_jas_bcum
+        use gradjerrb, only: ngrad_jas_bcum,ngrad_jas_blocks
+        use optwf_control, only: ioptjas
+        use optwf_parms, only: nparmj
+
 
         implicit none
 
@@ -101,6 +141,9 @@ module dumper_hdf5_mod
         integer :: irequest, iw
         real(dp) :: rnd, wq_id, x_id, xq_id, yq_id, zq_id
 
+        ! optorb
+        integer :: matdim
+
 
         do i=0,nproc-1
             ircounts(i)=4
@@ -115,6 +158,7 @@ module dumper_hdf5_mod
         call mpi_gatherv(irn(1,idtask),nscounts,mpi_integer,irn_tmp,ircounts,idispls,mpi_integer,0,MPI_COMM_WORLD,ierr)
 
         ! Bradcast the data which is spread across the processors
+        call bcast(irn)
         call bcast(xold)
         call bcast(xq)
         call bcast(yq)
@@ -290,20 +334,114 @@ module dumper_hdf5_mod
         call hdf5_write(file_id, group_id, "ekin", ekin(1:nrad))
         call hdf5_write(file_id, group_id, "ekin2", ekin2(1:nrad))
         call hdf5_write(file_id, group_id, "rejmax", rejmax)
+        call hdf5_group_close(group_id)
+
+        ! Orbital Optimization
+        if(ioptorb.ne.0) then
+                call hdf5_group_create(file_id, "Orbital Optimization", group_id)
+                call hdf5_group_open(file_id, "Orbital Optimization", group_id)
+                matdim=nreduced*(nreduced+1)/2
+                if(iapprox.gt.0) matdim=nreduced
+
+                call hdf5_write(file_id, group_id, "norbprim", norbprim)
+                call hdf5_write(file_id, group_id, "norbterm", norbterm)
+                call hdf5_write(file_id, group_id, "nreduced", nreduced)
+                call hdf5_write(file_id, group_id, "nefp_blocks", nefp_blocks)
+                call hdf5_write(file_id, group_id, "norb_f_bcum", norb_f_bcum)
+                call hdf5_write(file_id, group_id, "orb_o_cum", orb_o_cum(1:norbterm,1:nstates))
+                call hdf5_write(file_id, group_id, "orb_oe_cum", orb_oe_cum(1:norbterm,1:nstates))
+                call hdf5_write(file_id, group_id, "orb_ho_cum", orb_ho_cum(1:norbterm,1:nstates))
+                call hdf5_write(file_id, group_id, "orb_f_bcum", orb_f_bcum(1:norbterm,1:nstates))
+                call hdf5_write(file_id, group_id, "orb_f_bcm2", orb_f_bcm2(1:norbterm,1:nstates))
+                call hdf5_write(file_id, group_id, "orb_oo_cum", orb_oo_cum(1:matdim,1:nstates))
+                call hdf5_write(file_id, group_id, "orb_oho_cum", orb_oho_cum(1:nreduced*nreduced,1:nstates))
+                call hdf5_write(file_id, group_id, "orb_wcum", orb_wcum(1:nstates))
+                call hdf5_write(file_id, group_id, "orb_ecum", orb_ecum(1:nstates))
+                call hdf5_group_close(group_id)
+        endif
+
+        ! CI optimization
+        if (.not. (ioptci.eq.0.or.method.eq.'sr_n'.or.method.eq.'lin_d')) then
+                call hdf5_group_create(file_id, "CI Optimization", group_id)
+                call hdf5_group_open(file_id, "CI Optimization", group_id)
+                matdim=nciterm*(nciterm+1)/2
+
+                call hdf5_write(file_id, group_id, "nciprim", nciprim)
+                call hdf5_write(file_id, group_id, "nciterm", nciterm)
+                call hdf5_write(file_id, group_id, "ci_o_cum", ci_o_cum(1:nciterm))
+                call hdf5_write(file_id, group_id, "ci_oe_cum", ci_oe_cum(1:nciterm,1:nciterm))
+                call hdf5_write(file_id, group_id, "ci_oe_cm2", ci_oe_cm2(1:nciterm,1:nciterm))
+                call hdf5_write(file_id, group_id, "ci_oo_cum", ci_oo_cum(1:matdim))
+                call hdf5_write(file_id, group_id, "ci_oo_cm2", ci_oo_cm2(1:matdim))
+                call hdf5_write(file_id, group_id, "ci_ooe_cum", ci_ooe_cum(1:matdim))
+                call hdf5_group_close(group_id)
+        endif
+
+        ! properties
+        if (iprop.ne.0) then
+                call hdf5_group_create(file_id, "Properties", group_id)
+                call hdf5_group_open(file_id, "Properties", group_id)
+                call hdf5_write(file_id, group_id, "nprop", nprop)
+                call hdf5_write(file_id, group_id, "vprop_cum", vprop_cum(1:nprop))
+                call hdf5_write(file_id, group_id, "vprop_cm2", vprop_cm2(1:nprop))
+                call hdf5_group_close(group_id)
+        endif
+
+        ! Efficiency
+        if (iefficiency.ne.0) then
+                call hdf5_group_create(file_id, "Efficiency", group_id)
+                call hdf5_group_open(file_id, "Efficiency", group_id)
+                call hdf5_write(file_id, group_id, "nstates_psig", nstates_psig)
+                call hdf5_write(file_id, group_id, "effcum", effcum(1:nstates_psig))
+                call hdf5_write(file_id, group_id, "effcm2", effcm2(1:nstates_psig))
+                call hdf5_group_close(group_id)
+        endif
+
+        ! Force Analytical
+        if (iforce_analytical.ne.0) then
+                call hdf5_group_create(file_id, "Force Analytical", group_id)
+                call hdf5_group_open(file_id, "Force Analytical", group_id)
+                call hdf5_write(file_id, group_id, "da_energy_cum", da_energy_cum(1:3,1:ncent))
+                call hdf5_write(file_id, group_id, "da_psi_cum", da_psi_cum(1:3,1:ncent))
+                call hdf5_write(file_id, group_id, "da_energy_cm2", da_energy_cm2(1:3,1:ncent))
+                call hdf5_group_close(group_id)
+        endif
+
+        ! Jastrow Optimization
+        if (ioptjas.ne.0) then
+                call hdf5_group_create(file_id, "Jastrow Optimization", group_id)
+                call hdf5_group_open(file_id, "Jastrow Optimization", group_id)
+                call hdf5_write(file_id, group_id, "nparmj", nparmj)
+                call hdf5_write(file_id, group_id, "dj", dj(1:nparmj,1:nstates))
+                call hdf5_write(file_id, group_id, "de", de(1:nparmj,1:nstates))
+                call hdf5_write(file_id, group_id, "dj_e", dj_e(1:nparmj,1:nstates))
+                call hdf5_write(file_id, group_id, "de_e", de_e(1:nparmj,1:nstates))
+                call hdf5_write(file_id, group_id, "dj_e2", dj_e2(1:nparmj,1:nstates))
+                call hdf5_write(file_id, group_id, "e2", e2(1:nparmj,1:nstates))
+                call hdf5_write(file_id, group_id, "dj_de", dj_de(1:nparmj,1:nparmj,1:nstates))
+                call hdf5_write(file_id, group_id, "dj_dj", dj_dj(1:nparmj,1:nparmj,1:nstates))
+                call hdf5_write(file_id, group_id, "dj_dj_e", dj_dj_e(1:nparmj,1:nparmj,1:nstates))
+                call hdf5_write(file_id, group_id, "d2j", d2j(1:nparmj,1:nparmj,1:nstates))
+                call hdf5_write(file_id, group_id, "d2j_e", d2j_e(1:nparmj,1:nparmj,1:nstates))
+                call hdf5_write(file_id, group_id, "de_de", de_de(1:nparmj,1:nparmj,1:nstates))
+                if(ngrad_jas_blocks.gt.0) then
+                        call hdf5_write(file_id, group_id, "grad_jas_bcum", grad_jas_bcum(1:nparmj,1:nstates))
+                        call hdf5_write(file_id, group_id, "grad_jas_bcm2", grad_jas_bcm2(1:nparmj,1:nstates))
+                        call hdf5_write(file_id, group_id, "ngrad_jas_bcum", ngrad_jas_bcum)
+                endif
+                call hdf5_group_close(group_id)
+        endif
 
 
-        ! call optorb_dump(10)
-        ! call optci_dump(10)
-        ! call prop_dump(10)
-        ! call efficiency_dump(10)
-        ! call pcm_dump(10)
-        ! call force_analy_dump(10)
-        ! call optjas_dump(10)
+
+
+
+
         ! call optx_jas_orb_dump(10)
         ! call optx_jas_ci_dump(10)
         ! call optx_orb_ci_dump(10)
 
-        call hdf5_group_close(group_id)
+
 
         call hdf5_file_close(file_id)
         ! Close the HDF5 file
@@ -311,18 +449,18 @@ module dumper_hdf5_mod
         ! Reading section trial
 
         ! Open hdf5 file for reading data
-        call hdf5_file_open(restart_filename, file_id)
-        ! Open the group
-        call hdf5_group_open(file_id, "System", group_id)
-        ! Read the data
-        call hdf5_read(file_id, group_id, "Number of Centers", temporary_integer)
-        print*, " Number of Centers read from hdf5 ", temporary_integer
-        call hdf5_read(file_id, group_id, "Index of Which Center Type", temporary_integer_array)
-        print*, " Number of Centers types read from hdf5 ", temporary_integer_array
-        ! Close the group
-        call hdf5_group_close(group_id)
-        ! Close the file
-        call hdf5_file_close(file_id)
+        ! call hdf5_file_open(restart_filename, file_id)
+        ! ! Open the group
+        ! call hdf5_group_open(file_id, "System", group_id)
+        ! ! Read the data
+        ! call hdf5_read(file_id, group_id, "Number of Centers", temporary_integer)
+        ! print*, " Number of Centers read from hdf5 ", temporary_integer
+        ! call hdf5_read(file_id, group_id, "Index of Which Center Type", temporary_integer_array)
+        ! print*, " Number of Centers types read from hdf5 ", temporary_integer_array
+        ! ! Close the group
+        ! call hdf5_group_close(group_id)
+        ! ! Close the file
+        ! call hdf5_file_close(file_id)
 
 
 
