@@ -15,7 +15,7 @@ file(GLOB DMC_SOURCE
   acuest.f
   dmc.f
   dumper_gpop.f
-  dmc_dumper_hdf5.f90
+  dmc_store_hdf5.f90
   hpsiedmc.f
   mc_configs.f
   move_walker.f
@@ -49,11 +49,11 @@ formatFortran("${DMC_SOURCE}") # Set Fixed format property
 
 if (HDF5_FOUND)
   list(APPEND DMC_SOURCE
-    ${CMAKE_CURRENT_SOURCE_DIR}/dmc_dumper_hdf5.f90)
+    ${CMAKE_CURRENT_SOURCE_DIR}/dmc_store_hdf5.f90)
 endif()
 
 set_property(
-  SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/dmc_dumper_hdf5.f90
+  SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/dmc_store_hdf5.f90
   APPEND
   PROPERTY COMPILE_DEFINITIONS
   COMPILER=\"${CMAKE_Fortran_COMPILER}\"
@@ -72,7 +72,7 @@ set_property(
 
 # Compile these two files with hdf5 flags if HDF5 is found
 set_source_files_properties(
-  ${CMAKE_CURRENT_SOURCE_DIR}/dmc_dumper_hdf5.f90
+  ${CMAKE_CURRENT_SOURCE_DIR}/dmc_store_hdf5.f90
   APPEND
   PROPERTY
   COMPILE_FLAGS "-lhdf5_fortran -lhdf5")

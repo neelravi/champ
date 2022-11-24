@@ -1,8 +1,8 @@
-module vmc_dumper_hdf5_mod
+module vmc_store_hdf5_mod
         contains
-        subroutine vmc_dumper_hdf5(restart_filename)
-        !> @brief Dumps the data to a HDF5 file
-        !> @details This subroutine dumps the data to a HDF5 file for restarting purposes
+        subroutine vmc_store_hdf5(restart_filename)
+        !> @brief Store the VMC data to a HDF5 file for later restart
+        !> @details This subroutine stores the VMC data to a HDF5 file for restarting purposes
         !> @author Ravindra Shinde
         !> @date 2022-11-03
         !> @email r.l.shinde@utwente.nl
@@ -13,14 +13,6 @@ module vmc_dumper_hdf5_mod
         use hdf5_utils, only: hdf5_group_create, hdf5_group_close, hdf5_group_open
         use hdf5_utils, only: hdf5_write, hdf5_read
         use mpi
-
-        ! init routines
-        use mmpol,   only: mmpol_init
-        use optci_mod, only: optci_init
-        use optjas_mod, only: optjas_init
-        use optorb_f_mod, only: optorb_init
-        use pcm_mod, only: pcm_init
-        use properties_mod, only: prop_init
 
         ! union of all the required arrays
         use basis,   only: ns, np, nd, nf, ng, zex
@@ -34,7 +26,7 @@ module vmc_dumper_hdf5_mod
         use control_vmc, only: vmc_nblkeq, vmc_nconf_new, vmc_nstep, vmc_icharged_atom, vmc_nblk_ci
         use csfs,    only: ncsf, nstates, ccsf
         use denupdn, only: rprobdn,rprobup
-        ! use determinant_psig_mod, only: determinant_psig
+
         use determinante_mod, only: compute_determinante_grad
         use error,   only: fatal_error
         use est2cm,  only: ecm2,ecm21,pecm2,r2cm2,tjfcm2,tpbcm2
@@ -49,7 +41,7 @@ module vmc_dumper_hdf5_mod
         use mstates_ctrl, only: iguiding
         use mstates_mod, only: MSTATES
         use multiple_geo, only: fcm2,fcum,fgcm2,fgcum,iwftype,nforce,nwftype,pecent
-        ! use multiple_states, only: efficiency_dump,efficiency_rstrt
+
         use mpiconf, only: idtask,nproc,wid
         use nodes_distance_mod, only: nodes_distance,rnorm_nodes_num
         use optci_mod, only: optci_dump,optci_rstrt,optci_save
@@ -170,7 +162,7 @@ module vmc_dumper_hdf5_mod
         ! Only the master process will write the data to the HDF5 file
         if (wid) then
         ! Open the HDF5 file
-        write(ounit, *) "HDF5 Restart file name:: ", restart_filename
+        write(ounit, *) " HDF5 Group saved :: HDF5 Restart file name:: ", restart_filename
         call hdf5_file_create(restart_filename, file_id)
 
         call hdf5_group_create(file_id, "Metadata", group_id)
@@ -205,7 +197,7 @@ module vmc_dumper_hdf5_mod
         call hdf5_write(file_id, group_id, " HDF5 Version ", HDF5_VERSION)
 #endif
         call hdf5_group_close(group_id)
-        write(ounit, *) "Metadata written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: Metadata "
 
         call hdf5_group_create(file_id, "Electrons", group_id)
         call hdf5_group_open(file_id, "Electrons", group_id)
@@ -213,7 +205,7 @@ module vmc_dumper_hdf5_mod
         call hdf5_write(file_id, group_id, "Number of Down-Spin Electrons", ndn)
         call hdf5_write(file_id, group_id, "Total Number of Electrons", nelec)
         call hdf5_group_close(group_id)
-        write(ounit, *) "Electrons Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: Electrons "
 
         call hdf5_group_create(file_id, "System", group_id)
         call hdf5_group_open(file_id, "System", group_id)
@@ -227,12 +219,12 @@ module vmc_dumper_hdf5_mod
         call hdf5_write(file_id, group_id, "Nforce", nforce)
         call hdf5_write(file_id, group_id, "Nloc", nloc)
         call hdf5_group_close(group_id)
-        write(ounit, *) "System Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: System "
 
         call hdf5_group_create(file_id, "ECP", group_id)
         call hdf5_group_open(file_id, "ECP", group_id)
         call hdf5_group_close(group_id)
-        write(ounit, *) "ECP Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: ECP "
 
         call hdf5_group_create(file_id, "Basis", group_id)
         call hdf5_group_open(file_id, "Basis", group_id)
@@ -245,7 +237,7 @@ module vmc_dumper_hdf5_mod
             call hdf5_write(file_id, group_id, "wq", wq(1:nquad))
         endif
         call hdf5_group_close(group_id)
-        write(ounit, *) "Basis Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: Basis "
 
         call hdf5_group_create(file_id, "AO", group_id)
         call hdf5_group_open(file_id, "AO", group_id)
@@ -256,7 +248,7 @@ module vmc_dumper_hdf5_mod
         call hdf5_write(file_id, group_id, "Number of F Type AOs", nf)
         call hdf5_write(file_id, group_id, "Number of G Type AOs", ng)
         call hdf5_group_close(group_id)
-        write(ounit, *) "AO Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: AO "
 
         call hdf5_group_create(file_id, "MO", group_id)
         call hdf5_group_open(file_id, "MO", group_id)
@@ -264,36 +256,36 @@ module vmc_dumper_hdf5_mod
         call hdf5_write(file_id, group_id, "Number of Orbitals Total", norb_tot)
         call hdf5_write(file_id, group_id, "MO Coefficients", coef(1:nbasis,1:norb,1))
         call hdf5_group_close(group_id)
-        write(ounit, *) "MO Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: MO "
 
         call hdf5_group_create(file_id, "Determinants", group_id)
         call hdf5_group_open(file_id, "Determinants", group_id)
         call hdf5_write(file_id, group_id, "Number of Determinants", ndet)
         call hdf5_write(file_id, group_id, "Determinant Coefficients", cdet(1:ndet,1,1))
         call hdf5_group_close(group_id)
-        write(ounit, *) "Determinants Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: Determinants "
 
         call hdf5_group_create(file_id, "CSFs", group_id)
         call hdf5_group_open(file_id, "CSFs", group_id)
         call hdf5_write(file_id, group_id, "Number of CSFs", ncsf)
         call hdf5_group_close(group_id)
-        write(ounit, *) "CSFs Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: CSFs "
 
         call hdf5_group_create(file_id, "States", group_id)
         call hdf5_group_open(file_id, "States", group_id)
         call hdf5_write(file_id, group_id, "Number of States", nstates)
         call hdf5_group_close(group_id)
-        write(ounit, *) "States Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: States "
 
         call hdf5_group_create(file_id, "UnitCell", group_id)
         call hdf5_group_open(file_id, "UnitCell", group_id)
         call hdf5_group_close(group_id)
-        write(ounit, *) "UnitCell Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: UnitCell "
 
         call hdf5_group_create(file_id, "Periodic", group_id)
         call hdf5_group_open(file_id, "Periodic", group_id)
         call hdf5_group_close(group_id)
-        write(ounit, *) "Periodic Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: Periodic "
 
         call hdf5_group_create(file_id, "QMC", group_id)
         call hdf5_group_open(file_id, "QMC", group_id)
@@ -301,7 +293,7 @@ module vmc_dumper_hdf5_mod
         call hdf5_write(file_id, group_id, "Number of Processors", nproc)
         call hdf5_write(file_id, group_id, "Random Numbers Each Processor", irn_tmp(1:4,0:nproc-1))
         call hdf5_group_close(group_id)
-        write(ounit, *) "QMC Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: QMC "
 
         call hdf5_group_create(file_id, "VMC", group_id)
         call hdf5_group_open(file_id, "VMC", group_id)
@@ -352,7 +344,7 @@ module vmc_dumper_hdf5_mod
         call hdf5_write(file_id, group_id, "ekin2", ekin2(1:nrad))
         call hdf5_write(file_id, group_id, "rejmax", rejmax)
         call hdf5_group_close(group_id)
-        write(ounit, *) "VMC Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: VMC "
 
         ! Orbital Optimization
         if(ioptwf.ne.0 .and. ioptorb.ne.0) then
@@ -375,7 +367,7 @@ module vmc_dumper_hdf5_mod
                 call hdf5_write(file_id, group_id, "orb_wcum", orb_wcum(1:nstates))
                 call hdf5_write(file_id, group_id, "orb_ecum", orb_ecum(1:nstates))
                 call hdf5_group_close(group_id)
-                write(ounit, *) "Orbital Optimization Group written to the HDF5 file"
+                write(ounit, *) " HDF5 Group saved :: Orbital Optimization "
         endif
 
 
@@ -394,7 +386,7 @@ module vmc_dumper_hdf5_mod
                 call hdf5_write(file_id, group_id, "ci_oo_cm2", ci_oo_cm2(1:matdim))
                 call hdf5_write(file_id, group_id, "ci_ooe_cum", ci_ooe_cum(1:matdim))
                 call hdf5_group_close(group_id)
-                write(ounit, *) "CI Optimization Group written to the HDF5 file"
+                write(ounit, *) " HDF5 Group saved :: CI Optimization "
         endif
 
 
@@ -406,7 +398,7 @@ module vmc_dumper_hdf5_mod
                 call hdf5_write(file_id, group_id, "vprop_cum", vprop_cum(1:nprop))
                 call hdf5_write(file_id, group_id, "vprop_cm2", vprop_cm2(1:nprop))
                 call hdf5_group_close(group_id)
-                write(ounit, *) "Properties Group written to the HDF5 file"
+                write(ounit, *) " HDF5 Group saved :: Properties "
         endif
 
 
@@ -418,7 +410,7 @@ module vmc_dumper_hdf5_mod
                 call hdf5_write(file_id, group_id, "effcum", effcum(1:nstates_psig))
                 call hdf5_write(file_id, group_id, "effcm2", effcm2(1:nstates_psig))
                 call hdf5_group_close(group_id)
-                write(ounit, *) "Efficiency Group written to the HDF5 file"
+                write(ounit, *) " HDF5 Group saved :: Efficiency "
         endif
 
 
@@ -430,7 +422,7 @@ module vmc_dumper_hdf5_mod
                 call hdf5_write(file_id, group_id, "da_psi_cum", da_psi_cum(1:3,1:ncent))
                 call hdf5_write(file_id, group_id, "da_energy_cm2", da_energy_cm2(1:3,1:ncent))
                 call hdf5_group_close(group_id)
-                write(ounit, *) "Force Analytical Group written to the HDF5 file"
+                write(ounit, *) " HDF5 Group saved :: Force Analytical "
         endif
 
 
@@ -457,7 +449,7 @@ module vmc_dumper_hdf5_mod
                         call hdf5_write(file_id, group_id, "ngrad_jas_bcum", ngrad_jas_bcum)
                 endif
                 call hdf5_group_close(group_id)
-                write(ounit, *) "Jastrow Optimization Group written to the HDF5 file"
+                write(ounit, *) " HDF5 Group saved :: Jastrow Optimization "
         endif
 
 
@@ -471,7 +463,7 @@ module vmc_dumper_hdf5_mod
                 call hdf5_write(file_id, group_id, "dj_ho", dj_ho(1:nparmj,1:nreduced,1:nstates))
                 call hdf5_write(file_id, group_id, "de_o", de_o(1:nparmj,1:nreduced,1:nstates))
                 call hdf5_group_close(group_id)
-                write(ounit, *) "Opt Jas Orb Group written to the HDF5 file"
+                write(ounit, *) " HDF5 Group saved :: Opt Jas Orb "
         endif
 
 
@@ -485,7 +477,7 @@ module vmc_dumper_hdf5_mod
                 call hdf5_write(file_id, group_id, "dj_de_ci", dj_de_ci(1:nparmj,1:nciterm))
                 call hdf5_write(file_id, group_id, "de_o_ci", de_o_ci(1:nparmj,1:nciterm))
                 call hdf5_group_close(group_id)
-                write(ounit, *) "Opt Jas CI Group written to the HDF5 file"
+                write(ounit, *) " HDF5 Group saved :: Opt Jas CI "
         endif
 
 
@@ -500,7 +492,7 @@ module vmc_dumper_hdf5_mod
                 call hdf5_write(file_id, group_id, "ci_o_ho", ci_o_ho(1:nciterm,1:nreduced))
                 call hdf5_write(file_id, group_id, "ci_de_o", ci_de_o(1:nciterm,1:nreduced))
                 call hdf5_group_close(group_id)
-                write(ounit, *) "Opt Orb CI Group written to the HDF5 file"
+                write(ounit, *) " HDF5 Group saved :: Opt Orb CI "
         endif
 
 
@@ -510,5 +502,5 @@ module vmc_dumper_hdf5_mod
 
         endif   ! master thread
 
-        end subroutine vmc_dumper_hdf5
-end module vmc_dumper_hdf5_mod
+        end subroutine vmc_store_hdf5
+end module vmc_store_hdf5_mod

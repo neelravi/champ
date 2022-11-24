@@ -32,7 +32,7 @@ c and sa, pa, da asymptotic functions
       use strech_mod, only: setup_force
       use system,  only: nelec
 #if defined(HDF5_FOUND)
-      use vmc_dumper_hdf5_mod, only: vmc_dumper_hdf5
+      use vmc_store_hdf5_mod, only: vmc_store_hdf5
 #endif
 
       implicit none
@@ -196,7 +196,7 @@ c if dump flag is on then dump out data for a restart
       if(vmc_nconf_new.ne.0) close(7)
 
 #if defined(HDF5_FOUND)
-      call vmc_dumper_hdf5("restart_vmc.hdf5")
+      call vmc_store_hdf5("restart_vmc.hdf5")
 #endif
 
       return

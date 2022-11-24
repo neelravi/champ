@@ -120,7 +120,7 @@ if (MPI_Fortran_FOUND)
     get_norbterm.f90
     lapack_wrapper.f90
     main.f90
-    new_parser_read_data.f90
+    parser_read_data.f90
     read_trexio_data.f90
     fitting.f90
     olbfgs.f90
@@ -143,7 +143,7 @@ if (MPI_Fortran_FOUND)
 	  )
 
   set_property(
-  SOURCE new_parser_read_data.f90
+  SOURCE parser_read_data.f90
   APPEND
   PROPERTY COMPILE_DEFINITIONS
   CMAKE_Fortran_COMPILER=\"${CMAKE_Fortran_COMPILER}\"
@@ -204,7 +204,7 @@ if (MPI_Fortran_FOUND)
     ${CMAKE_CURRENT_SOURCE_DIR}/optgeo_convcartzmat.f90
     ${CMAKE_CURRENT_SOURCE_DIR}/optgeo_coords_int.f90
     ${CMAKE_CURRENT_SOURCE_DIR}/optgeo_hessian.f90
-    ${CMAKE_CURRENT_SOURCE_DIR}/new_parser_read_data.f90
+    ${CMAKE_CURRENT_SOURCE_DIR}/parser_read_data.f90
     ${CMAKE_CURRENT_SOURCE_DIR}/read_trexio_data.f90
     ${CMAKE_CURRENT_SOURCE_DIR}/set_input_data.f90
     ${CMAKE_CURRENT_SOURCE_DIR}/pot_local.f
@@ -323,11 +323,11 @@ if (MPI_Fortran_FOUND)
 
   if (HDF5_FOUND)
     list(APPEND SHARED_OBJECTS
-      ${CMAKE_CURRENT_SOURCE_DIR}/vmc_dumper_hdf5.f90)
+      ${CMAKE_CURRENT_SOURCE_DIR}/vmc_store_hdf5.f90)
   endif()
 
   set_property(
-  SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/vmc_dumper_hdf5.f90
+  SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/vmc_store_hdf5.f90
   APPEND
   PROPERTY COMPILE_DEFINITIONS
   COMPILER=\"${CMAKE_Fortran_COMPILER}\"
@@ -347,7 +347,7 @@ if (MPI_Fortran_FOUND)
   # Compile these two files with hdf5 flags if HDF5 is found
   set_source_files_properties(
     ${CMAKE_CURRENT_SOURCE_DIR}/utils_hdf5.f90
-    ${CMAKE_CURRENT_SOURCE_DIR}/vmc_dumper_hdf5.f90
+    ${CMAKE_CURRENT_SOURCE_DIR}/vmc_store_hdf5.f90
     APPEND
     PROPERTY
     COMPILE_FLAGS "-lhdf5_fortran -lhdf5")

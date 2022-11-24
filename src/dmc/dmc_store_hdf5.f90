@@ -1,8 +1,8 @@
-        module dmc_dumper_hdf5_mod
+        module dmc_store_hdf5_mod
         contains
-        subroutine dmc_dumper_hdf5(restart_filename)
-        !> @brief Dumps the data to a HDF5 file
-        !> @details This subroutine dumps the data to a HDF5 file for restarting purposes
+        subroutine dmc_store_hdf5(restart_filename)
+        !> @brief Store the DMC data to a HDF5 file for later restart
+        !> @details This subroutine stores DMC the data to a HDF5 file for restarting purposes
         !> @author Ravindra Shinde
         !> @date 2022-11-03
         !> @email r.l.shinde@utwente.nl
@@ -112,7 +112,7 @@
         ! Only the master process will write the data to the HDF5 file
         if (wid) then
         ! Open the HDF5 file
-        write(ounit, *) "HDF5 Restart file name:: ", restart_filename
+        write(ounit, *) " HDF5 Group saved :: HDF5 Restart file name:: ", restart_filename
         call hdf5_file_create(restart_filename, file_id)
 
         call hdf5_group_create(file_id, "Metadata", group_id)
@@ -147,7 +147,7 @@
         call hdf5_write(file_id, group_id, " HDF5 Version ", HDF5_VERSION)
 #endif
         call hdf5_group_close(group_id)
-        write(ounit, *) "Metadata written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: Metadata "
 
         call hdf5_group_create(file_id, "Electrons", group_id)
         call hdf5_group_open(file_id, "Electrons", group_id)
@@ -155,7 +155,7 @@
         call hdf5_write(file_id, group_id, "Number of Down-Spin Electrons", ndn)
         call hdf5_write(file_id, group_id, "Total Number of Electrons", nelec)
         call hdf5_group_close(group_id)
-        write(ounit, *) "Electrons Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: Electrons "
 
         call hdf5_group_create(file_id, "System", group_id)
         call hdf5_group_open(file_id, "System", group_id)
@@ -169,12 +169,12 @@
         call hdf5_write(file_id, group_id, "Nforce", nforce)
         call hdf5_write(file_id, group_id, "Nloc", nloc)
         call hdf5_group_close(group_id)
-        write(ounit, *) "System Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: System "
 
         call hdf5_group_create(file_id, "ECP", group_id)
         call hdf5_group_open(file_id, "ECP", group_id)
         call hdf5_group_close(group_id)
-        write(ounit, *) "ECP Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: ECP "
 
         call hdf5_group_create(file_id, "Basis", group_id)
         call hdf5_group_open(file_id, "Basis", group_id)
@@ -187,7 +187,7 @@
                 call hdf5_write(file_id, group_id, "wq", wq(1:nquad))
         endif
         call hdf5_group_close(group_id)
-        write(ounit, *) "Basis Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: Basis "
 
         call hdf5_group_create(file_id, "AO", group_id)
         call hdf5_group_open(file_id, "AO", group_id)
@@ -198,7 +198,7 @@
         call hdf5_write(file_id, group_id, "Number of F Type AOs", nf)
         call hdf5_write(file_id, group_id, "Number of G Type AOs", ng)
         call hdf5_group_close(group_id)
-        write(ounit, *) "AO Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: AO "
 
         call hdf5_group_create(file_id, "MO", group_id)
         call hdf5_group_open(file_id, "MO", group_id)
@@ -206,36 +206,36 @@
         call hdf5_write(file_id, group_id, "Number of Orbitals Total", norb_tot)
         call hdf5_write(file_id, group_id, "MO Coefficients", coef(1:nbasis,1:norb,1))
         call hdf5_group_close(group_id)
-        write(ounit, *) "MO Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: MO "
 
         call hdf5_group_create(file_id, "Determinants", group_id)
         call hdf5_group_open(file_id, "Determinants", group_id)
         call hdf5_write(file_id, group_id, "Number of Determinants", ndet)
         call hdf5_write(file_id, group_id, "Determinant Coefficients", cdet(1:ndet,1,1))
         call hdf5_group_close(group_id)
-        write(ounit, *) "Determinants Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: Determinants "
 
         call hdf5_group_create(file_id, "CSFs", group_id)
         call hdf5_group_open(file_id, "CSFs", group_id)
         call hdf5_write(file_id, group_id, "Number of CSFs", ncsf)
         call hdf5_group_close(group_id)
-        write(ounit, *) "CSFs Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: CSFs "
 
         call hdf5_group_create(file_id, "States", group_id)
         call hdf5_group_open(file_id, "States", group_id)
         call hdf5_write(file_id, group_id, "Number of States", nstates)
         call hdf5_group_close(group_id)
-        write(ounit, *) "States Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: States "
 
         call hdf5_group_create(file_id, "UnitCell", group_id)
         call hdf5_group_open(file_id, "UnitCell", group_id)
         call hdf5_group_close(group_id)
-        write(ounit, *) "UnitCell Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: UnitCell "
 
         call hdf5_group_create(file_id, "Periodic", group_id)
         call hdf5_group_open(file_id, "Periodic", group_id)
         call hdf5_group_close(group_id)
-        write(ounit, *) "Periodic Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: Periodic "
 
         call hdf5_group_create(file_id, "QMC", group_id)
         call hdf5_group_open(file_id, "QMC", group_id)
@@ -243,7 +243,7 @@
         call hdf5_write(file_id, group_id, "Number of Processors", nproc)
         call hdf5_write(file_id, group_id, "Random Numbers Each Processor", irn_tmp(1:4,0:nproc-1))
         call hdf5_group_close(group_id)
-        write(ounit, *) "QMC Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: QMC "
 
         call hdf5_group_create(file_id, "DMC", group_id)
         call hdf5_group_open(file_id, "DMC", group_id)
@@ -315,7 +315,7 @@
         call hdf5_write(file_id, group_id, "nodecr", nodecr)
 
         call hdf5_group_close(group_id)
-        write(ounit, *) "DMC Group written to the HDF5 file"
+        write(ounit, *) " HDF5 Group saved :: DMC "
 
         ! properties
         if (iprop.ne.0) then
@@ -325,12 +325,12 @@
                 call hdf5_write(file_id, group_id, "vprop_cum", vprop_cum(1:nprop))
                 call hdf5_write(file_id, group_id, "vprop_cm2", vprop_cm2(1:nprop))
                 call hdf5_group_close(group_id)
-                write(ounit, *) "Properties Group written to the HDF5 file"
+                write(ounit, *) " HDF5 Group saved :: Properties "
         endif
 
         call hdf5_file_close(file_id)
         ! Close the HDF5 file
         endif   ! master thread
 
-        end subroutine dmc_dumper_hdf5
-        end module dmc_dumper_hdf5_mod
+        end subroutine dmc_store_hdf5
+        end module dmc_store_hdf5_mod
