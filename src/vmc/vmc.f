@@ -33,6 +33,7 @@ c and sa, pa, da asymptotic functions
       use system,  only: nelec
 #if defined(HDF5_FOUND)
       use vmc_store_hdf5_mod, only: vmc_store_hdf5
+      use vmc_restore_hdf5_mod, only: vmc_restore_hdf5
 #endif
 
       implicit none
@@ -123,9 +124,13 @@ c dumped data to restart
         goto 402
   401   call fatal_error('VMC: restart_vmc empty, not able to restart')
   402   rewind 10
+#if defined(HDF5_FOUND)
+        call vmc_restore_hdf5("restart_vmc.hdf5")
+#else
         call startr
         close(10)
         call elapsed_time("VMC : reading restart files : ")
+#endif
       endif
 
 c if there are equilibrium steps to take, do them here
@@ -187,17 +192,17 @@ c print out final results
 
 c if dump flag is on then dump out data for a restart
       if (vmc_idump.eq.1) then
-        open(10,form='unformatted',file='restart_vmc')
-        rewind 10
-        call dumper
-        close(10)
-        call elapsed_time("dumping restart files : ")
-      endif
-      if(vmc_nconf_new.ne.0) close(7)
-
 #if defined(HDF5_FOUND)
       call vmc_store_hdf5("restart_vmc.hdf5")
+#else
+      open(10,form='unformatted',file='restart_vmc')
+      rewind 10
+      call dumper
+      close(10)
 #endif
+      call elapsed_time("dumping restart files : ")
+      endif
+      if(vmc_nconf_new.ne.0) close(7)
 
       return
       end

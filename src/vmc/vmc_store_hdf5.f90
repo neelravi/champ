@@ -122,7 +122,8 @@ module vmc_store_hdf5_mod
         character(len=*), intent(in)   ::  restart_filename
         integer(hid_t)                 ::  file_id
         integer(hid_t)                 ::  group_id
-        character(len=20)              ::  author = "CHAMP"
+        ! character(len=20)              ::  author = "CHAMP"
+        character(:), allocatable      ::  author
 
         integer :: i, ib, ic, id, idfrom, idget, ierr
         integer :: ifr, istate, j, k
@@ -169,7 +170,7 @@ module vmc_store_hdf5_mod
         call hdf5_group_open(file_id, "Metadata", group_id)
 
         call get_environment_variable ("USER", author)
-        call hdf5_write(file_id, group_id, "Author", trim(author))
+        call hdf5_write(file_id, group_id, "Author", author)
         call hdf5_write(file_id, group_id, " Code Compilation Date ", __DATE__)
         call hdf5_write(file_id, group_id, " Code Compilation Time ", __TIME__)
 
