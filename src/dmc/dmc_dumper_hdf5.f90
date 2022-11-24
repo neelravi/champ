@@ -25,7 +25,6 @@
         use denupdn, only: rprobdn,rprobup
         use derivest, only: derivcm2,derivcum,derivtotave_num_old
         use dmc_mod, only: MWALK
-        ! use dumper_gpop_mod, only: dumper_gpop
         use est2cm,  only: ecm21_dmc,ecm2_dmc,efcm2,efcm21,egcm2,egcm21
         use est2cm,  only: ei1cm2,ei2cm2,ei3cm2,pecm2_dmc,r2cm2_dmc,ricm2
         use est2cm,  only: tjfcm_dmc,tpbcm2_dmc,wcm2,wcm21,wdcm2,wdcm21
@@ -61,20 +60,19 @@
         use hdf5_utils, only: hdf5_group_create, hdf5_group_close, hdf5_group_open
         use hdf5_utils, only: hdf5_write!, hdf5_read
 
+        ! properties
+        use prp000,  only: iprop,nprop
+        use prp003,  only: vprop_cm2,vprop_cum
+
+
 
         implicit none
 
         ! HDF5 related variables
         character(len=*), intent(in)   ::  restart_filename
         integer(hid_t)                 ::  file_id
-        integer(hid_t)                 ::  group_id, group_id1, group_id2
-        integer(hid_t)                 ::  plist_id
-        integer(hid_t)                 ::  dataset_id
-        integer(hid_t)                 ::  dataspace_id
-        integer(hid_t)                 ::  memspace_id
-        integer(hid_t)                 ::  filespace
-        integer                        ::  error
-        character(len=20)              ::  author = "Ravindra Shinde", read_author
+        integer(hid_t)                 ::  group_id
+        character(len=20)              ::  author = "CHAMP"
 
         integer :: i, ib, ic, id, ierr
         integer :: ifr, irequest, iw, j
@@ -253,6 +251,7 @@
         call hdf5_write(file_id, group_id, "Number of DMC Steps per Block", dmc_nstep)
         call hdf5_write(file_id, group_id, "Number of DMC Configurations ", dmc_nconf)
         call hdf5_write(file_id, group_id, "Number of Walkers", nwalk)
+        call hdf5_write(file_id, group_id, "Number of Processors", nproc)
         call hdf5_write(file_id, group_id, "xold_dmc", xold_dmc)
         call hdf5_write(file_id, group_id, "nfprod", nfprod)
         call hdf5_write(file_id, group_id, "ff", ff)
@@ -280,29 +279,31 @@
         call hdf5_write(file_id, group_id, "wfcm2", wfcm2)
         call hdf5_write(file_id, group_id, "wdcm2", wdcm2)
         call hdf5_write(file_id, group_id, "wgdcm2", wgdcm2)
-        call hdf5_write(file_id, group_id, "wcm21/nproc", wcm21/nproc)
-        call hdf5_write(file_id, group_id, "wfcm21/nproc", wfcm21/nproc)
-        call hdf5_write(file_id, group_id, "wgcm21(i)/nproc", wgcm21(1:nforce)/nproc)
         call hdf5_write(file_id, group_id, "wdcm21", wdcm21)
         call hdf5_write(file_id, group_id, "ecm2_dmc", ecm2_dmc)
         call hdf5_write(file_id, group_id, "efcm2", efcm2)
-        call hdf5_write(file_id, group_id, "ecm21_dmc/nproc", ecm21_dmc/nproc)
-        call hdf5_write(file_id, group_id, "efcm21/nproc", efcm21/nproc)
-        call hdf5_write(file_id, group_id, "egcm21(i)/nproc", egcm21(1:nforce)/nproc)
+
+        call hdf5_write(file_id, group_id, "wcm21", wcm21/nproc)
+        call hdf5_write(file_id, group_id, "wfcm21", wfcm21/nproc)
+        call hdf5_write(file_id, group_id, "wgcm21", wgcm21(1:nforce)/nproc)
+        call hdf5_write(file_id, group_id, "ecm21_dmc", ecm21_dmc/nproc)
+        call hdf5_write(file_id, group_id, "efcm21", efcm21/nproc)
+        call hdf5_write(file_id, group_id, "egcm21", egcm21(1:nforce)/nproc)
+
         call hdf5_write(file_id, group_id, "ei1cm2", ei1cm2)
         call hdf5_write(file_id, group_id, "ei2cm2", ei2cm2)
         call hdf5_write(file_id, group_id, "ei3cm2", ei3cm2)
         call hdf5_write(file_id, group_id, "r2cm2_dmc", r2cm2_dmc)
         call hdf5_write(file_id, group_id, "ricm2", ricm2)
-        call hdf5_write(file_id, group_id, "fgcum(i)", fgcum(1:nforce))
-        call hdf5_write(file_id, group_id, "fgcm2(i)", fgcm2(1:nforce))
-        call hdf5_write(file_id, group_id, "derivcum(k,i)", derivcum(1:3,1:nforce))
-        call hdf5_write(file_id, group_id, "derivcm2(i)", derivcm2(1:nforce))
-        call hdf5_write(file_id, group_id, "derivtotave_num_old(i)", derivtotave_num_old(1:nforce))
+        call hdf5_write(file_id, group_id, "fgcum", fgcum(1:nforce))
+        call hdf5_write(file_id, group_id, "fgcm2", fgcm2(1:nforce))
+        call hdf5_write(file_id, group_id, "derivcum", derivcum(1:3,1:nforce))
+        call hdf5_write(file_id, group_id, "derivcm2", derivcm2(1:nforce))
+        call hdf5_write(file_id, group_id, "derivtotave_num_old", derivtotave_num_old(1:nforce))
 
-        call hdf5_write(file_id, group_id, "rprob(i)", rprob(1:nrad)/nproc)
-        call hdf5_write(file_id, group_id, "rprobup(i)", rprobup(1:nrad))
-        call hdf5_write(file_id, group_id, "rprobdn(i)", rprobdn(1:nrad))
+        call hdf5_write(file_id, group_id, "rprob", rprob(1:nrad)/nproc)
+        call hdf5_write(file_id, group_id, "rprobup", rprobup(1:nrad))
+        call hdf5_write(file_id, group_id, "rprobdn", rprobdn(1:nrad))
         call hdf5_write(file_id, group_id, "dfus2ac", dfus2ac)
         call hdf5_write(file_id, group_id, "dfus2un", dfus2un)
         call hdf5_write(file_id, group_id, "dr2ac", dr2ac)
@@ -315,6 +316,17 @@
 
         call hdf5_group_close(group_id)
         write(ounit, *) "DMC Group written to the HDF5 file"
+
+        ! properties
+        if (iprop.ne.0) then
+                call hdf5_group_create(file_id, "Properties", group_id)
+                call hdf5_group_open(file_id, "Properties", group_id)
+                call hdf5_write(file_id, group_id, "nprop", nprop)
+                call hdf5_write(file_id, group_id, "vprop_cum", vprop_cum(1:nprop))
+                call hdf5_write(file_id, group_id, "vprop_cm2", vprop_cm2(1:nprop))
+                call hdf5_group_close(group_id)
+                write(ounit, *) "Properties Group written to the HDF5 file"
+        endif
 
         call hdf5_file_close(file_id)
         ! Close the HDF5 file
