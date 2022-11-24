@@ -323,11 +323,11 @@ if (MPI_Fortran_FOUND)
 
   if (HDF5_FOUND)
     list(APPEND SHARED_OBJECTS
-      ${CMAKE_CURRENT_SOURCE_DIR}/dumper_hdf5.f90)
+      ${CMAKE_CURRENT_SOURCE_DIR}/vmc_dumper_hdf5.f90)
   endif()
 
   set_property(
-  SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/dumper_hdf5.f90
+  SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/vmc_dumper_hdf5.f90
   APPEND
   PROPERTY COMPILE_DEFINITIONS
   COMPILER=\"${CMAKE_Fortran_COMPILER}\"
@@ -347,7 +347,7 @@ if (MPI_Fortran_FOUND)
   # Compile these two files with hdf5 flags if HDF5 is found
   set_source_files_properties(
     ${CMAKE_CURRENT_SOURCE_DIR}/utils_hdf5.f90
-    ${CMAKE_CURRENT_SOURCE_DIR}/dumper_hdf5.f90
+    ${CMAKE_CURRENT_SOURCE_DIR}/vmc_dumper_hdf5.f90
     APPEND
     PROPERTY
     COMPILE_FLAGS "-lhdf5_fortran -lhdf5")

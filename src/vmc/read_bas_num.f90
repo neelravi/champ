@@ -218,7 +218,7 @@ contains
             temp = ae(1,irb,ic,iwf)*dexp(-ae(2,irb,ic,iwf)*x(nr(ic)-ir))
             write(45,'(i3,2x,1p4e22.14)') ir,x(nr(ic)-ir),rwf(nr(ic)-ir,irb,ic,iwf), temp
           enddo
-          write(45,*) 'dwf1,dwfn',dwf1,dwfn
+          write(45,*) 'dwf1',dwf1
 
           if(ae(2,irb,ic,iwf).lt.0) call fatal_error ('BASIS_READ_NUM: ak<0')
 
@@ -269,7 +269,7 @@ subroutine readps_gauss
   integer         :: iunit, iostat, counter = 0
   logical         :: exist, skip = .true.
   real(dp) ::  necp_power_tmp
-  
+
   character*80 label
 
 
