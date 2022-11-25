@@ -5,6 +5,7 @@ on:
     branches:
       - 'releases/**'
       - main
+      - bugfix
       - feature/debug-ci
       - optimization
     # Sequence of patterns matched against refs/tags
