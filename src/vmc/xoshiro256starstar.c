@@ -115,3 +115,10 @@ void xoshiro_seed(uint64_t * seed) {
   s[2] = seed[2];
   s[3] = seed[3];
 }
+
+void xoshiro_get_seed(uint64_t * seed) {
+  seed[0] = s[0];
+  seed[1] = s[1];
+  seed[2] = s[2];
+  seed[3] = s[3];
+}
