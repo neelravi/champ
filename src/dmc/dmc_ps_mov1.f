@@ -44,10 +44,10 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
       use vmc_mod, only: nrad
       use vmc_mod, only: delri
-      use const, only: etrial, hb, ipr, nelec
+      use const, only: etrial, hb, ipr, nelec, esigmatrial
       use forcepar, only: istrech, nforce
       use age, only: iage, ioldest, ioldestmx
-      use contrldmc, only: iacc_rej, icross, icut_br, icut_e, idmc, ipq, nfprod, rttau, tau
+      use contrldmc, only: iacc_rej, icross, icut_br, icut_e, idmc, ipq, nfprod, rttau, tau, limit_wt_dmc
       use atom, only: cent, ncent ! Jacopo added ncent
       use estcum, only: ipass
       use config, only: d2o, peo_dmc, psido_dmc, psijo_dmc, vold_dmc, xold_dmc
@@ -117,8 +117,8 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       real(dp) :: dfus2n, dfus2o, distance_node, distance_node_ratio2
       real(dp) :: dmin1, dr2, drifdif, drifdifgfunc
       real(dp) :: drifdifr, drifdifs, drift, dwt
-      real(dp) :: dx, e_cutoff, enew(1)
       real(dp) :: ecuto, ecutn ![Jacopo]
+      real(dp) :: dx, e_cutoff, dwt_cutoff, enew(1)
       real(dp) :: ewtn, ewto, expon, ffi
       real(dp) :: ffn, fration, ginv
       real(dp) :: p, pen, pp, psi2savo
@@ -543,6 +543,12 @@ c Use more accurate formula for the drift and tau secondary in drift
                dwt=0.5d0+1/(1+exp(-4*expon))
             endif
          endif
+
+c Limit the weights for LA
+          if(limit_wt_dmc.gt.0) then
+            dwt_cutoff=exp((etrial-eest+limit_wt_dmc*esigma/rttau)*tau)
+            if(dwt.gt.dwt_cutoff) dwt=dwt_cutoff
+          endif
 
 c If we are using weights rather than accept/reject
           if(iacc_rej.eq.0) dwt=dwt*pp

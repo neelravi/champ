@@ -13,6 +13,7 @@ module const
     integer  :: ipr
     integer  :: nelec
     real(dp) :: pi = 4.0d0*datan(1.0d0)
+    real(dp) :: esigmatrial
 
     private
     public   :: pi, hb, etrial, delta, deltai, fbias, nelec, imetro, ipr
@@ -39,9 +40,12 @@ module constant
 
     implicit none
 
-    real(dp) :: twopi
+    real(dp), parameter :: hb = 0.5
+    real(dp), parameter :: pi = 4.0d0*datan(1.0d0)
+    real(dp), parameter :: twopi = 8.d0*datan(1.0d0)
 
     private
-    public :: twopi
+    public :: twopi, hb, pi
     save
 end module constant
+

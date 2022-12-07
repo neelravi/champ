@@ -49,7 +49,7 @@ subroutine parser
   use atom, 		        only: znuc, cent, pecent, iwctype, nctype, ncent, ncent_tot, nctype_tot, symbol, atomtyp
   use jaspar, 		      only: nspin1, nspin2, is
   use ghostatom, 	      only: newghostype, nghostcent
-  use const, 		        only: pi, hb, etrial, delta, deltai, fbias, nelec, imetro, ipr
+  use const, 		        only: pi, hb, etrial, delta, deltai, fbias, nelec, imetro, ipr, esigmatrial
   use general, 		      only: pooldir, pp_id, bas_id
   use general, 		      only: filenames_bas_num
   use csfs, 		        only: cxdet, ncsf, nstates
@@ -82,7 +82,8 @@ subroutine parser
   use const2, 		      only: deltar, deltat
   use contr2, 		      only: ianalyt_lap, ijas
   use contr2, 		      only: isc
-  use contrldmc, 	      only: iacc_rej, icross, icuspg, icut_br, icut_e, idiv_v, idmc, ipq
+  use contrldmc, 	      only: iacc_rej, icross, icuspg, icut_br, icut_e, idiv_v, idmc, ip, limit_wt_dmc
+q
   use contrldmc, 	      only: itau_eff, nfprod, rttau, tau
 
 ! Note the additions: Ravindra
@@ -385,10 +386,12 @@ subroutine parser
   idiv_v      = fdf_get('idiv_v', 0)
   icut_br     = fdf_get('icut_br', 0)
   icut_e      = fdf_get('icut_e', 0)
+  limit_wt_dmc= fdf_get('limit_wt_dmc', 0)
   dmc_node_cutoff = fdf_get('dmc_node_cutoff', 0)
   dmc_eps_node_cutoff = fdf_get('dmc_enode_cutoff', 1.0d-7)
   tau         = fdf_get('tau', 1.0d0)
   etrial      = fdf_get('etrial', 1.0d0)
+  esigmatrial = fdf_get('esigmatrial', 1.0d0)
   nfprod      = fdf_get('nfprod', 100)
   itausec     = fdf_get('itausec', 1)
   icasula     = fdf_get('icasula', 0)
@@ -1265,6 +1268,15 @@ subroutine parser
     endif
 
     if(ioptwf.gt.0.or.ioptjas+ioptorb+ioptci.ne.0) then
+      if(method.eq.'lin_d' .or. method.eq.'mix_n') then
+        if(lin_jdav.eq.0) then
+                write(ounit,'(a)' ) " Use old Regterg"
+        elseif(lin_jdav.eq.1) then
+                write(ounit,'(a)' ) " Use new Davidson"
+        else
+                write(ounit,'(a)' ) " Use new Jacobi-Davidson"
+        endif
+      endif
       if(method.eq.'linear' .and. mxreduced.ne.norbterm )  &
           call fatal_error('READ_INPUT: mxreduced .ne. norbterm')
     endif
