@@ -16,7 +16,7 @@ module const
     real(dp) :: esigmatrial
 
     private
-    public   :: pi, hb, etrial, delta, deltai, fbias, nelec, imetro, ipr
+    public   :: pi, hb, etrial, delta, deltai, fbias, nelec, imetro, ipr, esigmatrial
     save
 end module const
 

@@ -550,6 +550,12 @@ c Limit the weights for LA
             if(dwt.gt.dwt_cutoff) dwt=dwt_cutoff
           endif
 
+c Limit the weights for LA
+          if(limit_wt_dmc.gt.0) then
+            dwt_cutoff=exp((etrial-eest+limit_wt_dmc*esigma/rttau)*tau)
+            if(dwt.gt.dwt_cutoff) dwt=dwt_cutoff
+          endif
+
 c If we are using weights rather than accept/reject
           if(iacc_rej.eq.0) dwt=dwt*pp
 
