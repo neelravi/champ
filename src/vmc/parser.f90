@@ -259,7 +259,7 @@ subroutine parser
 
 ! local counter variables
   integer                    :: i,j,k, iostat
-  integer                    :: ic, iwft, ib
+  integer                    :: ic, iwft
   type(atom_t)               :: atoms
   character(len=2), allocatable   :: unique(:)
 
@@ -333,7 +333,6 @@ subroutine parser
   alfa_dfssd  = fdf_get('alfa_dfssd', 1.d0/2.718281828459)
   errbar_fssd = fdf_get('errbar_fssd', 0.01)
   iset        = fdf_get('iset', 0)
-  dmc_ivd     = fdf_get('dmc_ivd', 0) !only for dmc
 
 ! %module gradients
   delgrdxyz   = fdf_get('delgrdxyz', 0.001d0)
@@ -393,6 +392,7 @@ subroutine parser
   nfprod      = fdf_get('nfprod', 100)
   itausec     = fdf_get('itausec', 1)
   icasula     = fdf_get('icasula', 0)
+  dmc_ivd     = fdf_get('dmc_ivd', 0) !only for dmc
 
 ! %module dmc / blocking_dmc (complete)
   dmc_nstep     = fdf_get('dmc_nstep', 1)
@@ -751,7 +751,7 @@ subroutine parser
 
     if (dmc_node_cutoff.gt.0) write(ounit,real_format) " enode cutoff = ", dmc_eps_node_cutoff
 
-    if (abs(idmc).ne.2) call fatal_error('INPUT: only idmc=2 supported')
+    if (idmc.ne.2) call fatal_error('INPUT: only idmc=2 supported')
 
     if (nloc.eq.0) call fatal_error('INPUT: no all-electron DMC calculations supported')
   else
@@ -1098,13 +1098,9 @@ subroutine parser
       if (.not. allocated(zex)) allocate (zex(nbasis, 3))
     else
       if (.not. allocated(zex)) allocate (zex(nbasis, nwftype))
-   endif
-!   write (ounit, *) 'nbasis, nwftype', nbasis, nwftype
+    endif
     zex = 1   ! debug check condition about numr == 0
- endif
- !do iwft=1,nwftype
- !   write(ounit,*) 'zex(iwft)',  (zex(ib,iwft), ib=1,nbasis)
- !enddo
+  endif
   iexponents = iexponents + 1
 
 
@@ -1660,16 +1656,27 @@ subroutine parser
   subroutine fdf_read_molecule_block(bfdf)
     implicit none
 
-    type(block_fdf)            :: bfdf
-    type(parsed_line), pointer :: pline
-
+    type(block_fdf)                 :: bfdf
+    type(parsed_line), pointer      :: pline
+    double precision, allocatable   :: nval(:)
+    integer                         :: count
     ! %block molecule
     ! 4
-    ! some comment
+    ! some comment (symbol, x,y,z)
     ! C   -3.466419  0.298187  0
     ! C    3.466419 -0.298187  0
     ! H   -3.706633  2.326423  0
     ! H    3.706633 -2.326423  0
+    ! %endblock
+
+    ! Example of znuc assignment in the block (last column)
+    ! %block molecule
+    ! 4
+    ! some comment (symbol, x,y,z, znuc)
+    ! C1   -3.466419  0.298187  0   4.0
+    ! C2    3.466419 -0.298187  0   4.0
+    ! H1   -3.706633  2.326423  0   1.0
+    ! H2    3.706633 -2.326423  0   1.0
     ! %endblock
 
     write(ounit,*) ' Molecular Coordinates from molecule block '
@@ -1686,7 +1693,9 @@ subroutine parser
       if (.not. allocated(symbol)) allocate(symbol(ncent))
       if (.not. allocated(iwctype)) allocate(iwctype(ncent))
       if (.not. allocated(unique)) allocate(unique(ncent))
+      if (.not. allocated(nval)) allocate(nval(ncent))
 
+      count = pline%ntokens
       ! get the coordinates: 4 tokens per line; first char (n) and three (r)reals or (i)ints.
       if ((pline%ntokens==4).and.((pline%id(1).eq."n").and.((any(pline%id(2:4).eq."r")) .or. (any(pline%id(2:4).eq.("i"))) ))) then
         symbol(j) = fdf_bnames(pline, 1)
@@ -1694,8 +1703,14 @@ subroutine parser
           cent(i,j) = fdf_bvalues(pline, i)
         enddo
         j = j + 1
-      elseif (pline%ntokens .ne. 1 ) then ! remaining line is a comment line
-        write(ounit,*) " Comment from the file ::  ", trim(pline%line)
+      ! get the coordinates: 5 tokens per line; first char (n) and three (r)reals or (i)ints for coords and 4th for nvalence/znuc
+      elseif ((pline%ntokens==5).and.((pline%id(1).eq."n").and.((any(pline%id(2:4).eq."r")) .or. (any(pline%id(2:4).eq.("i"))) ))) then
+        symbol(j) = fdf_bnames(pline, 1)
+        do i= 1, 3
+          cent(i,j) = fdf_bvalues(pline, i)
+        enddo
+        nval(j) = fdf_bvalues(pline, 4)
+        j = j + 1
       endif
     enddo
 
@@ -1721,7 +1736,10 @@ subroutine parser
     ! get the correspondence for each atom according to the rule defined for atomtypes
     do j = 1, ncent
         do k = 1, nctype
-            if (symbol(j) == unique(k))   iwctype(j) = k
+            if (symbol(j) == unique(k))  then
+              iwctype(j) = k
+              if (count .gt. 4) znuc(k) = nval(j)
+          endif
         enddo
     enddo
 
@@ -1731,12 +1749,15 @@ subroutine parser
     enddo
     if (allocated(unique)) deallocate(unique)
 
-    ! Get the znuc for each unique atom
-    do j = 1, nctype
-        atoms = element(atomtyp(j))
-        znuc(j) = atoms%nvalence
-    enddo
+    if (count == 4) then
+      ! Get the znuc for each unique atom
+      do j = 1, nctype
+          atoms = element(atomtyp(j))
+          znuc(j) = atoms%nvalence
+      enddo
+    endif
 
+    ncent_tot = ncent + nghostcent
     nctype_tot = nctype + newghostype
 
     write(ounit,*) '-----------------------------------------------------------------------'

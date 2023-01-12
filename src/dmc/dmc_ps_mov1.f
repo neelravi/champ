@@ -68,9 +68,7 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       use inputflags, only: node_cutoff, eps_node_cutoff, icircular, idrifdifgfunc
       use precision_kinds, only: dp
       use contrl_file,    only: ounit
-      use da_energy_now, only: da_energy, da_psi !intro by Jacopo for calculation of forces
-      use force_fin, only: da_energy_ave !intro by Jacopo for calculation of forces
-      use da_energy_sumcum, only: da_energy_sum !intro by Jacopo to check when da_E is calculated
+      use da_energy_now, only: da_energy !intro by Jacopo for calculation of forces
 
       use distances_mod,  only: distances
       use strech_mod,     only: strech
@@ -676,17 +674,13 @@ c     HERE I SHOULD START CALCULATE FORCES [Jacopo]
                   
                   if (dmc_ivd.gt.0) then  
                      do ic=1,ncent
-                        do k=1,3
-                           
+                        do k=1,3                           
                            esnake(k,ic,iw)=esnake(k,ic,iw)+deriv_energy_new(k,ic)
      &                          +deriv_eold(k,ic,iw)-ehist(k,ic,iw,iwmod)
-!                          write(*,*) 'esnake', esnake(k,ic,iw)
-!                           write(*,*) 'deriv_eold', deriv_eold(k,ic,iw)
+
                            ehist(k,ic,iw,iwmod)=deriv_eold(k,ic,iw)+deriv_energy_new(k,ic)
-!                           write(*,*) 'ehist', ehist(k,ic,iw,iwmod)
+
                            da_branch(k,ic)=-half*tau*esnake(k,ic,iw)
-!                           write(*,*) 'branch/snake', da_branch(k,ic)/esnake(k,ic,iw)
-!     da_branch is the derivative of branching term wrt atomic coordinates;
                         enddo
                      enddo
                   endif
