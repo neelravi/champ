@@ -58,7 +58,7 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       use force_dmc, only: itausec, nwprod
       use derivest, only: derivsum
       use step, only: rprob
-      use branch, only: eest, eigv, eold, ff, fprod, nwalk, pwt, wdsumo, wgdsumo, wt
+      use branch, only: eest, eigv, eold, ff, fprod, nwalk, pwt, wdsumo, wgdsumo, wt, esigma
       use branch, only: wthist
       use casula, only: i_vpsp, icasula
       use jacobsave, only: ajacob, ajacold
@@ -101,7 +101,9 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       use rannyu_mod,     only: rannyu
       use gauss_mod,      only: gauss
       use vd_mod,         only: dmc_ivd, da_branch, deriv_eold, esnake, ehist ![Jacopo]
-      
+      use pathak_mod,     only: ipathak, eps_pathak, pold, pnew, pathak ![Jacopo]
+      use force_pth,      only: PTH ![Jacopo]
+
       implicit none
 
       integer :: i, iaccept, iel
@@ -109,7 +111,7 @@ c:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       integer :: imove, ipmod, ipmod2, iw
       integer :: iwmod, j, jel, k
       integer :: ncall, ncount_casula, nmove_casula
-      integer :: ic ! added by Jacopo
+      integer :: ic, iph ! added by Jacopo
       integer, dimension(nelec) :: itryo
       integer, dimension(nelec) :: itryn
       integer, dimension(nelec) :: iacc_elec
@@ -674,6 +676,12 @@ c         if(idrifdifgfunc.eq.0)wtnow=wtnow/rnorm_nodes**2
 c     HERE I SHOULD START CALCULATE FORCES [Jacopo]
 !write(ounit,'(''Jacopo`s attempt at calculating forces'')')
             if(iforce_analy.eq.1) then
+               if (ipathak.gt.0) then
+                  call nodes_distance(vold_dmc(1,1,iw,ifr),distance_node,1)
+                  do iph=1,PTH
+                     call pathak(distance_node,pnew(iph),eps_pathak(iph))
+                  enddo
+               endif
                if (dmc_ivd.gt.0) then  
                   if(ecutn.eq.e_cutoff) deriv_energy_new=zero
                   if(ecuto.eq.e_cutoff) then
@@ -683,24 +691,42 @@ c     HERE I SHOULD START CALCULATE FORCES [Jacopo]
                         enddo
                      enddo
                   endif
-                  
-                  if (dmc_ivd.gt.0) then  
+                 
+                   do iph=1,PTH
+                 if (ipathak.gt.0) then 
                      do ic=1,ncent
                         do k=1,3                           
-                           esnake(k,ic,iw)=esnake(k,ic,iw)+deriv_energy_new(k,ic)
-     &                          +deriv_eold(k,ic,iw)-ehist(k,ic,iw,iwmod)
+                           esnake(k,ic,iw,iph)=esnake(k,ic,iw,iph)+deriv_energy_new(k,ic)*pnew(iph)
+     &+deriv_eold(k,ic,iw)*pold(iw,iph)-ehist(k,ic,iw,iwmod,iph)
 
-                           ehist(k,ic,iw,iwmod)=deriv_eold(k,ic,iw)+deriv_energy_new(k,ic)
+                           ehist(k,ic,iw,iwmod,iph)=deriv_eold(k,ic,iw)*pold(iw,iph)+deriv_energy_new(k,ic)*pnew(iph)
 
-                           da_branch(k,ic)=-half*tau*esnake(k,ic,iw)
+                           da_branch(k,ic,iph)=-half*tau*esnake(k,ic,iw,iph)
+                        enddo
+                     enddo                   
+                 else                        
+                      do ic=1,ncent
+                        do k=1,3                           
+                           esnake(k,ic,iw,iph)=esnake(k,ic,iw,iph)+deriv_energy_new(k,ic)
+     &+deriv_eold(k,ic,iw)-ehist(k,ic,iw,iwmod,iph)
+
+                           ehist(k,ic,iw,iwmod,iph)=deriv_eold(k,ic,iw)+deriv_energy_new(k,ic)
+
+                           da_branch(k,ic,iph)=-half*tau*esnake(k,ic,iw,iph)
                         enddo
                      enddo
-                  endif
+                 endif
+                   enddo
                   
                   do ic=1,ncent
                      do k=1,3
                         deriv_eold(k,ic,iw)=deriv_energy_new(k,ic)
                      enddo
+                  enddo
+               endif
+               if (ipathak.gt.0) then
+                  do iph=1,PTH
+                     pold(iw,iph)=pnew(iph)
                   enddo
                endif
             endif

@@ -82,8 +82,7 @@ subroutine parser
   use const2, 		      only: deltar, deltat
   use contr2, 		      only: ianalyt_lap, ijas
   use contr2, 		      only: isc
-  use contrldmc, 	      only: iacc_rej, icross, icuspg, icut_br, icut_e, idiv_v, idmc, ip, limit_wt_dmc
-q
+  use contrldmc, 	      only: iacc_rej, icross, icuspg, icut_br, icut_e, idiv_v, idmc, ipq, limit_wt_dmc
   use contrldmc, 	      only: itau_eff, nfprod, rttau, tau
 
 ! Note the additions: Ravindra
@@ -193,7 +192,9 @@ q
   use rannyu_mod,       only: setrn
   use read_bas_num_mod, only: readps_gauss
   use multidet,         only: kref_fixed
-
+  use pathak_mod,       only: ipathak, eps_max, deps ![Jacopo]
+  use pathak_mod,       only: init_pathak ![Jacopo]
+  
   use precision_kinds,  only: dp
 ! Note the following modules are new additions
 
@@ -396,6 +397,10 @@ q
   itausec     = fdf_get('itausec', 1)
   icasula     = fdf_get('icasula', 0)
   dmc_ivd     = fdf_get('dmc_ivd', 0) !only for dmc
+  ipathak     = fdf_get('ipathak', 0) ! [Jacopo]
+  call init_pathak()
+  eps_max     = fdf_get('eps_max', 0.d0) ! [Jacopo]
+  deps        = fdf_get('deps', 0.d0) ! [Jacopo]
 
 ! %module dmc / blocking_dmc (complete)
   dmc_nstep     = fdf_get('dmc_nstep', 1)

@@ -16,7 +16,9 @@ c Written by Cyrus Umrigar
       use velratio, only: fratio, xdrifted
       use vd_mod, only: esnake, ehist, deriv_eold, dmc_ivd ![Jacopo]
       use atom, only: ncent     ![Jacopo]
-      use force_analy, only: iforce_analy  ![Jacopo]
+      use force_analy, only: iforce_analy ![Jacopo]
+      use force_pth, only: PTH  ![Jacopo]
+      use pathak_mod, only: pold  ![Jacopo]
       use precision_kinds, only: dp
 
       use mmpol_dmc,      only: mmpol_splitj
@@ -29,7 +31,7 @@ c Written by Cyrus Umrigar
 
       implicit none
 
-      integer :: i, ifr, ip, ipair, iunder, ic
+      integer :: i, ifr, ip, ipair, iunder, ic, iph
       integer :: iw, iw2, j, k
       integer :: nwalk2
       integer, dimension(MWALK) :: iwundr
@@ -81,7 +83,7 @@ c Written by Cyrus Umrigar
            else
             nwalk2=nwalk2+1
             iw2=nwalk2
-            if(nwalk2.gt.MWALK) call fatal_error('SPLITJ: MWALK exceeded')
+           if(nwalk2.gt.MWALK) call fatal_error('SPLITJ: MWALK exceeded')
           endif
           wt(iw)=wt(iw)*half
           wt(iw2)=wt(iw)
@@ -94,14 +96,25 @@ c         call t_vpsp_splitj(iw,iw2)
           call mmpol_splitj(iw,iw2)
           if(iforce_analy.eq.1) then
              if(dmc_ivd.gt.0) then
+                do iph=1,PTH
+                pold(iw2,iph)=pold(iw,iph)
                 do ic=1,ncent
                    do k=1,3
-                      esnake(k,ic,iw2)=esnake(k,ic,iw)
-                      deriv_eold(k,ic,iw2)=deriv_eold(k,ic,iw)
+                      esnake(k,ic,iw2,iph)=esnake(k,ic,iw,iph)
                       do ip=0,nwprod-1
-                         ehist(k,ic,iw2,ip)=ehist(k,ic,iw,ip)
+                         ehist(k,ic,iw2,ip,iph)=ehist(k,ic,iw,ip,iph)
                       enddo
                    enddo
+                enddo
+                enddo
+                do ic=1,ncent
+                 do k=1,3
+                    deriv_eold(k,ic,iw2)=deriv_eold(k,ic,iw)
+                 enddo
+              enddo
+             else                
+                do iph=1,PTH
+                   pold(iw2,iph)=pold(iw,iph)
                 enddo
              endif
           endif
@@ -142,14 +155,24 @@ c       call t_vpsp_splitj(iw,iw2)
         call mmpol_splitj(iw,iw2)
         if(iforce_analy.eq.1) then
            if(dmc_ivd.gt.0) then
+              do iph=1,PTH
               do ic=1,ncent
                  do k=1,3
-                    esnake(k,ic,iw2)=esnake(k,ic,iw)
-                    deriv_eold(k,ic,iw2)=deriv_eold(k,ic,iw)
+                    esnake(k,ic,iw2,iph)=esnake(k,ic,iw,iph)
                     do ip=0,nwprod-1
-                       ehist(k,ic,iw2,ip)=ehist(k,ic,iw,ip)
+                       ehist(k,ic,iw2,ip,iph)=ehist(k,ic,iw,ip,iph)
                     enddo
                  enddo
+              enddo
+              enddo
+              do ic=1,ncent
+                   do k=1,3
+                      deriv_eold(k,ic,iw2)=deriv_eold(k,ic,iw)
+                   enddo
+                enddo
+           else
+              do iph=1,PTH
+                 pold(iw2,iph)=pold(iw,iph)
               enddo
            endif
         endif

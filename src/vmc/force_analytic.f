@@ -233,30 +233,37 @@ c-----------------------------------------------------------------------
       use atom, only: ncent
       use da_energy_sumcum, only: da_energy_cm2, da_energy_cum, da_energy_sum, da_psi_cum, da_psi_sum
       use force_analy, only: iforce_analy
-      use vd_mod, only: dmc_ivd, da_branch_sum, da_branch_cum
+      use vd_mod, only: dmc_ivd, da_branch_sum, da_branch_cum     
+      use force_pth, only: PTH
+
 
       implicit none
 
-      integer :: ic, iflag, k
+      integer :: ic, iflag, k, iph
 
       if(iforce_analy.eq.0) return
 
-      do ic=1,ncent
-        do k=1,3
-          da_psi_sum(k,ic)=0.0d0
-          da_energy_sum(k,ic)=0.0d0
-          if (dmc_ivd.gt.0) da_branch_sum(k,ic)=0.d0
+      do iph=1,PTH
+        do ic=1,ncent
+           do k=1,3
+              da_psi_sum(k,ic,iph)=0.0d0
+              da_energy_sum(k,ic,iph)=0.0d0
+              if (dmc_ivd.gt.0) da_branch_sum(k,ic,iph)=0.d0
+           enddo
         enddo
       enddo
 
       if(iflag.gt.0) return
 
-      do ic=1,ncent
-        do k=1,3
-          da_psi_cum(k,ic)=0.0d0
-          da_energy_cum(k,ic)=0.0d0
-          da_energy_cm2(k,ic)=0.0d0
-          if (dmc_ivd.gt.0) da_branch_cum(k,ic)=0.d0
+      
+      do iph=1,PTH
+        do ic=1,ncent
+          do k=1,3
+            da_psi_cum(k,ic,iph)=0.0d0
+            da_energy_cum(k,ic,iph)=0.0d0
+            da_energy_cm2(k,ic,iph)=0.0d0
+            if (dmc_ivd.gt.0) da_branch_cum(k,ic,iph)=0.d0
+          enddo
         enddo
       enddo
 
@@ -272,28 +279,49 @@ c-----------------------------------------------------------------------
       use force_analy, only: iforce_analy
       use vd_mod, only: dmc_ivd, da_branch_sum, da_branch
       use precision_kinds, only: dp
+      use pathak_mod, only: ipathak, pnew
+      use force_pth, only: PTH
 
       implicit none
 
-      integer :: ic, k
+      integer :: ic, k, iph
       real(dp) :: eloc, eloco, p, q
+      real(dp), dimension(3, ncent, PTH) :: da_energy_here !(3,ncent,PTH)
+
 
       if(iforce_analy.eq.0) return
 
-      do ic=1,ncent
-         do k=1,3
-            if (dmc_ivd.gt.0) then  
-               da_energy(k,ic)=da_energy(k,ic)+2*eloc*da_psi(k,ic)+eloc*da_branch(k,ic)
+      do iph=1,PTH
+        do ic=1,ncent
+            do k=1,3
+              if (dmc_ivd.gt.0) then  
+                 if (ipathak.gt.0) then
+                 da_energy_here(k,ic,iph)=da_energy(k,ic)*pnew(iph)+2*eloc*da_psi(k,ic)*pnew(iph)+eloc*da_branch(k,ic,iph)
                
-               da_branch_sum(k,ic) = da_branch_sum(k,ic) + p*da_branch(k,ic)
-               da_psi_sum(k,ic)= da_psi_sum(k,ic)+p*da_psi(k,ic)
-               da_energy_sum(k,ic)= da_energy_sum(k,ic)+p*da_energy(k,ic)
-            else
-               da_energy(k,ic)=da_energy(k,ic)+2*eloc*da_psi(k,ic)
+                 da_branch_sum(k,ic,iph) = da_branch_sum(k,ic,iph) + p*da_branch(k,ic,iph)
+                 da_psi_sum(k,ic,iph)=da_psi_sum(k,ic,iph)+p*da_psi(k,ic)*pnew(iph)
+                 da_energy_sum(k,ic,iph)= da_energy_sum(k,ic,iph)+p*da_energy_here(k,ic,iph)
+                 else
+                 da_energy_here(k,ic,iph)=da_energy(k,ic)+2*eloc*da_psi(k,ic)+eloc*da_branch(k,ic,iph)
                
-               da_psi_sum(k,ic)= da_psi_sum(k,ic)+p*da_psi(k,ic)
-               da_energy_sum(k,ic)= da_energy_sum(k,ic)+p*da_energy(k,ic)
-            endif
+                 da_branch_sum(k,ic,iph) = da_branch_sum(k,ic,iph) + p*da_branch(k,ic,iph)
+                 da_psi_sum(k,ic,iph)= da_psi_sum(k,ic,iph)+p*da_psi(k,ic)
+                 da_energy_sum(k,ic,iph)= da_energy_sum(k,ic,iph)+p*da_energy_here(k,ic,iph)
+                 endif
+              else
+                 if (ipathak.gt.0) then
+                 da_energy_here(k,ic,iph)=da_energy(k,ic)*pnew(iph)+2*eloc*da_psi(k,ic)*pnew(iph)
+               
+                 da_psi_sum(k,ic,iph)=da_psi_sum(k,ic,iph)+p*da_psi(k,ic)*pnew(iph)
+                 da_energy_sum(k,ic,iph)=da_energy_sum(k,ic,iph)+p*da_energy_here(k,ic,iph)
+                 else
+                 da_energy_here(k,ic,iph)=da_energy(k,ic)+2*eloc*da_psi(k,ic)
+               
+                 da_psi_sum(k,ic,iph)= da_psi_sum(k,ic,iph)+p*da_psi(k,ic)
+                 da_energy_sum(k,ic,iph)=da_energy_sum(k,ic,iph)+p*da_energy_here(k,ic,iph)
+         endif
+              endif
+           enddo
         enddo
       enddo
 
@@ -306,32 +334,39 @@ c-----------------------------------------------------------------------
       use da_energy_sumcum, only: da_energy_cm2, da_energy_cum, da_energy_sum, da_psi_cum, da_psi_sum
       use force_analy, only: iforce_analy
       use vd_mod, only: dmc_ivd, da_branch_sum, da_branch_cum
-      use precision_kinds, only: dp
+      use precision_kinds, only: dp      
+      use pathak_mod, only: ipathak, pnew
+      use force_pth, only: PTH
+
 
       implicit none
 
-      integer :: ic, k
-      real(dp) :: da_energy_now, eave, wcum, wsum
+      integer :: ic, k, iph
+      real(dp) :: eave, wcum, wsum
+      real(dp), dimension(3, ncent, PTH) :: da_energy_now !(3,ncent,PTH)
+
 
       if(iforce_analy.eq.0) return
 
+      do iph=1,PTH
       do ic=1,ncent
          do k=1,3
             if (dmc_ivd.gt.0) then 
-               da_energy_now=(da_energy_sum(k,ic)-2*eave*da_psi_sum(k,ic)-eave*da_branch_sum(k,ic))/wsum
-               da_energy_cm2(k,ic)=da_energy_cm2(k,ic)+wsum*da_energy_now**2
+               da_energy_now(k,ic,iph)=(da_energy_sum(k,ic,iph)-2*eave*da_psi_sum(k,ic,iph)-eave*da_branch_sum(k,ic,iph))/wsum
+               da_energy_cm2(k,ic,iph)=da_energy_cm2(k,ic,iph)+wsum*da_energy_now(k,ic,iph)**2
                
-               da_branch_cum(k,ic)=da_branch_cum(k,ic)+da_branch_sum(k,ic)
-               da_psi_cum(k,ic)=da_psi_cum(k,ic)+da_psi_sum(k,ic)
-               da_energy_cum(k,ic)=da_energy_cum(k,ic)+da_energy_sum(k,ic)
+               da_branch_cum(k,ic,iph)=da_branch_cum(k,ic,iph)+da_branch_sum(k,ic,iph)
+               da_psi_cum(k,ic,iph)=da_psi_cum(k,ic,iph)+da_psi_sum(k,ic,iph)
+               da_energy_cum(k,ic,iph)=da_energy_cum(k,ic,iph)+da_energy_sum(k,ic,iph)
             else
-               da_energy_now=(da_energy_sum(k,ic)-2*eave*da_psi_sum(k,ic))/wsum
-               da_energy_cm2(k,ic)=da_energy_cm2(k,ic)+wsum*da_energy_now**2
-               
-               da_psi_cum(k,ic)=da_psi_cum(k,ic)+da_psi_sum(k,ic)
-               da_energy_cum(k,ic)=da_energy_cum(k,ic)+da_energy_sum(k,ic)
+               da_energy_now(k,ic,iph)=(da_energy_sum(k,ic,iph)-2*eave*da_psi_sum(k,ic,iph))/wsum
+               da_energy_cm2(k,ic,iph)=da_energy_cm2(k,ic,iph)+wsum*da_energy_now(k,ic,iph)**2
+              
+               da_psi_cum(k,ic,iph)=da_psi_cum(k,ic,iph)+da_psi_sum(k,ic,iph)
+               da_energy_cum(k,ic,iph)=da_energy_cum(k,ic,iph)+da_energy_sum(k,ic,iph)
             endif
         enddo
+      enddo
       enddo
 
       return
@@ -346,11 +381,13 @@ c-----------------------------------------------------------------------
       use vd_mod, only: dmc_ivd, da_branch_cum
       use precision_kinds, only: dp
       use contrl_file,    only: ounit
+      use force_pth, only: PTH
+      use pathak_mod, only: ipathak
 
       implicit none
 
       real(dp) :: iblk_eff
-      integer :: iblk, ic, k
+      integer :: iblk, ic, k, iph
       real(dp) :: eave, err, rtpass, wcum, x
       real(dp) :: x2
       real(dp), dimension(3) :: da_energy_err
@@ -362,19 +399,26 @@ c-----------------------------------------------------------------------
       rtpass=dsqrt(wcum)
 
       write(ounit, *) 'iblk_eff in force_analy_fin is ', iblk_eff
-      write(ounit, *) 'da_energy_cm2 ', (da_energy_cm2(k,1), k=1,3)
       open(80,file='force_analytic',form='formatted',status='unknown')
+      do iph=1,PTH
       do ic=1,ncent
          do k=1,3
              if (dmc_ivd.gt.0) then 
-                da_energy_ave(k,ic)=(da_energy_cum(k,ic)-2*eave*da_psi_cum(k,ic)-eave*da_branch_cum(k,ic))/wcum
-                da_energy_err(k)=err(da_energy_ave(k,ic),da_energy_cm2(k,ic))
+                da_energy_ave(k,ic,iph)=(da_energy_cum(k,ic,iph)-2*eave*da_psi_cum(k,ic,iph)-eave*da_branch_cum(k,ic,iph))/wcum
+                da_energy_err(k)=err(da_energy_ave(k,ic,iph),da_energy_cm2(k,ic,iph))
              else
-                da_energy_ave(k,ic)=(da_energy_cum(k,ic)-2*eave*da_psi_cum(k,ic))/wcum
-                da_energy_err(k)=err(da_energy_ave(k,ic),da_energy_cm2(k,ic))
+                da_energy_ave(k,ic,iph)=(da_energy_cum(k,ic,iph)-2*eave*da_psi_cum(k,ic,iph))/wcum
+                da_energy_err(k)=err(da_energy_ave(k,ic,iph),da_energy_cm2(k,ic,iph))
              endif
+            !write(*,*) 'da_energy_ave', da_energy_ave(k,ic)
         enddo
-        write(80,'(i5,1p6e14.5)') ic,(da_energy_ave(k,ic),k=1,3),(da_energy_err(k),k=1,3)
+        
+        if (ipathak.gt.0) then        
+                write(80,'(i5,i5,1p6e14.5)')iph,ic,(da_energy_ave(k,ic,iph),k=1,3),(da_energy_err(k),k=1,3)
+        else    
+                write(80,'(i5,1p6e14.5)') ic,(da_energy_ave(k,ic,iph),k=1,3),(da_energy_err(k),k=1,3)
+        endif
+      enddo
       enddo
 
        ! TODO JF this is included in the treatment of internal
@@ -390,14 +434,15 @@ c-----------------------------------------------------------------------
       use da_energy_sumcum, only: da_energy_cm2, da_energy_cum, da_psi_cum
       use force_analy, only: iforce_analy
       use contrl_file, only: ounit
+      use force_pth, only: PTH
 
       implicit none
 
-      integer :: ic, iu, k
+      integer :: ic, iu, k, iph
 
       if(iforce_analy.eq.0) return
 
-      write(iu) ((da_energy_cum(k,ic),da_psi_cum(k,ic),da_energy_cm2(k,ic),k=1,3),ic=1,ncent)
+      write(iu) (((da_energy_cum(k,ic,iph),da_psi_cum(k,ic,iph),da_energy_cm2(k,ic,iph),k=1,3),ic=1,ncent),iph=1,PTH)
 c      write(ounit,*) "force analy", ((da_energy_cum(k,ic),da_psi_cum(k,ic),da_energy_cm2(k,ic),k=1,3),ic=1,ncent)
 
       return
@@ -408,14 +453,15 @@ c-----------------------------------------------------------------------
       use atom, only: ncent
       use da_energy_sumcum, only: da_energy_cm2, da_energy_cum, da_psi_cum
       use force_analy, only: iforce_analy
+      use force_pth, only: PTH
 
       implicit none
 
-      integer :: ic, iu, k
+      integer :: ic, iu, k, iph
 
       if(iforce_analy.eq.0) return
 
-      read(iu) ((da_energy_cum(k,ic),da_psi_cum(k,ic),da_energy_cm2(k,ic),k=1,3),ic=1,ncent)
+      read(iu) (((da_energy_cum(k,ic,iph),da_psi_cum(k,ic,iph),da_energy_cm2(k,ic,iph),k=1,3),ic=1,ncent),iph=1,PTH)
 
       return
       end

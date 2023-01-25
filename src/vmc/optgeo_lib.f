@@ -46,6 +46,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         use zmatrix, only: czint, izcmat
         use force_analy, only: iforce_analy, iuse_zmat, alfgeo
         use contrl_file,    only: ounit
+        use pathak_mod, only: ipathak
         use fssd
       implicit none
 
@@ -61,7 +62,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
         if(iuse_zmat.eq.1) then
           call coords_init (ncent, cent, izcmat)
           call coords_compute_wilson (cent, izcmat)
-          call coords_transform_gradients (da_energy_ave)
+          call coords_transform_gradients (da_energy_ave(:,:,1))
           call coords_compute_step (alfgeo)
           call coords_transform_step (czint, cent, izcmat)
 
@@ -76,23 +77,23 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
           enddo
 
        else
-          
+        if (ipathak.lt.0) then 
           if (ifssd .eq. 0) then 
 !     STEEPEST DESCENT
              do ic=1,ncent
                 do k=1,3
-                   cent(k,ic)=cent(k,ic)-alfgeo*da_energy_ave(k,ic)
+                   cent(k,ic)=cent(k,ic)-alfgeo*da_energy_ave(k,ic,1)
                 enddo
                 write(ounit,*)'CENT ',(cent(k,ic),k=1,3)
              enddo
              
              write (ounit, *) 'Energy gradient over centers is'
              do ic=1,ncent
-                write(ounit, *)'FORCES ',(-da_energy_ave(k,ic), k=1,3)
+                write(ounit, *)'FORCES ',(-da_energy_ave(k,ic,1), k=1,3)
              enddo
 
              F_m = 0.0
-             call d_modulus(F_m, da_energy_ave)
+             call d_modulus(F_m, da_energy_ave(:,:,1))
              write(ounit, *)'FORCES MODULUS', F_m
 
 !             com = 0
@@ -120,7 +121,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
              
              write (ounit, *) 'Energy gradient over centers is'
              do ic=1,ncent
-                write(ounit, *)'FORCES ',(-da_energy_ave(k,ic), k=1,3)
+                write(ounit, *)'FORCES ',(-da_energy_ave(k,ic,1), k=1,3)
              enddo
              write (ounit, *) 'Non normalized displacement direction is'
              do ic=1,ncent
@@ -139,8 +140,9 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !             enddo
              
           endif
-          
+        endif   
        endif
+
 
        return
       end
@@ -181,7 +183,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       alpha = alfa_dfssd
       do ic=1,ncent             
          do k=1,3               
-            d(k,ic)=(d(k,ic)*alpha-da_energy_ave(k, ic))/(alpha*div+1.d0) 
+            d(k,ic)=(d(k,ic)*alpha-da_energy_ave(k, ic,1))/(alpha*div+1.d0) 
          enddo                  
       enddo                     
       
@@ -214,6 +216,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       use atom, only: ncent
       use force_fin, only: da_energy_ave
       use force_analy, only: iforce_analy
+      use force_pth, only: PTH
       use mpi
 
       implicit none
@@ -222,7 +225,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
       if(iforce_analy.eq.0)return
 
-      call MPI_BCAST(da_energy_ave,3*ncent,MPI_REAL8,0,MPI_COMM_WORLD,i)
+      call MPI_BCAST(da_energy_ave,3*ncent*PTH,MPI_REAL8,0,MPI_COMM_WORLD,i)
 
       return
       end

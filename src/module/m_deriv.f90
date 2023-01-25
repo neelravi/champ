@@ -4,11 +4,11 @@ module da_energy_sumcum
 
     implicit none
 
-    real(dp), dimension(:, :), allocatable :: da_energy_cm2 !(3, MCENT)
-    real(dp), dimension(:, :), allocatable :: da_energy_cum !(3, MCENT)
-    real(dp), dimension(:, :), allocatable :: da_energy_sum !(3, MCENT)
-    real(dp), dimension(:, :), allocatable :: da_psi_cum !(3, MCENT)
-    real(dp), dimension(:, :), allocatable :: da_psi_sum !(3, MCENT)
+    real(dp), dimension(:, :, :), allocatable :: da_energy_cm2 !(3, MCENT, PTH)
+    real(dp), dimension(:, :, :), allocatable :: da_energy_cum !(3, MCENT, PTH)
+    real(dp), dimension(:, :, :), allocatable :: da_energy_sum !(3, MCENT, PTH)
+    real(dp), dimension(:, :, :), allocatable :: da_psi_cum !(3, MCENT, PTH)
+    real(dp), dimension(:, :, :), allocatable :: da_psi_sum !(3, MCENT, PTH)
 
     private
     public :: da_energy_cm2, da_energy_cum, da_energy_sum, da_psi_cum, da_psi_sum
@@ -16,12 +16,13 @@ module da_energy_sumcum
     save
 contains
     subroutine allocate_da_energy_sumcum()
-      use atom, only: ncent_tot
-        if (.not. allocated(da_energy_cm2)) allocate (da_energy_cm2(3, ncent_tot))
-        if (.not. allocated(da_energy_cum)) allocate (da_energy_cum(3, ncent_tot))
-        if (.not. allocated(da_energy_sum)) allocate (da_energy_sum(3, ncent_tot))
-        if (.not. allocated(da_psi_cum)) allocate (da_psi_cum(3, ncent_tot))
-        if (.not. allocated(da_psi_sum)) allocate (da_psi_sum(3, ncent_tot))
+      use atom, only: ncent_tot      
+      use force_pth, only: PTH
+        if (.not. allocated(da_energy_cm2)) allocate (da_energy_cm2(3, ncent_tot, PTH))
+        if (.not. allocated(da_energy_cum)) allocate (da_energy_cum(3, ncent_tot, PTH))
+        if (.not. allocated(da_energy_sum)) allocate (da_energy_sum(3, ncent_tot, PTH))
+        if (.not. allocated(da_psi_cum)) allocate (da_psi_cum(3, ncent_tot, PTH))
+        if (.not. allocated(da_psi_sum)) allocate (da_psi_sum(3, ncent_tot, PTH))
        
         
     end subroutine allocate_da_energy_sumcum

@@ -18,11 +18,13 @@ c Written by Claudia Filippi
       use pcm_reduce_mod,  only: pcm_send, pcm_recv
       use vd_mod, only: ehist, esnake, deriv_eold, dmc_ivd ![Jacopo]
       use force_analy, only: iforce_analy ![Jacopo]
+      use force_pth, only: PTH  ![Jacopo]
+      use pathak_mod, only: pold ![Jacopo]
       use atom, only: ncent ![Jacopo]
 
       implicit none
 
-      integer :: ierr, ifr, ip, irecv, irequest
+      integer :: ierr, ifr, ip, irecv, irequest, iph
       integer :: isend, itag
       integer, dimension(MPI_STATUS_SIZE) :: istatus
 
@@ -72,16 +74,23 @@ c     nwalk=nwalk-1
       if(iforce_analy.eq.1) then
          if(dmc_ivd.gt.0) then
             itag=itag+1
+            call mpi_isend(pold(nwalk,1),PTH,mpi_double_precision,irecv
+     &  ,itag,MPI_COMM_WORLD,irequest,ierr)
+            itag=itag+1
             call mpi_isend(deriv_eold(1,1,nwalk),3*ncent,mpi_double_precision,irecv
      &           ,itag,MPI_COMM_WORLD,irequest,ierr)
             itag=itag+1
-            call mpi_isend(esnake(1,1,nwalk),3*ncent,mpi_double_precision,irecv
+            call mpi_isend(esnake(1,1,nwalk,1),3*ncent*PTH,mpi_double_precision,irecv
      &           ,itag,MPI_COMM_WORLD,irequest,ierr)
             do  ip=0,nwprod-1
                itag=itag+1
-               call mpi_isend(ehist(1,1,nwalk,ip),3*ncent,mpi_double_precision,irecv
+               call mpi_isend(ehist(1,1,nwalk,ip,1),3*ncent*PTH,mpi_double_precision,irecv
      &              ,itag,MPI_COMM_WORLD,irequest,ierr)
             enddo
+         else
+            itag=itag+1
+            call mpi_isend(pold(nwalk,1),PTH,mpi_double_precision,irecv
+     &           ,itag,MPI_COMM_WORLD,irequest,ierr)
          endif
       endif
 
@@ -135,18 +144,25 @@ c     call recv_det(itag,isend)
 c     call recv_jas(itag,isend)
 
       if(iforce_analy.eq.1) then
-         if(dmc_ivd.gt.0) then
+         if(dmc_ivd.gt.0) then            
+            itag=itag+1
+            call mpi_recv(pold(nwalk,1),PTH,mpi_double_precision,isend
+     &  ,itag,MPI_COMM_WORLD,istatus,ierr)
             itag=itag+1
             call mpi_recv(deriv_eold(1,1,nwalk),3*ncent,mpi_double_precision,isend
      &           ,itag,MPI_COMM_WORLD,istatus,ierr)
             itag=itag+1
-            call mpi_recv(esnake(1,1,nwalk),3*ncent,mpi_double_precision,isend
+            call mpi_recv(esnake(1,1,nwalk,1),3*ncent*PTH,mpi_double_precision,isend
      &           ,itag,MPI_COMM_WORLD,istatus,ierr)
             do ip=0,nwprod-1
                itag=itag+1
-               call mpi_recv(ehist(1,1,nwalk,ip),3*ncent,mpi_double_precision,isend
+               call mpi_recv(ehist(1,1,nwalk,ip,1),3*ncent*PTH,mpi_double_precision,isend
      &              ,itag,MPI_COMM_WORLD,istatus,ierr)
             enddo
+          else
+            itag=itag+1
+            call mpi_recv(pold(nwalk,1),PTH,mpi_double_precision,isend
+     &           ,itag,MPI_COMM_WORLD,istatus,ierr)
          endif
       endif
 

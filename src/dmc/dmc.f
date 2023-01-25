@@ -18,10 +18,8 @@ c    C.J. Umrigar, M.P. Nightingale and K.J. Runge, J. Chem. Phys., 99, 2865 (19
       use control_dmc, only: dmc_idump, dmc_irstar, dmc_nblk, dmc_nblkeq
       use control_dmc, only: dmc_nconf, dmc_nstep
       use mpitimer,    only: elapsed_time
-      use contrl_file,    only: ounit
-      use force_fin, only: da_energy_ave !intro by Jacopo to check when da_E is calculated
-      use da_energy_sumcum, only: da_energy_cm2 !intro by Jacopo
-      use atom, only: ncent ! Jacopo added ncent
+      use contrl_file,    only: ounit   
+      use atom, only: ncent     ! Jacopo added ncent
 
       use strech_mod,     only: setup_force
       use dumper_mod,     only: dumper
@@ -38,7 +36,7 @@ c    C.J. Umrigar, M.P. Nightingale and K.J. Runge, J. Chem. Phys., 99, 2865 (19
       use finwrt_mod,     only: finwrt
       implicit none
 
-      integer :: i, j, kc, ic
+      integer :: i, j, k, ic
       real(dp), parameter :: one = 1.d0
       real(dp), parameter :: four = 4.d0
 
@@ -170,14 +168,14 @@ c loops for dmc calculation
         if((i.eq.dmc_nblkeq+1.or.i.eq.2*dmc_nblkeq+1).and.dmc_irstar.ne.1) then
 
           call elapsed_time("DMC : equilibrium CP : ")
-
           call zerest
           call average(0)
           call elapsed_time("DMC : zero out estimators and averages : ")
         endif
         do j=1,dmc_nstep
           ipass=ipass+1
-          if (nloc.gt.0) call rotqua
+c TMP ! ATTENTION
+c         if (nloc.gt.0) call rotqua
           if(iabs(idmc).eq.1) then
 c           call dmc_brock
            elseif(iabs(idmc).eq.2) then

@@ -106,11 +106,9 @@
       write(ounit,'(1x,''attempting restart from unit 10'')')
       rewind 10  ! debug ravindra remove after checking
       read(10) nprock
-      write(*,*) nprock
       if(nprock.ne.nproc) call fatal_error('STARTR: different num procs')
       do id=0,idtask
         read(10) nwalk
-        write(*,*) nwalk
         read(10) (((xold_dmc(ic,i,iw,1),ic=1,3),i=1,nelec),iw=1,nwalk)
         read(10) nfprod,(ff(i),i=0,nfprod),(wt(i),i=1,nwalk),fprod
      &  ,eigv,eest,wdsumo

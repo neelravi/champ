@@ -10,6 +10,16 @@ module force_mod
      public :: MFORCE, MFORCE_WT_PRD, MWF
      save
  end module force_mod
+ 
+ module force_pth
+
+   implicit none
+
+   integer :: PTH
+
+   public :: PTH
+
+ end module force_pth
 
  module forcepar
     !> Arguments: istrech, nforce, alfstr
@@ -169,10 +179,11 @@ end module wfsec
  module force_fin
      !> Arguments: da_energy_ave, da_energy_err
      use precision_kinds, only: dp
+     use force_pth, only: PTH
 
      implicit none
 
-     real(dp), dimension(:, :), allocatable :: da_energy_ave !(3,MCENT)
+     real(dp), dimension(:, :, :), allocatable :: da_energy_ave !(3,MCENT,PTH)
      real(dp), dimension(:), allocatable :: da_energy_err !(3)
 
      private
@@ -182,7 +193,7 @@ end module wfsec
  contains
      subroutine allocate_force_fin()
          use atom, only: ncent_tot
-         if (.not. allocated(da_energy_ave)) allocate (da_energy_ave(3, ncent_tot))
+         if (.not. allocated(da_energy_ave)) allocate (da_energy_ave(3, ncent_tot,PTH))
          if (.not. allocated(da_energy_err)) allocate (da_energy_err(3))
      end subroutine allocate_force_fin
 

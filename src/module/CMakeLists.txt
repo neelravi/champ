@@ -27,6 +27,7 @@ if (MPI_Fortran_FOUND)
     m_sr.f90
     m_dmc.f90
     m_vmc.f90
+    m_pathak.f90
     m_vd.f90
     m_grid.f90
     m_pcm.f90

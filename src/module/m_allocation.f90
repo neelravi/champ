@@ -106,7 +106,7 @@ contains
     use jacobsave, only: allocate_jacobsave
     use velratio, only: allocate_velratio
     use vd_mod, only: allocate_da_branch
-
+    use pathak_mod, only: allocate_pathak
     implicit none
   
     !> Allocate dmc-related arrays:
@@ -124,7 +124,8 @@ contains
     call allocate_jacobsave()
     call allocate_velratio()
     call allocate_da_branch()
-  
+    call allocate_pathak()
+
   end subroutine allocate_dmc
   
   subroutine deallocate_dmc()
@@ -141,6 +142,7 @@ contains
     use jacobsave, only: deallocate_jacobsave
     use velratio, only: deallocate_velratio
     use vd_mod, only: deallocate_da_branch
+    use pathak_mod, only: deallocate_pathak
 
     !> Deallocate dmc-related arrays:
   
@@ -157,6 +159,7 @@ contains
     call deallocate_jacobsave()
     call deallocate_velratio()
     call deallocate_da_branch()
-  
+    call deallocate_pathak()  
+
   end subroutine deallocate_dmc
 end module allocation_mod
