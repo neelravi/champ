@@ -38,7 +38,7 @@ c Written by Claudia Filippi, modified by Cyrus Umrigar and A. Scemama
       real(dp), dimension(ncent_tot,MPS_QUAD,*) :: t_vpsp
 
       ! local variables
-      integer :: i, i1, i2, iab
+      integer :: i, i1, i2, iab, auxy
       integer :: ic, ict, iel, index
       integer :: iorb, iparm, iq, iqq
       integer :: jc, k, l, nxquad
@@ -63,22 +63,38 @@ c Written by Claudia Filippi, modified by Cyrus Umrigar and A. Scemama
       real(dp), allocatable :: da_orbn(:,:,:,:)
       real(dp), allocatable :: vjn(:,:)
 
-      ! allocating local arrays
+! allocating local arrays
+      if(allocated(iequad)) deallocate(iequad)
       allocate(iequad(nquad*nelec*2))
+      if(allocated(icquad)) deallocate(icquad)
       allocate(icquad(nquad*nelec*2))
+      if(allocated(iqquad)) deallocate(iqquad)
       allocate(iqquad(nquad*nelec*2))
+      if(allocated(costh)) deallocate(costh)
       allocate(costh(nquad*nelec*2))
+      if(allocated(term_radial)) deallocate(term_radial)
       allocate(term_radial(nquad*nelec*2))
+      if(allocated(xquad)) deallocate(xquad)
       allocate(xquad(3,nquad*nelec*2))
+      if(allocated(det_ratio)) deallocate(det_ratio)
       allocate(det_ratio(nquad*nelec*2))
+      if(allocated(psij_ratio)) deallocate(psij_ratio)
       allocate(psij_ratio(nquad*nelec*2))
+      if(allocated(dpsij_ratio)) deallocate(dpsij_ratio)
       allocate(dpsij_ratio(nparmj,nquad*nelec*2))
+      if(allocated(da_psij_ratio)) deallocate(da_psij_ratio)
       allocate(da_psij_ratio(3,ncent_tot,nquad*nelec*2))
+      if(allocated(r_en_quad)) deallocate(r_en_quad)
       allocate(r_en_quad(nquad*nelec*2,ncent_tot))
+      if(allocated(rvec_en_quad)) deallocate(rvec_en_quad)
       allocate(rvec_en_quad(3,nquad*nelec*2,ncent_tot))
+      if(allocated(orbn)) deallocate(orbn)
       allocate(orbn(norb_tot,nquad*nelec*2))
+      if(allocated(dorbn)) deallocate(dorbn)
       allocate(dorbn(norb_tot,nquad*nelec*2,3))
+      if(allocated(da_orbn)) deallocate(da_orbn)
       allocate(da_orbn(3,ncent_tot,norb_tot,nquad*nelec*2))
+      if(allocated(vjn)) deallocate(vjn)
       allocate(vjn(3,nquad*nelec*2))
 
 
@@ -347,6 +363,11 @@ c Written by Claudia Filippi, modified by Cyrus Umrigar and A. Scemama
       use qua,     only: nquad
       use precision_kinds, only: dp
 
+#ifdef QMCKL_FOUND
+      use qmckl_data
+#endif
+
+      
       implicit none
 
       integer :: ic, iel, ider, ier, ii, iq
@@ -362,96 +383,188 @@ c Written by Claudia Filippi, modified by Cyrus Umrigar and A. Scemama
       real(dp), dimension(3) :: dtmp
       real(dp) :: ddtmp
 
+
+#ifdef QMCKL_FOUND
+      real(dp), allocatable :: mo_qmckl(:,:)
+      real(dp), allocatable :: mo_vgl_qmckl(:,:,:)
+      real(dp), allocatable :: ao_vgl_qmckl(:,:,:)
+      integer :: rc
+      integer*8 :: n8
+#endif  
+
+      
       nadorb_sav=nadorb
 
       if(ioptorb.eq.0.or.(method(1:3).ne.'lin'.and.i_sr_rescale.eq.0)) nadorb=0
 
       if(iperiodic.eq.0) then
 
-c get the value from the 3d-interpolated orbitals
-        ier=0
-        if(i3dsplorb.ge.1) then
-          do iq=1,nxquad
-            do iorb=1,norb+nadorb
-              ddtmp=0     ! Don't compute the laplacian
-              dtmp(1)=0   ! Don't compute the gradients
-              dtmp(2)=0   ! Don't compute the gradients
-              dtmp(3)=0   ! Don't compute the gradients
-              call spline_mo(xquad(1,iq),iorb,orbn(iorb,iq),dtmp,ddtmp,ier)
+c     get the value from the 3d-interpolated orbitals
+         ier=0
+         if(i3dsplorb.ge.1) then
+            do iq=1,nxquad
+               do iorb=1,norb+nadorb
+                  ddtmp=0       ! Don't compute the laplacian
+                  dtmp(1)=0     ! Don't compute the gradients
+                  dtmp(2)=0     ! Don't compute the gradients
+                  dtmp(3)=0     ! Don't compute the gradients
+                  call spline_mo(xquad(1,iq),iorb,orbn(iorb,iq),dtmp,ddtmp,ier)
+               enddo
             enddo
-          enddo
          elseif(i3dlagorb.ge.1) then
-          do iq=1,nxquad
-            call lagrange_mose(1,xquad(1,iq),orbn(iorb,iq),ier)
-          enddo
+            do iq=1,nxquad
+               call lagrange_mose(1,xquad(1,iq),orbn(iorb,iq),ier)
+            enddo
          else
-          ier=1
-        endif
+            ier=1
+         endif
 
-        if(ier.eq.1) then
-c get basis functions for electron iel
-          ider=0
-          if(iforce_analy.gt.0) ider=1
+         if(ier.eq.1) then
+c     get basis functions for electron iel
+            ider=0
+            if(iforce_analy.gt.0) ider=1
 
-          call basis_fns(1,nxquad,nquad*nelec*2,rvec_en,r_en,ider)
+#ifdef QMCKL_FOUND
 
-          do iq=1,nxquad
+!     Send electron coordinates to QMCkl to compute the MOs at these positions
+            rc = qmckl_set_point(qmckl_ctx, 'N', nxquad*1_8, xquad, nxquad*3_8)
+            if (rc /= QMCKL_SUCCESS) then
+                print *, 'orbitals quad Error setting electron coordinates in QMCkl'
+             end if
+             
+             rc = qmckl_get_mo_basis_mo_num(qmckl_ctx, n8)
+             if (rc /= QMCKL_SUCCESS) then
+                print *, 'orbitals quad Error getting mo_num from QMCkl'
+                stop
+             end if
 
-! Vectorization dependent code selection
-#ifdef VECTORIZATION
-          ! The following loop changed for better vectorization AVX512/AVX2
-          do iorb=1,norb+nadorb
-             orbn(iorb,iq)=0.d0
-             do m=1,nbasis
-                orbn(iorb,iq)=orbn(iorb,iq)+coef(m,iorb,iwf)*phin(m,iq)
-             enddo
-          enddo
+
+!             allocate(mo_qmckl(n8, nxquad))
+!
+!     Compute the MOs
+!             rc = qmckl_get_mo_basis_mo_value(
+!     &            qmckl_ctx,
+!     &            mo_qmckl,
+!     &            nxquad*n8)
+!             
+!             if (rc /= QMCKL_SUCCESS) then
+!                print *, 'Error orbitals quad getting MOs from QMCkl'
+!             end if
+!             
+!             orbn(1:norb+nadorb,1:nxquad) = mo_qmckl(1:norb+nadorb,1:nxquad)
+!                
+!             deallocate(mo_qmckl)
+
+
+!     Compute the MOs
+             rc = qmckl_get_mo_basis_mo_value_inplace(
+     &            qmckl_ctx,
+     &            orbn(1:norb+nadorb,1:nxquad),
+     &            nxquad*n8)
+             
+
+             if (rc /= QMCKL_SUCCESS) then
+                print *, 'Error orbitals quad getting MOs from QMCkl'
+             end if
+             
+
+
+             
+             if(iforce_analy.gt.0) then
+                do iq=1,nxquad
+
+                   do iorb=1,norb
+                      do ic=1,ncent
+                        do k=1,3
+                           da_orbn(k,ic,iorb,iq)=0.d0
+                        enddo
+                     enddo
+                     do m0=1,n0_nbasis(iq)
+                        m=n0_ibasis(m0,iq)
+                        ic=n0_ic(m0,iq)
+                        ii=iwctype(ic)
+                        do k=1,3
+                           da_orbn(k,ic,iorb,iq)=da_orbn(k,ic,iorb,iq)-coef(m,iorb,iwf)*dphin(m,iq,k)
+                        enddo
+                     enddo
+                     do k=1,3
+                        dorbn(iorb,iq,k)=0.d0
+                     enddo
+                     do ic=1,ncent
+                        do k=1,3
+                           dorbn(iorb,iq,k)=dorbn(iorb,iq,k)-da_orbn(k,ic,iorb,iq)
+                        enddo
+                     enddo
+                  enddo
+                   
+                  
+                enddo
+             endif
+
 #else
-          do iorb=1,norb+nadorb
-             orbn(iorb,iq)=0.d0
-             do m0=1,n0_nbasis(iq)
-                m=n0_ibasis(m0,iq)
-                orbn(iorb,iq)=orbn(iorb,iq)+coef(m,iorb,iwf)*phin(m,iq)
-             enddo
-          enddo
+
+            
+            call basis_fns(1,nxquad,nquad*nelec*2,rvec_en,r_en,ider)
+
+            do iq=1,nxquad
+
+!     Vectorization dependent code selection
+#ifdef VECTORIZATION
+! The following loop changed for better vectorization AVX512/AVX2
+               do iorb=1,norb+nadorb
+                  orbn(iorb,iq)=0.d0
+                  do m=1,nbasis
+                     orbn(iorb,iq)=orbn(iorb,iq)+coef(m,iorb,iwf)*phin(m,iq)
+                  enddo
+               enddo
+#else
+               do iorb=1,norb+nadorb
+                  orbn(iorb,iq)=0.d0
+                  do m0=1,n0_nbasis(iq)
+                     m=n0_ibasis(m0,iq)
+                     orbn(iorb,iq)=orbn(iorb,iq)+coef(m,iorb,iwf)*phin(m,iq)
+                  enddo
+               enddo
 #endif
 
-          if(iforce_analy.gt.0) then
-            do iorb=1,norb
-              do ic=1,ncent
-                do k=1,3
-                  da_orbn(k,ic,iorb,iq)=0.d0
-                enddo
-              enddo
-              do m0=1,n0_nbasis(iq)
-                m=n0_ibasis(m0,iq)
-                ic=n0_ic(m0,iq)
-                ii=iwctype(ic)
-                do k=1,3
-                  da_orbn(k,ic,iorb,iq)=da_orbn(k,ic,iorb,iq)-coef(m,iorb,iwf)*dphin(m,iq,k)
-                enddo
-              enddo
-              do k=1,3
-                dorbn(iorb,iq,k)=0.d0
-              enddo
-              do ic=1,ncent
-                do k=1,3
-                   dorbn(iorb,iq,k)=dorbn(iorb,iq,k)-da_orbn(k,ic,iorb,iq)
-                enddo
-              enddo
+               if(iforce_analy.gt.0) then
+                  do iorb=1,norb
+                     do ic=1,ncent
+                        do k=1,3
+                           da_orbn(k,ic,iorb,iq)=0.d0
+                        enddo
+                     enddo
+                     do m0=1,n0_nbasis(iq)
+                        m=n0_ibasis(m0,iq)
+                        ic=n0_ic(m0,iq)
+                        ii=iwctype(ic)
+                        do k=1,3
+                           da_orbn(k,ic,iorb,iq)=da_orbn(k,ic,iorb,iq)-coef(m,iorb,iwf)*dphin(m,iq,k)
+                        enddo
+                     enddo
+                     do k=1,3
+                        dorbn(iorb,iq,k)=0.d0
+                     enddo
+                     do ic=1,ncent
+                        do k=1,3
+                           dorbn(iorb,iq,k)=dorbn(iorb,iq,k)-da_orbn(k,ic,iorb,iq)
+                        enddo
+                     enddo
+                  enddo
+               endif
+c     write(ounit,*)'orb_quad iel,ren',iel,rvec_en(1,iel,1),rvec_en(1,iel,2)
+c     write(ounit,*)'orb_quad da_orb', da_orbn(1,1,1),dphin(1,iel,1)
+
             enddo
-          endif
-c         write(ounit,*)'orb_quad iel,ren',iel,rvec_en(1,iel,1),rvec_en(1,iel,2)
-c         write(ounit,*)'orb_quad da_orb', da_orbn(1,1,1),dphin(1,iel,1)
 
-        enddo
+#endif
+            
+         endif
 
-        endif
-
-       else
-
-        call orbitals_pwe(iel,xquad,orbn)
-
+      else
+         
+         call orbitals_pwe(iel,xquad,orbn)
+         
       endif
 
       nadorb = nadorb_sav
