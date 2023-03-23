@@ -47,6 +47,7 @@ integer(trexio_exit_code), parameter :: TREXIO_INVALID_ELECTRON_NUM    = 33
 integer(trexio_exit_code), parameter :: TREXIO_INVALID_DETERMINANT_NUM = 34
 integer(trexio_exit_code), parameter :: TREXIO_INVALID_STATE           = 35
 integer(trexio_exit_code), parameter :: TREXIO_VERSION_PARSING_ISSUE   = 36
+integer(trexio_exit_code), parameter :: TREXIO_PHASE_CHANGE            = 37
 
 interface
    subroutine trexio_string_of_error (error, string) bind(C, name='trexio_string_of_error_f')
@@ -65,7 +66,6 @@ integer(trexio_back_end_t), parameter :: TREXIO_HDF5 = 0
 
 interface
    logical(c_bool) function trexio_has_back_end (back_end) bind(C)
-     use, intrinsic :: iso_c_binding
      import
      integer(trexio_back_end_t), intent(in), value :: back_end
    end function trexio_has_back_end
@@ -73,7 +73,6 @@ end interface
 
 interface
    logical(c_bool) function trexio_has_backend (back_end) bind(C)
-     use, intrinsic :: iso_c_binding
      import
      integer(trexio_back_end_t), intent(in), value :: back_end
    end function trexio_has_backend
@@ -120,6 +119,14 @@ interface
      import
      character(kind=c_char), dimension(*)       :: filename
    end function trexio_inquire_c
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_cp_c (source, destination) bind(C, name="trexio_cp")
+     use, intrinsic :: iso_c_binding
+     import
+     character(kind=c_char), dimension(*)          :: source, destination
+   end function trexio_cp_c
 end interface
 
 interface
@@ -188,7 +195,7 @@ character(len = 12) :: TREXIO_PACKAGE_VERSION = "2.3.0"
 integer :: TREXIO_VERSION_MAJOR = 2
 integer :: TREXIO_VERSION_MINOR = 3
 integer :: TREXIO_VERSION_PATCH = 0
-character(len = 64) :: TREXIO_GIT_HASH = "813577e4a6d0a617ebafadea3306f10a9f1ad237"
+character(len = 64) :: TREXIO_GIT_HASH = "7955bc1d8ed4e034895fcb9261aa3b3f97fef8c8"
 
 interface
    integer(trexio_exit_code) function trexio_delete_metadata (trex_file) bind(C)
@@ -196,14 +203,6 @@ interface
      import
      integer(trexio_t), intent(in), value  :: trex_file
    end function trexio_delete_metadata
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_delete_electron (trex_file) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value  :: trex_file
-   end function trexio_delete_electron
 end interface
 
 interface
@@ -215,11 +214,35 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_delete_ecp (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_delete_cell (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value  :: trex_file
-   end function trexio_delete_ecp
+   end function trexio_delete_cell
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_delete_pbc (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value  :: trex_file
+   end function trexio_delete_pbc
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_delete_electron (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value  :: trex_file
+   end function trexio_delete_electron
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_delete_state (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value  :: trex_file
+   end function trexio_delete_state
 end interface
 
 interface
@@ -228,6 +251,22 @@ interface
      import
      integer(trexio_t), intent(in), value  :: trex_file
    end function trexio_delete_basis
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_delete_ecp (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value  :: trex_file
+   end function trexio_delete_ecp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_delete_grid (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value  :: trex_file
+   end function trexio_delete_grid
 end interface
 
 interface
@@ -295,11 +334,11 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_delete_state (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_delete_amplitude (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value  :: trex_file
-   end function trexio_delete_state
+   end function trexio_delete_amplitude
 end interface
 
 interface
@@ -311,19 +350,11 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_delete_cell (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_delete_jastrow (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value  :: trex_file
-   end function trexio_delete_cell
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_delete_pbc (trex_file) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value  :: trex_file
-   end function trexio_delete_pbc
+   end function trexio_delete_jastrow
 end interface
 
 interface
@@ -359,6 +390,38 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_has_nucleus_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_nucleus_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_nucleus_repulsion (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_nucleus_repulsion
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_cell_two_pi (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_cell_two_pi
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_pbc_periodic (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_pbc_periodic
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_has_electron_num (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -383,27 +446,19 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_nucleus_num (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_state_num (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_nucleus_num
+   end function trexio_has_state_num
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_nucleus_repulsion (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_state_id (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_nucleus_repulsion
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_has_ecp_num (trex_file) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_ecp_num
+   end function trexio_has_state_id
 end interface
 
 interface
@@ -423,6 +478,70 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_has_basis_e_cut (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_basis_e_cut
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_ecp_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_ecp_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_grid_rad_precision (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_grid_rad_precision
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_grid_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_grid_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_grid_max_ang_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_grid_max_ang_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_grid_min_ang_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_grid_min_ang_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_grid_ang_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_grid_ang_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_grid_rad_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_grid_rad_num
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_has_ao_cartesian (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -439,11 +558,43 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_has_ao_2e_int_eri_cholesky_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_ao_2e_int_eri_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_ao_2e_int_eri_lr_cholesky_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_ao_2e_int_eri_lr_cholesky_num
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_has_mo_num (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
    end function trexio_has_mo_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_mo_2e_int_eri_cholesky_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_mo_2e_int_eri_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_mo_2e_int_eri_lr_cholesky_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_mo_2e_int_eri_lr_cholesky_num
 end interface
 
 interface
@@ -463,27 +614,67 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_state_num (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_rdm_2e_cholesky_num (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_state_num
+   end function trexio_has_rdm_2e_cholesky_num
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_state_id (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_rdm_2e_upup_cholesky_num (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_state_id
+   end function trexio_has_rdm_2e_upup_cholesky_num
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_pbc_periodic (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_rdm_2e_dndn_cholesky_num (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_pbc_periodic
+   end function trexio_has_rdm_2e_dndn_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_rdm_2e_updn_cholesky_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_rdm_2e_updn_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_jastrow_en_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_jastrow_en_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_jastrow_ee_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_jastrow_ee_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_jastrow_een_num (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_jastrow_een_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_jastrow_ee_scaling (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_jastrow_ee_scaling
 end interface
 
 interface
@@ -519,11 +710,27 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_has_state_current_label (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value  :: trex_file
+   end function trexio_has_state_current_label
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_has_basis_type (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value  :: trex_file
    end function trexio_has_basis_type
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_grid_description (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value  :: trex_file
+   end function trexio_has_grid_description
 end interface
 
 interface
@@ -535,11 +742,11 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_state_current_label (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_jastrow_type (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value  :: trex_file
-   end function trexio_has_state_current_label
+   end function trexio_has_jastrow_type
 end interface
 
 interface
@@ -572,6 +779,126 @@ interface
      import
      integer(trexio_t), intent(in), value :: trex_file
    end function trexio_has_nucleus_coord
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_cell_a (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_cell_a
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_cell_b (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_cell_b
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_cell_c (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_cell_c
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_cell_G_a (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_cell_G_a
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_cell_G_b (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_cell_G_b
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_cell_G_c (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_cell_G_c
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_pbc_k_point (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_pbc_k_point
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_basis_nucleus_index (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_basis_nucleus_index
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_basis_shell_ang_mom (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_basis_shell_ang_mom
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_basis_shell_factor (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_basis_shell_factor
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_basis_r_power (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_basis_r_power
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_basis_shell_index (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_basis_shell_index
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_basis_exponent (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_basis_exponent
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_basis_coefficient (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_basis_coefficient
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_basis_prim_factor (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_basis_prim_factor
 end interface
 
 interface
@@ -631,59 +958,51 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_basis_nucleus_index (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_grid_coord (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_basis_nucleus_index
+   end function trexio_has_grid_coord
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_basis_shell_ang_mom (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_grid_weight (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_basis_shell_ang_mom
+   end function trexio_has_grid_weight
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_basis_shell_factor (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_grid_ang_coord (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_basis_shell_factor
+   end function trexio_has_grid_ang_coord
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_basis_shell_index (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_grid_ang_weight (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_basis_shell_index
+   end function trexio_has_grid_ang_weight
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_basis_exponent (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_grid_rad_coord (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_basis_exponent
+   end function trexio_has_grid_rad_coord
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_basis_coefficient (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_grid_rad_weight (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_basis_coefficient
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_has_basis_prim_factor (trex_file) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_basis_prim_factor
+   end function trexio_has_grid_rad_weight
 end interface
 
 interface
@@ -927,35 +1246,51 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_cell_a (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_jastrow_en (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_cell_a
+   end function trexio_has_jastrow_en
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_cell_b (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_jastrow_ee (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_cell_b
+   end function trexio_has_jastrow_ee
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_cell_c (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_jastrow_een (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_cell_c
+   end function trexio_has_jastrow_een
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_pbc_k_point (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_jastrow_en_nucleus (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_pbc_k_point
+   end function trexio_has_jastrow_en_nucleus
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_jastrow_een_nucleus (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_jastrow_een_nucleus
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_jastrow_en_scaling (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_jastrow_en_scaling
 end interface
 
 interface
@@ -999,6 +1334,22 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_has_ao_2e_int_eri_cholesky (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_ao_2e_int_eri_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_ao_2e_int_eri_lr_cholesky (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_ao_2e_int_eri_lr_cholesky
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_has_mo_2e_int_eri (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -1015,11 +1366,91 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_has_mo_2e_int_eri_cholesky (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_mo_2e_int_eri_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_mo_2e_int_eri_lr_cholesky (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_mo_2e_int_eri_lr_cholesky
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_has_csf_det_coefficient (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
    end function trexio_has_csf_det_coefficient
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_amplitude_single (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_amplitude_single
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_amplitude_single_exp (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_amplitude_single_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_amplitude_double (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_amplitude_double
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_amplitude_double_exp (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_amplitude_double_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_amplitude_triple (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_amplitude_triple
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_amplitude_triple_exp (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_amplitude_triple_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_amplitude_quadruple (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_amplitude_quadruple
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_amplitude_quadruple_exp (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_amplitude_quadruple_exp
 end interface
 
 interface
@@ -1055,11 +1486,35 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_rdm_2e_dnup (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_rdm_2e_cholesky (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_rdm_2e_dnup
+   end function trexio_has_rdm_2e_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_rdm_2e_upup_cholesky (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_rdm_2e_upup_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_rdm_2e_dndn_cholesky (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_rdm_2e_dndn_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_rdm_2e_updn_cholesky (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_rdm_2e_updn_cholesky
 end interface
 
 interface
@@ -1087,22 +1542,6 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_mo_class (trex_file) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_mo_class
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_has_mo_symmetry (trex_file) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_mo_symmetry
-end interface
-
-interface
    integer(trexio_exit_code) function trexio_has_state_label (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -1119,19 +1558,27 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_has_mo_class (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_mo_class
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_mo_symmetry (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_mo_symmetry
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_has_metadata (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
    end function trexio_has_metadata
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_has_electron (trex_file) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_electron
 end interface
 
 interface
@@ -1143,11 +1590,35 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_ecp (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_cell (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_ecp
+   end function trexio_has_cell
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_pbc (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_pbc
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_electron (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_electron
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_state (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_state
 end interface
 
 interface
@@ -1156,6 +1627,22 @@ interface
      import
      integer(trexio_t), intent(in), value :: trex_file
    end function trexio_has_basis
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_ecp (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_ecp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_has_grid (trex_file) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+   end function trexio_has_grid
 end interface
 
 interface
@@ -1223,11 +1710,11 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_state (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_amplitude (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_state
+   end function trexio_has_amplitude
 end interface
 
 interface
@@ -1239,19 +1726,11 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_has_cell (trex_file) bind(C)
+   integer(trexio_exit_code) function trexio_has_jastrow (trex_file) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_cell
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_has_pbc (trex_file) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-   end function trexio_has_pbc
+   end function trexio_has_jastrow
 end interface
 
 interface
@@ -1290,6 +1769,42 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_nucleus_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_nucleus_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_nucleus_repulsion_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: num
+   end function trexio_read_nucleus_repulsion_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_two_pi_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_cell_two_pi_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_pbc_periodic_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_pbc_periodic_32
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_electron_num_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -1317,30 +1832,21 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_nucleus_num_32 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_state_num_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(out) :: num
-   end function trexio_read_nucleus_num_32
+   end function trexio_read_state_num_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_nucleus_repulsion_32 (trex_file, num) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     real(c_float), intent(out) :: num
-   end function trexio_read_nucleus_repulsion_32
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_ecp_num_32 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_state_id_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(out) :: num
-   end function trexio_read_ecp_num_32
+   end function trexio_read_state_id_32
 end interface
 
 interface
@@ -1362,6 +1868,78 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_basis_e_cut_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: num
+   end function trexio_read_basis_e_cut_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_ecp_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_ecp_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_rad_precision_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: num
+   end function trexio_read_grid_rad_precision_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_grid_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_max_ang_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_grid_max_ang_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_min_ang_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_grid_min_ang_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_ang_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_grid_ang_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_rad_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_grid_rad_num_32
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_ao_cartesian_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -1380,12 +1958,48 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_ao_2e_int_eri_cholesky_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_ao_2e_int_eri_cholesky_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_ao_2e_int_eri_lr_cholesky_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_ao_2e_int_eri_lr_cholesky_num_32
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_mo_num_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(out) :: num
    end function trexio_read_mo_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_mo_2e_int_eri_cholesky_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_mo_2e_int_eri_cholesky_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_mo_2e_int_eri_lr_cholesky_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_mo_2e_int_eri_lr_cholesky_num_32
 end interface
 
 interface
@@ -1407,30 +2021,75 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_state_num_32 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_rdm_2e_cholesky_num_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(out) :: num
-   end function trexio_read_state_num_32
+   end function trexio_read_rdm_2e_cholesky_num_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_state_id_32 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_rdm_2e_upup_cholesky_num_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(out) :: num
-   end function trexio_read_state_id_32
+   end function trexio_read_rdm_2e_upup_cholesky_num_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_pbc_periodic_32 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_rdm_2e_dndn_cholesky_num_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(out) :: num
-   end function trexio_read_pbc_periodic_32
+   end function trexio_read_rdm_2e_dndn_cholesky_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_rdm_2e_updn_cholesky_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_rdm_2e_updn_cholesky_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_en_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_jastrow_en_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_ee_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_jastrow_ee_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_een_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_jastrow_een_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_ee_scaling_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: num
+   end function trexio_read_jastrow_ee_scaling_32
 end interface
 
 interface
@@ -1470,6 +2129,42 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_nucleus_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_nucleus_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_nucleus_repulsion_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: num
+   end function trexio_read_nucleus_repulsion_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_two_pi_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_cell_two_pi_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_pbc_periodic_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_pbc_periodic_64
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_electron_num_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -1497,30 +2192,21 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_nucleus_num_64 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_state_num_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(out) :: num
-   end function trexio_read_nucleus_num_64
+   end function trexio_read_state_num_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_nucleus_repulsion_64 (trex_file, num) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     real(c_double), intent(out) :: num
-   end function trexio_read_nucleus_repulsion_64
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_ecp_num_64 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_state_id_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(out) :: num
-   end function trexio_read_ecp_num_64
+   end function trexio_read_state_id_64
 end interface
 
 interface
@@ -1542,6 +2228,78 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_basis_e_cut_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: num
+   end function trexio_read_basis_e_cut_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_ecp_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_ecp_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_rad_precision_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: num
+   end function trexio_read_grid_rad_precision_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_grid_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_max_ang_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_grid_max_ang_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_min_ang_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_grid_min_ang_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_ang_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_grid_ang_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_rad_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_grid_rad_num_64
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_ao_cartesian_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -1560,12 +2318,48 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_ao_2e_int_eri_cholesky_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_ao_2e_int_eri_cholesky_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_ao_2e_int_eri_lr_cholesky_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_ao_2e_int_eri_lr_cholesky_num_64
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_mo_num_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(out) :: num
    end function trexio_read_mo_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_mo_2e_int_eri_cholesky_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_mo_2e_int_eri_cholesky_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_mo_2e_int_eri_lr_cholesky_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_mo_2e_int_eri_lr_cholesky_num_64
 end interface
 
 interface
@@ -1587,30 +2381,75 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_state_num_64 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_rdm_2e_cholesky_num_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(out) :: num
-   end function trexio_read_state_num_64
+   end function trexio_read_rdm_2e_cholesky_num_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_state_id_64 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_rdm_2e_upup_cholesky_num_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(out) :: num
-   end function trexio_read_state_id_64
+   end function trexio_read_rdm_2e_upup_cholesky_num_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_pbc_periodic_64 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_rdm_2e_dndn_cholesky_num_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(out) :: num
-   end function trexio_read_pbc_periodic_64
+   end function trexio_read_rdm_2e_dndn_cholesky_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_rdm_2e_updn_cholesky_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_rdm_2e_updn_cholesky_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_en_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_jastrow_en_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_ee_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_jastrow_ee_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_een_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: num
+   end function trexio_read_jastrow_een_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_ee_scaling_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: num
+   end function trexio_read_jastrow_ee_scaling_64
 end interface
 
 interface
@@ -1650,6 +2489,42 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_nucleus_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_nucleus_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_nucleus_repulsion (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: num
+   end function trexio_read_nucleus_repulsion
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_two_pi (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_cell_two_pi
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_pbc_periodic (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_pbc_periodic
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_electron_num (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -1677,30 +2552,21 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_nucleus_num (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_state_num (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(out) :: num
-   end function trexio_read_nucleus_num
+   end function trexio_read_state_num
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_nucleus_repulsion (trex_file, num) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     real(c_double), intent(out) :: num
-   end function trexio_read_nucleus_repulsion
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_ecp_num (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_state_id (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(out) :: num
-   end function trexio_read_ecp_num
+   end function trexio_read_state_id
 end interface
 
 interface
@@ -1722,6 +2588,78 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_basis_e_cut (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: num
+   end function trexio_read_basis_e_cut
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_ecp_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_ecp_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_rad_precision (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: num
+   end function trexio_read_grid_rad_precision
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_grid_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_max_ang_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_grid_max_ang_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_min_ang_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_grid_min_ang_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_ang_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_grid_ang_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_rad_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_grid_rad_num
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_ao_cartesian (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -1740,12 +2678,48 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_ao_2e_int_eri_cholesky_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_ao_2e_int_eri_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_ao_2e_int_eri_lr_cholesky_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_ao_2e_int_eri_lr_cholesky_num
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_mo_num (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(out) :: num
    end function trexio_read_mo_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_mo_2e_int_eri_cholesky_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_mo_2e_int_eri_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_mo_2e_int_eri_lr_cholesky_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_mo_2e_int_eri_lr_cholesky_num
 end interface
 
 interface
@@ -1767,30 +2741,75 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_state_num (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_rdm_2e_cholesky_num (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(out) :: num
-   end function trexio_read_state_num
+   end function trexio_read_rdm_2e_cholesky_num
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_state_id (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_rdm_2e_upup_cholesky_num (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(out) :: num
-   end function trexio_read_state_id
+   end function trexio_read_rdm_2e_upup_cholesky_num
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_pbc_periodic (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_read_rdm_2e_dndn_cholesky_num (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(out) :: num
-   end function trexio_read_pbc_periodic
+   end function trexio_read_rdm_2e_dndn_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_rdm_2e_updn_cholesky_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_rdm_2e_updn_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_en_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_jastrow_en_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_ee_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_jastrow_ee_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_een_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: num
+   end function trexio_read_jastrow_een_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_ee_scaling (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: num
+   end function trexio_read_jastrow_ee_scaling
 end interface
 
 interface
@@ -1836,6 +2855,17 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_state_current_label_c (trex_file, str, max_str_len) &
+           bind(C, name="trexio_read_state_current_label")
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value  :: trex_file
+     character(kind=c_char), intent(out)   :: str(*)
+     integer(c_int32_t), intent(in), value :: max_str_len
+   end function trexio_read_state_current_label_c
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_basis_type_c (trex_file, str, max_str_len) &
            bind(C, name="trexio_read_basis_type")
      use, intrinsic :: iso_c_binding
@@ -1844,6 +2874,17 @@ interface
      character(kind=c_char), intent(out)   :: str(*)
      integer(c_int32_t), intent(in), value :: max_str_len
    end function trexio_read_basis_type_c
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_description_c (trex_file, str, max_str_len) &
+           bind(C, name="trexio_read_grid_description")
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value  :: trex_file
+     character(kind=c_char), intent(out)   :: str(*)
+     integer(c_int32_t), intent(in), value :: max_str_len
+   end function trexio_read_grid_description_c
 end interface
 
 interface
@@ -1858,14 +2899,14 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_state_current_label_c (trex_file, str, max_str_len) &
-           bind(C, name="trexio_read_state_current_label")
+   integer(trexio_exit_code) function trexio_read_jastrow_type_c (trex_file, str, max_str_len) &
+           bind(C, name="trexio_read_jastrow_type")
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value  :: trex_file
      character(kind=c_char), intent(out)   :: str(*)
      integer(c_int32_t), intent(in), value :: max_str_len
-   end function trexio_read_state_current_label_c
+   end function trexio_read_jastrow_type_c
 end interface
 
 interface
@@ -1959,6 +3000,141 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_cell_a_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_cell_a_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_b_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_cell_b_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_c_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_cell_c_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_G_a_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_cell_G_a_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_G_b_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_cell_G_b_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_G_c_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_cell_G_c_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_pbc_k_point_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_pbc_k_point_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_nucleus_index_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: dset(*)
+   end function trexio_read_basis_nucleus_index_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_shell_ang_mom_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: dset(*)
+   end function trexio_read_basis_shell_ang_mom_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_shell_factor_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_basis_shell_factor_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_r_power_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: dset(*)
+   end function trexio_read_basis_r_power_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_shell_index_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: dset(*)
+   end function trexio_read_basis_shell_index_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_exponent_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_basis_exponent_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_coefficient_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_basis_coefficient_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_prim_factor_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_basis_prim_factor_32
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_ecp_max_ang_mom_plus_1_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -2022,66 +3198,57 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_basis_nucleus_index_32 (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int32_t), intent(out) :: dset(*)
-   end function trexio_read_basis_nucleus_index_32
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_basis_shell_ang_mom_32 (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int32_t), intent(out) :: dset(*)
-   end function trexio_read_basis_shell_ang_mom_32
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_basis_shell_factor_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_grid_coord_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(out) :: dset(*)
-   end function trexio_read_basis_shell_factor_32
+   end function trexio_read_grid_coord_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_basis_shell_index_32 (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int32_t), intent(out) :: dset(*)
-   end function trexio_read_basis_shell_index_32
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_basis_exponent_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_grid_weight_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(out) :: dset(*)
-   end function trexio_read_basis_exponent_32
+   end function trexio_read_grid_weight_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_basis_coefficient_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_grid_ang_coord_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(out) :: dset(*)
-   end function trexio_read_basis_coefficient_32
+   end function trexio_read_grid_ang_coord_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_basis_prim_factor_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_grid_ang_weight_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(out) :: dset(*)
-   end function trexio_read_basis_prim_factor_32
+   end function trexio_read_grid_ang_weight_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_rad_coord_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_grid_rad_coord_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_rad_weight_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(out) :: dset(*)
+   end function trexio_read_grid_rad_weight_32
 end interface
 
 interface
@@ -2355,39 +3522,57 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_cell_a_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_jastrow_en_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(out) :: dset(*)
-   end function trexio_read_cell_a_32
+   end function trexio_read_jastrow_en_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_cell_b_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_jastrow_ee_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(out) :: dset(*)
-   end function trexio_read_cell_b_32
+   end function trexio_read_jastrow_ee_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_cell_c_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_jastrow_een_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(out) :: dset(*)
-   end function trexio_read_cell_c_32
+   end function trexio_read_jastrow_een_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_pbc_k_point_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_jastrow_en_nucleus_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: dset(*)
+   end function trexio_read_jastrow_en_nucleus_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_een_nucleus_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: dset(*)
+   end function trexio_read_jastrow_een_nucleus_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_en_scaling_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(out) :: dset(*)
-   end function trexio_read_pbc_k_point_32
+   end function trexio_read_jastrow_en_scaling_32
 end interface
 
 interface
@@ -2433,6 +3618,141 @@ interface
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
    end function trexio_read_nucleus_coord_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_a_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_cell_a_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_b_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_cell_b_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_c_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_cell_c_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_G_a_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_cell_G_a_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_G_b_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_cell_G_b_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_G_c_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_cell_G_c_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_pbc_k_point_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_pbc_k_point_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_nucleus_index_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: dset(*)
+   end function trexio_read_basis_nucleus_index_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_shell_ang_mom_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: dset(*)
+   end function trexio_read_basis_shell_ang_mom_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_shell_factor_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_basis_shell_factor_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_r_power_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: dset(*)
+   end function trexio_read_basis_r_power_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_shell_index_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: dset(*)
+   end function trexio_read_basis_shell_index_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_exponent_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_basis_exponent_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_coefficient_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_basis_coefficient_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_prim_factor_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_basis_prim_factor_64
 end interface
 
 interface
@@ -2499,66 +3819,57 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_basis_nucleus_index_64 (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int64_t), intent(out) :: dset(*)
-   end function trexio_read_basis_nucleus_index_64
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_basis_shell_ang_mom_64 (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int64_t), intent(out) :: dset(*)
-   end function trexio_read_basis_shell_ang_mom_64
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_basis_shell_factor_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_grid_coord_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_basis_shell_factor_64
+   end function trexio_read_grid_coord_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_basis_shell_index_64 (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int64_t), intent(out) :: dset(*)
-   end function trexio_read_basis_shell_index_64
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_basis_exponent_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_grid_weight_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_basis_exponent_64
+   end function trexio_read_grid_weight_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_basis_coefficient_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_grid_ang_coord_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_basis_coefficient_64
+   end function trexio_read_grid_ang_coord_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_basis_prim_factor_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_grid_ang_weight_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_basis_prim_factor_64
+   end function trexio_read_grid_ang_weight_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_rad_coord_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_grid_rad_coord_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_rad_weight_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_grid_rad_weight_64
 end interface
 
 interface
@@ -2832,39 +4143,57 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_cell_a_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_jastrow_en_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_cell_a_64
+   end function trexio_read_jastrow_en_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_cell_b_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_jastrow_ee_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_cell_b_64
+   end function trexio_read_jastrow_ee_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_cell_c_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_jastrow_een_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_cell_c_64
+   end function trexio_read_jastrow_een_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_pbc_k_point_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_jastrow_en_nucleus_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: dset(*)
+   end function trexio_read_jastrow_en_nucleus_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_een_nucleus_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: dset(*)
+   end function trexio_read_jastrow_een_nucleus_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_en_scaling_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_pbc_k_point_64
+   end function trexio_read_jastrow_en_scaling_64
 end interface
 
 interface
@@ -2910,6 +4239,141 @@ interface
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
    end function trexio_read_nucleus_coord
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_a (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_cell_a
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_b (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_cell_b
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_c (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_cell_c
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_G_a (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_cell_G_a
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_G_b (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_cell_G_b
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_cell_G_c (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_cell_G_c
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_pbc_k_point (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_pbc_k_point
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_nucleus_index (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: dset(*)
+   end function trexio_read_basis_nucleus_index
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_shell_ang_mom (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: dset(*)
+   end function trexio_read_basis_shell_ang_mom
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_shell_factor (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_basis_shell_factor
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_r_power (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: dset(*)
+   end function trexio_read_basis_r_power
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_shell_index (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: dset(*)
+   end function trexio_read_basis_shell_index
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_exponent (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_basis_exponent
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_coefficient (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_basis_coefficient
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_basis_prim_factor (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_basis_prim_factor
 end interface
 
 interface
@@ -2976,66 +4440,57 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_basis_nucleus_index (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int32_t), intent(out) :: dset(*)
-   end function trexio_read_basis_nucleus_index
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_basis_shell_ang_mom (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int32_t), intent(out) :: dset(*)
-   end function trexio_read_basis_shell_ang_mom
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_basis_shell_factor (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_grid_coord (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_basis_shell_factor
+   end function trexio_read_grid_coord
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_basis_shell_index (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int32_t), intent(out) :: dset(*)
-   end function trexio_read_basis_shell_index
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_basis_exponent (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_grid_weight (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_basis_exponent
+   end function trexio_read_grid_weight
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_basis_coefficient (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_grid_ang_coord (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_basis_coefficient
+   end function trexio_read_grid_ang_coord
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_basis_prim_factor (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_grid_ang_weight (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_basis_prim_factor
+   end function trexio_read_grid_ang_weight
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_rad_coord (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_grid_rad_coord
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_grid_rad_weight (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(out) :: dset(*)
+   end function trexio_read_grid_rad_weight
 end interface
 
 interface
@@ -3309,39 +4764,57 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_cell_a (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_jastrow_en (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_cell_a
+   end function trexio_read_jastrow_en
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_cell_b (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_jastrow_ee (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_cell_b
+   end function trexio_read_jastrow_ee
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_cell_c (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_jastrow_een (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_cell_c
+   end function trexio_read_jastrow_een
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_pbc_k_point (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_read_jastrow_en_nucleus (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: dset(*)
+   end function trexio_read_jastrow_en_nucleus
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_een_nucleus (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(out) :: dset(*)
+   end function trexio_read_jastrow_een_nucleus
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_jastrow_en_scaling (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(out) :: dset(*)
-   end function trexio_read_pbc_k_point
+   end function trexio_read_jastrow_en_scaling
 end interface
 
 interface
@@ -3434,6 +4907,68 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_ao_2e_int_eri_cholesky (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_ao_2e_int_eri_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_ao_2e_int_eri_cholesky (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_ao_2e_int_eri_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_ao_2e_int_eri_lr_cholesky (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_ao_2e_int_eri_lr_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_ao_2e_int_eri_lr_cholesky (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_ao_2e_int_eri_lr_cholesky
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_mo_2e_int_eri (trex_file, &
                                               offset_file, buffer_size, &
                                               index_sparse, value_sparse) bind(C)
@@ -3496,6 +5031,68 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_mo_2e_int_eri_cholesky (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_mo_2e_int_eri_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_mo_2e_int_eri_cholesky (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_mo_2e_int_eri_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_mo_2e_int_eri_lr_cholesky (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_mo_2e_int_eri_lr_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_mo_2e_int_eri_lr_cholesky (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_mo_2e_int_eri_lr_cholesky
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_csf_det_coefficient (trex_file, &
                                               offset_file, buffer_size, &
                                               index_sparse, value_sparse) bind(C)
@@ -3524,6 +5121,254 @@ interface
      real(c_double), intent(out)           :: value_sparse(*)
      integer(c_int64_t), intent(in), value :: value_size
    end function trexio_read_safe_csf_det_coefficient
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_single (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_amplitude_single
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_amplitude_single (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_amplitude_single
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_single_exp (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_amplitude_single_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_amplitude_single_exp (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_amplitude_single_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_double (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_amplitude_double
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_amplitude_double (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_amplitude_double
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_double_exp (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_amplitude_double_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_amplitude_double_exp (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_amplitude_double_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_triple (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_amplitude_triple
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_amplitude_triple (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_amplitude_triple
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_triple_exp (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_amplitude_triple_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_amplitude_triple_exp (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_amplitude_triple_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_quadruple (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_amplitude_quadruple
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_amplitude_quadruple (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_amplitude_quadruple
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_quadruple_exp (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_amplitude_quadruple_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_amplitude_quadruple_exp (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_amplitude_quadruple_exp
 end interface
 
 interface
@@ -3651,7 +5496,7 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_rdm_2e_dnup (trex_file, &
+   integer(trexio_exit_code) function trexio_read_rdm_2e_cholesky (trex_file, &
                                               offset_file, buffer_size, &
                                               index_sparse, value_sparse) bind(C)
      use, intrinsic :: iso_c_binding
@@ -3661,11 +5506,11 @@ interface
      integer(c_int64_t), intent(inout)     :: buffer_size
      integer(c_int32_t), intent(out)       :: index_sparse(*)
      real(c_double), intent(out)           :: value_sparse(*)
-   end function trexio_read_rdm_2e_dnup
+   end function trexio_read_rdm_2e_cholesky
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_safe_rdm_2e_dnup (trex_file, &
+   integer(trexio_exit_code) function trexio_read_safe_rdm_2e_cholesky (trex_file, &
                                                    offset_file, buffer_size, &
                                                    index_sparse, index_size, &
                                                    value_sparse, value_size) bind(C)
@@ -3678,7 +5523,100 @@ interface
      integer(c_int64_t), intent(in), value :: index_size
      real(c_double), intent(out)           :: value_sparse(*)
      integer(c_int64_t), intent(in), value :: value_size
-   end function trexio_read_safe_rdm_2e_dnup
+   end function trexio_read_safe_rdm_2e_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_rdm_2e_upup_cholesky (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_rdm_2e_upup_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_rdm_2e_upup_cholesky (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_rdm_2e_upup_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_rdm_2e_dndn_cholesky (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_rdm_2e_dndn_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_rdm_2e_dndn_cholesky (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_rdm_2e_dndn_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_rdm_2e_updn_cholesky (trex_file, &
+                                              offset_file, buffer_size, &
+                                              index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     real(c_double), intent(out)           :: value_sparse(*)
+   end function trexio_read_rdm_2e_updn_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_safe_rdm_2e_updn_cholesky (trex_file, &
+                                                   offset_file, buffer_size, &
+                                                   index_sparse, index_size, &
+                                                   value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(inout)     :: buffer_size
+     integer(c_int32_t), intent(out)       :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(out)           :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_read_safe_rdm_2e_updn_cholesky
 end interface
 
 interface
@@ -3702,6 +5640,26 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_ao_2e_int_eri_cholesky_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_ao_2e_int_eri_cholesky_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_ao_2e_int_eri_lr_cholesky_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_ao_2e_int_eri_lr_cholesky_size
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_mo_2e_int_eri_size (trex_file, &
                                                    size_max) bind(C)
      use, intrinsic :: iso_c_binding
@@ -3722,6 +5680,26 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_read_mo_2e_int_eri_cholesky_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_mo_2e_int_eri_cholesky_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_mo_2e_int_eri_lr_cholesky_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_mo_2e_int_eri_lr_cholesky_size
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_read_csf_det_coefficient_size (trex_file, &
                                                    size_max) bind(C)
      use, intrinsic :: iso_c_binding
@@ -3729,6 +5707,86 @@ interface
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(out) :: size_max
    end function trexio_read_csf_det_coefficient_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_single_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_amplitude_single_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_single_exp_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_amplitude_single_exp_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_double_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_amplitude_double_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_double_exp_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_amplitude_double_exp_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_triple_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_amplitude_triple_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_triple_exp_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_amplitude_triple_exp_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_quadruple_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_amplitude_quadruple_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_amplitude_quadruple_exp_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_amplitude_quadruple_exp_size
 end interface
 
 interface
@@ -3772,13 +5830,43 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_rdm_2e_dnup_size (trex_file, &
+   integer(trexio_exit_code) function trexio_read_rdm_2e_cholesky_size (trex_file, &
                                                    size_max) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(out) :: size_max
-   end function trexio_read_rdm_2e_dnup_size
+   end function trexio_read_rdm_2e_cholesky_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_rdm_2e_upup_cholesky_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_rdm_2e_upup_cholesky_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_rdm_2e_dndn_cholesky_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_rdm_2e_dndn_cholesky_size
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_rdm_2e_updn_cholesky_size (trex_file, &
+                                                   size_max) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(out) :: size_max
+   end function trexio_read_rdm_2e_updn_cholesky_size
 end interface
 
 interface
@@ -3812,26 +5900,6 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_read_mo_class_low (trex_file, dset, max_str_len) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(c_int64_t), intent(in), value  :: trex_file
-     character(kind=c_char), intent(out)    :: dset(*)
-     integer(c_int32_t), intent(in), value  :: max_str_len
-   end function trexio_read_mo_class_low
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_read_mo_symmetry_low (trex_file, dset, max_str_len) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(c_int64_t), intent(in), value  :: trex_file
-     character(kind=c_char), intent(out)    :: dset(*)
-     integer(c_int32_t), intent(in), value  :: max_str_len
-   end function trexio_read_mo_symmetry_low
-end interface
-
-interface
    integer(trexio_exit_code) function trexio_read_state_label_low (trex_file, dset, max_str_len) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -3849,6 +5917,26 @@ interface
      character(kind=c_char), intent(out)    :: dset(*)
      integer(c_int32_t), intent(in), value  :: max_str_len
    end function trexio_read_state_file_name_low
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_mo_class_low (trex_file, dset, max_str_len) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(c_int64_t), intent(in), value  :: trex_file
+     character(kind=c_char), intent(out)    :: dset(*)
+     integer(c_int32_t), intent(in), value  :: max_str_len
+   end function trexio_read_mo_class_low
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_read_mo_symmetry_low (trex_file, dset, max_str_len) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(c_int64_t), intent(in), value  :: trex_file
+     character(kind=c_char), intent(out)    :: dset(*)
+     integer(c_int32_t), intent(in), value  :: max_str_len
+   end function trexio_read_mo_symmetry_low
 end interface
 
 interface
@@ -3879,6 +5967,42 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_nucleus_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_nucleus_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_nucleus_repulsion_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in), value :: num
+   end function trexio_write_nucleus_repulsion_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_two_pi_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_cell_two_pi_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_pbc_periodic_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_pbc_periodic_32
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_electron_num_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -3906,30 +6030,21 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_nucleus_num_32 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_state_num_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(in), value :: num
-   end function trexio_write_nucleus_num_32
+   end function trexio_write_state_num_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_nucleus_repulsion_32 (trex_file, num) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     real(c_float), intent(in), value :: num
-   end function trexio_write_nucleus_repulsion_32
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_ecp_num_32 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_state_id_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(in), value :: num
-   end function trexio_write_ecp_num_32
+   end function trexio_write_state_id_32
 end interface
 
 interface
@@ -3951,6 +6066,78 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_basis_e_cut_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in), value :: num
+   end function trexio_write_basis_e_cut_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_ecp_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_ecp_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_rad_precision_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in), value :: num
+   end function trexio_write_grid_rad_precision_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_grid_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_max_ang_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_grid_max_ang_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_min_ang_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_grid_min_ang_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_ang_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_grid_ang_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_rad_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_grid_rad_num_32
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_ao_cartesian_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -3969,6 +6156,24 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_ao_2e_int_eri_cholesky_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_ao_2e_int_eri_cholesky_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_ao_2e_int_eri_lr_cholesky_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_ao_2e_int_eri_lr_cholesky_num_32
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_mo_num_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -3978,30 +6183,93 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_state_num_32 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_mo_2e_int_eri_cholesky_num_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(in), value :: num
-   end function trexio_write_state_num_32
+   end function trexio_write_mo_2e_int_eri_cholesky_num_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_state_id_32 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_mo_2e_int_eri_lr_cholesky_num_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(in), value :: num
-   end function trexio_write_state_id_32
+   end function trexio_write_mo_2e_int_eri_lr_cholesky_num_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_pbc_periodic_32 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_rdm_2e_cholesky_num_32 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(in), value :: num
-   end function trexio_write_pbc_periodic_32
+   end function trexio_write_rdm_2e_cholesky_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_rdm_2e_upup_cholesky_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_rdm_2e_upup_cholesky_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_rdm_2e_dndn_cholesky_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_rdm_2e_dndn_cholesky_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_rdm_2e_updn_cholesky_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_rdm_2e_updn_cholesky_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_en_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_jastrow_en_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_ee_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_jastrow_ee_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_een_num_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_jastrow_een_num_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_ee_scaling_32 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in), value :: num
+   end function trexio_write_jastrow_ee_scaling_32
 end interface
 
 interface
@@ -4041,6 +6309,42 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_nucleus_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_nucleus_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_nucleus_repulsion_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in), value :: num
+   end function trexio_write_nucleus_repulsion_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_two_pi_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_cell_two_pi_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_pbc_periodic_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_pbc_periodic_64
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_electron_num_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -4068,30 +6372,21 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_nucleus_num_64 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_state_num_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(in), value :: num
-   end function trexio_write_nucleus_num_64
+   end function trexio_write_state_num_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_nucleus_repulsion_64 (trex_file, num) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     real(c_double), intent(in), value :: num
-   end function trexio_write_nucleus_repulsion_64
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_ecp_num_64 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_state_id_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(in), value :: num
-   end function trexio_write_ecp_num_64
+   end function trexio_write_state_id_64
 end interface
 
 interface
@@ -4113,6 +6408,78 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_basis_e_cut_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in), value :: num
+   end function trexio_write_basis_e_cut_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_ecp_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_ecp_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_rad_precision_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in), value :: num
+   end function trexio_write_grid_rad_precision_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_grid_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_max_ang_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_grid_max_ang_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_min_ang_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_grid_min_ang_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_ang_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_grid_ang_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_rad_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_grid_rad_num_64
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_ao_cartesian_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -4131,6 +6498,24 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_ao_2e_int_eri_cholesky_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_ao_2e_int_eri_cholesky_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_ao_2e_int_eri_lr_cholesky_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_ao_2e_int_eri_lr_cholesky_num_64
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_mo_num_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -4140,30 +6525,93 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_state_num_64 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_mo_2e_int_eri_cholesky_num_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(in), value :: num
-   end function trexio_write_state_num_64
+   end function trexio_write_mo_2e_int_eri_cholesky_num_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_state_id_64 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_mo_2e_int_eri_lr_cholesky_num_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(in), value :: num
-   end function trexio_write_state_id_64
+   end function trexio_write_mo_2e_int_eri_lr_cholesky_num_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_pbc_periodic_64 (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_rdm_2e_cholesky_num_64 (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int64_t), intent(in), value :: num
-   end function trexio_write_pbc_periodic_64
+   end function trexio_write_rdm_2e_cholesky_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_rdm_2e_upup_cholesky_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_rdm_2e_upup_cholesky_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_rdm_2e_dndn_cholesky_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_rdm_2e_dndn_cholesky_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_rdm_2e_updn_cholesky_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_rdm_2e_updn_cholesky_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_en_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_jastrow_en_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_ee_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_jastrow_ee_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_een_num_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: num
+   end function trexio_write_jastrow_een_num_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_ee_scaling_64 (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in), value :: num
+   end function trexio_write_jastrow_ee_scaling_64
 end interface
 
 interface
@@ -4203,6 +6651,42 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_nucleus_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_nucleus_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_nucleus_repulsion (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in), value :: num
+   end function trexio_write_nucleus_repulsion
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_two_pi (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_cell_two_pi
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_pbc_periodic (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_pbc_periodic
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_electron_num (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -4230,30 +6714,21 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_nucleus_num (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_state_num (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(in), value :: num
-   end function trexio_write_nucleus_num
+   end function trexio_write_state_num
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_nucleus_repulsion (trex_file, num) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     real(c_double), intent(in), value :: num
-   end function trexio_write_nucleus_repulsion
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_ecp_num (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_state_id (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(in), value :: num
-   end function trexio_write_ecp_num
+   end function trexio_write_state_id
 end interface
 
 interface
@@ -4275,6 +6750,78 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_basis_e_cut (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in), value :: num
+   end function trexio_write_basis_e_cut
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_ecp_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_ecp_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_rad_precision (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in), value :: num
+   end function trexio_write_grid_rad_precision
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_grid_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_max_ang_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_grid_max_ang_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_min_ang_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_grid_min_ang_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_ang_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_grid_ang_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_rad_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_grid_rad_num
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_ao_cartesian (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -4293,6 +6840,24 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_ao_2e_int_eri_cholesky_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_ao_2e_int_eri_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_ao_2e_int_eri_lr_cholesky_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_ao_2e_int_eri_lr_cholesky_num
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_mo_num (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -4302,30 +6867,93 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_state_num (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_mo_2e_int_eri_cholesky_num (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(in), value :: num
-   end function trexio_write_state_num
+   end function trexio_write_mo_2e_int_eri_cholesky_num
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_state_id (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_mo_2e_int_eri_lr_cholesky_num (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(in), value :: num
-   end function trexio_write_state_id
+   end function trexio_write_mo_2e_int_eri_lr_cholesky_num
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_pbc_periodic (trex_file, num) bind(C)
+   integer(trexio_exit_code) function trexio_write_rdm_2e_cholesky_num (trex_file, num) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      integer(c_int32_t), intent(in), value :: num
-   end function trexio_write_pbc_periodic
+   end function trexio_write_rdm_2e_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_rdm_2e_upup_cholesky_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_rdm_2e_upup_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_rdm_2e_dndn_cholesky_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_rdm_2e_dndn_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_rdm_2e_updn_cholesky_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_rdm_2e_updn_cholesky_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_en_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_jastrow_en_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_ee_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_jastrow_ee_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_een_num (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in), value :: num
+   end function trexio_write_jastrow_een_num
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_ee_scaling (trex_file, num) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in), value :: num
+   end function trexio_write_jastrow_ee_scaling
 end interface
 
 interface
@@ -4371,6 +6999,17 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_state_current_label_c (trex_file, str, max_str_len) &
+           bind(C, name="trexio_write_state_current_label")
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value  :: trex_file
+     character(kind=c_char), intent(in)    :: str(*)
+     integer(c_int32_t), intent(in), value :: max_str_len
+   end function trexio_write_state_current_label_c
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_basis_type_c (trex_file, str, max_str_len) &
            bind(C, name="trexio_write_basis_type")
      use, intrinsic :: iso_c_binding
@@ -4379,6 +7018,17 @@ interface
      character(kind=c_char), intent(in)    :: str(*)
      integer(c_int32_t), intent(in), value :: max_str_len
    end function trexio_write_basis_type_c
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_description_c (trex_file, str, max_str_len) &
+           bind(C, name="trexio_write_grid_description")
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value  :: trex_file
+     character(kind=c_char), intent(in)    :: str(*)
+     integer(c_int32_t), intent(in), value :: max_str_len
+   end function trexio_write_grid_description_c
 end interface
 
 interface
@@ -4393,14 +7043,14 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_state_current_label_c (trex_file, str, max_str_len) &
-           bind(C, name="trexio_write_state_current_label")
+   integer(trexio_exit_code) function trexio_write_jastrow_type_c (trex_file, str, max_str_len) &
+           bind(C, name="trexio_write_jastrow_type")
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value  :: trex_file
      character(kind=c_char), intent(in)    :: str(*)
      integer(c_int32_t), intent(in), value :: max_str_len
-   end function trexio_write_state_current_label_c
+   end function trexio_write_jastrow_type_c
 end interface
 
 interface
@@ -4474,6 +7124,141 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_cell_a_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_cell_a_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_b_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_cell_b_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_c_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_cell_c_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_G_a_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_cell_G_a_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_G_b_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_cell_G_b_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_G_c_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_cell_G_c_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_pbc_k_point_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_pbc_k_point_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_nucleus_index_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in) :: dset(*)
+   end function trexio_write_basis_nucleus_index_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_shell_ang_mom_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in) :: dset(*)
+   end function trexio_write_basis_shell_ang_mom_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_shell_factor_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_basis_shell_factor_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_r_power_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in) :: dset(*)
+   end function trexio_write_basis_r_power_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_shell_index_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in) :: dset(*)
+   end function trexio_write_basis_shell_index_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_exponent_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_basis_exponent_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_coefficient_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_basis_coefficient_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_prim_factor_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_basis_prim_factor_32
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_ecp_max_ang_mom_plus_1_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -4537,66 +7322,57 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_basis_nucleus_index_32 (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int32_t), intent(in) :: dset(*)
-   end function trexio_write_basis_nucleus_index_32
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_basis_shell_ang_mom_32 (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int32_t), intent(in) :: dset(*)
-   end function trexio_write_basis_shell_ang_mom_32
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_basis_shell_factor_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_grid_coord_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(in) :: dset(*)
-   end function trexio_write_basis_shell_factor_32
+   end function trexio_write_grid_coord_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_basis_shell_index_32 (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int32_t), intent(in) :: dset(*)
-   end function trexio_write_basis_shell_index_32
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_basis_exponent_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_grid_weight_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(in) :: dset(*)
-   end function trexio_write_basis_exponent_32
+   end function trexio_write_grid_weight_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_basis_coefficient_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_grid_ang_coord_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(in) :: dset(*)
-   end function trexio_write_basis_coefficient_32
+   end function trexio_write_grid_ang_coord_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_basis_prim_factor_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_grid_ang_weight_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(in) :: dset(*)
-   end function trexio_write_basis_prim_factor_32
+   end function trexio_write_grid_ang_weight_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_rad_coord_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_grid_rad_coord_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_rad_weight_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_float), intent(in) :: dset(*)
+   end function trexio_write_grid_rad_weight_32
 end interface
 
 interface
@@ -4870,39 +7646,57 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_cell_a_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_jastrow_en_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(in) :: dset(*)
-   end function trexio_write_cell_a_32
+   end function trexio_write_jastrow_en_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_cell_b_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_jastrow_ee_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(in) :: dset(*)
-   end function trexio_write_cell_b_32
+   end function trexio_write_jastrow_ee_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_cell_c_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_jastrow_een_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(in) :: dset(*)
-   end function trexio_write_cell_c_32
+   end function trexio_write_jastrow_een_32
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_pbc_k_point_32 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_jastrow_en_nucleus_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in) :: dset(*)
+   end function trexio_write_jastrow_en_nucleus_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_een_nucleus_32 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in) :: dset(*)
+   end function trexio_write_jastrow_een_nucleus_32
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_en_scaling_32 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_float), intent(in) :: dset(*)
-   end function trexio_write_pbc_k_point_32
+   end function trexio_write_jastrow_en_scaling_32
 end interface
 
 interface
@@ -4948,6 +7742,141 @@ interface
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
    end function trexio_write_nucleus_coord_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_a_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_cell_a_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_b_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_cell_b_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_c_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_cell_c_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_G_a_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_cell_G_a_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_G_b_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_cell_G_b_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_G_c_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_cell_G_c_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_pbc_k_point_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_pbc_k_point_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_nucleus_index_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in) :: dset(*)
+   end function trexio_write_basis_nucleus_index_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_shell_ang_mom_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in) :: dset(*)
+   end function trexio_write_basis_shell_ang_mom_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_shell_factor_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_basis_shell_factor_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_r_power_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in) :: dset(*)
+   end function trexio_write_basis_r_power_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_shell_index_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in) :: dset(*)
+   end function trexio_write_basis_shell_index_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_exponent_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_basis_exponent_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_coefficient_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_basis_coefficient_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_prim_factor_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_basis_prim_factor_64
 end interface
 
 interface
@@ -5014,66 +7943,57 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_basis_nucleus_index_64 (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int64_t), intent(in) :: dset(*)
-   end function trexio_write_basis_nucleus_index_64
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_basis_shell_ang_mom_64 (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int64_t), intent(in) :: dset(*)
-   end function trexio_write_basis_shell_ang_mom_64
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_basis_shell_factor_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_grid_coord_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_basis_shell_factor_64
+   end function trexio_write_grid_coord_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_basis_shell_index_64 (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int64_t), intent(in) :: dset(*)
-   end function trexio_write_basis_shell_index_64
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_basis_exponent_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_grid_weight_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_basis_exponent_64
+   end function trexio_write_grid_weight_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_basis_coefficient_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_grid_ang_coord_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_basis_coefficient_64
+   end function trexio_write_grid_ang_coord_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_basis_prim_factor_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_grid_ang_weight_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_basis_prim_factor_64
+   end function trexio_write_grid_ang_weight_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_rad_coord_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_grid_rad_coord_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_rad_weight_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_grid_rad_weight_64
 end interface
 
 interface
@@ -5347,39 +8267,57 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_cell_a_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_jastrow_en_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_cell_a_64
+   end function trexio_write_jastrow_en_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_cell_b_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_jastrow_ee_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_cell_b_64
+   end function trexio_write_jastrow_ee_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_cell_c_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_jastrow_een_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_cell_c_64
+   end function trexio_write_jastrow_een_64
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_pbc_k_point_64 (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_jastrow_en_nucleus_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in) :: dset(*)
+   end function trexio_write_jastrow_en_nucleus_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_een_nucleus_64 (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in) :: dset(*)
+   end function trexio_write_jastrow_een_nucleus_64
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_en_scaling_64 (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_pbc_k_point_64
+   end function trexio_write_jastrow_en_scaling_64
 end interface
 
 interface
@@ -5425,6 +8363,141 @@ interface
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
    end function trexio_write_nucleus_coord
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_a (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_cell_a
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_b (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_cell_b
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_c (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_cell_c
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_G_a (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_cell_G_a
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_G_b (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_cell_G_b
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_cell_G_c (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_cell_G_c
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_pbc_k_point (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_pbc_k_point
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_nucleus_index (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in) :: dset(*)
+   end function trexio_write_basis_nucleus_index
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_shell_ang_mom (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in) :: dset(*)
+   end function trexio_write_basis_shell_ang_mom
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_shell_factor (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_basis_shell_factor
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_r_power (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in) :: dset(*)
+   end function trexio_write_basis_r_power
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_shell_index (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in) :: dset(*)
+   end function trexio_write_basis_shell_index
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_exponent (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_basis_exponent
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_coefficient (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_basis_coefficient
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_basis_prim_factor (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_basis_prim_factor
 end interface
 
 interface
@@ -5491,66 +8564,57 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_basis_nucleus_index (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int32_t), intent(in) :: dset(*)
-   end function trexio_write_basis_nucleus_index
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_basis_shell_ang_mom (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int32_t), intent(in) :: dset(*)
-   end function trexio_write_basis_shell_ang_mom
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_basis_shell_factor (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_grid_coord (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_basis_shell_factor
+   end function trexio_write_grid_coord
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_basis_shell_index (trex_file, dset) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     integer(c_int32_t), intent(in) :: dset(*)
-   end function trexio_write_basis_shell_index
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_basis_exponent (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_grid_weight (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_basis_exponent
+   end function trexio_write_grid_weight
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_basis_coefficient (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_grid_ang_coord (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_basis_coefficient
+   end function trexio_write_grid_ang_coord
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_basis_prim_factor (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_grid_ang_weight (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_basis_prim_factor
+   end function trexio_write_grid_ang_weight
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_rad_coord (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_grid_rad_coord
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_grid_rad_weight (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     real(c_double), intent(in) :: dset(*)
+   end function trexio_write_grid_rad_weight
 end interface
 
 interface
@@ -5824,39 +8888,57 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_cell_a (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_jastrow_en (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_cell_a
+   end function trexio_write_jastrow_en
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_cell_b (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_jastrow_ee (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_cell_b
+   end function trexio_write_jastrow_ee
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_cell_c (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_jastrow_een (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_cell_c
+   end function trexio_write_jastrow_een
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_pbc_k_point (trex_file, dset) bind(C)
+   integer(trexio_exit_code) function trexio_write_jastrow_en_nucleus (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in) :: dset(*)
+   end function trexio_write_jastrow_en_nucleus
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_een_nucleus (trex_file, dset) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int32_t), intent(in) :: dset(*)
+   end function trexio_write_jastrow_een_nucleus
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_jastrow_en_scaling (trex_file, dset) bind(C)
      use, intrinsic :: iso_c_binding
      import
      integer(trexio_t), intent(in), value :: trex_file
      real(c_double), intent(in) :: dset(*)
-   end function trexio_write_pbc_k_point
+   end function trexio_write_jastrow_en_scaling
 end interface
 
 interface
@@ -5949,6 +9031,68 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_ao_2e_int_eri_cholesky (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_ao_2e_int_eri_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_ao_2e_int_eri_cholesky (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_ao_2e_int_eri_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_ao_2e_int_eri_lr_cholesky (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_ao_2e_int_eri_lr_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_ao_2e_int_eri_lr_cholesky (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_ao_2e_int_eri_lr_cholesky
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_mo_2e_int_eri (trex_file, &
                                                offset_file, buffer_size, &
                                                index_sparse, value_sparse) bind(C)
@@ -6011,6 +9155,68 @@ interface
 end interface
 
 interface
+   integer(trexio_exit_code) function trexio_write_mo_2e_int_eri_cholesky (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_mo_2e_int_eri_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_mo_2e_int_eri_cholesky (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_mo_2e_int_eri_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_mo_2e_int_eri_lr_cholesky (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_mo_2e_int_eri_lr_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_mo_2e_int_eri_lr_cholesky (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_mo_2e_int_eri_lr_cholesky
+end interface
+
+interface
    integer(trexio_exit_code) function trexio_write_csf_det_coefficient (trex_file, &
                                                offset_file, buffer_size, &
                                                index_sparse, value_sparse) bind(C)
@@ -6039,6 +9245,254 @@ interface
      real(c_double), intent(in)            :: value_sparse(*)
      integer(c_int64_t), intent(in), value :: value_size
    end function trexio_write_safe_csf_det_coefficient
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_amplitude_single (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_amplitude_single
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_amplitude_single (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_amplitude_single
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_amplitude_single_exp (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_amplitude_single_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_amplitude_single_exp (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_amplitude_single_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_amplitude_double (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_amplitude_double
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_amplitude_double (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_amplitude_double
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_amplitude_double_exp (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_amplitude_double_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_amplitude_double_exp (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_amplitude_double_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_amplitude_triple (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_amplitude_triple
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_amplitude_triple (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_amplitude_triple
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_amplitude_triple_exp (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_amplitude_triple_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_amplitude_triple_exp (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_amplitude_triple_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_amplitude_quadruple (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_amplitude_quadruple
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_amplitude_quadruple (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_amplitude_quadruple
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_amplitude_quadruple_exp (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_amplitude_quadruple_exp
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_amplitude_quadruple_exp (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_amplitude_quadruple_exp
 end interface
 
 interface
@@ -6166,7 +9620,7 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_rdm_2e_dnup (trex_file, &
+   integer(trexio_exit_code) function trexio_write_rdm_2e_cholesky (trex_file, &
                                                offset_file, buffer_size, &
                                                index_sparse, value_sparse) bind(C)
      use, intrinsic :: iso_c_binding
@@ -6176,11 +9630,11 @@ interface
      integer(c_int64_t), intent(in), value :: buffer_size
      integer(c_int32_t), intent(in)        :: index_sparse(*)
      real(c_double), intent(in)            :: value_sparse(*)
-   end function trexio_write_rdm_2e_dnup
+   end function trexio_write_rdm_2e_cholesky
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_safe_rdm_2e_dnup (trex_file, &
+   integer(trexio_exit_code) function trexio_write_safe_rdm_2e_cholesky (trex_file, &
                                                     offset_file, buffer_size, &
                                                     index_sparse, index_size, &
                                                     value_sparse, value_size) bind(C)
@@ -6193,7 +9647,100 @@ interface
      integer(c_int64_t), intent(in), value :: index_size
      real(c_double), intent(in)            :: value_sparse(*)
      integer(c_int64_t), intent(in), value :: value_size
-   end function trexio_write_safe_rdm_2e_dnup
+   end function trexio_write_safe_rdm_2e_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_rdm_2e_upup_cholesky (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_rdm_2e_upup_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_rdm_2e_upup_cholesky (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_rdm_2e_upup_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_rdm_2e_dndn_cholesky (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_rdm_2e_dndn_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_rdm_2e_dndn_cholesky (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_rdm_2e_dndn_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_rdm_2e_updn_cholesky (trex_file, &
+                                               offset_file, buffer_size, &
+                                               index_sparse, value_sparse) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     real(c_double), intent(in)            :: value_sparse(*)
+   end function trexio_write_rdm_2e_updn_cholesky
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_safe_rdm_2e_updn_cholesky (trex_file, &
+                                                    offset_file, buffer_size, &
+                                                    index_sparse, index_size, &
+                                                    value_sparse, value_size) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     integer(c_int64_t), intent(in), value :: offset_file
+     integer(c_int64_t), intent(in), value :: buffer_size
+     integer(c_int32_t), intent(in)        :: index_sparse(*)
+     integer(c_int64_t), intent(in), value :: index_size
+     real(c_double), intent(in)            :: value_sparse(*)
+     integer(c_int64_t), intent(in), value :: value_size
+   end function trexio_write_safe_rdm_2e_updn_cholesky
 end interface
 
 interface
@@ -6227,26 +9774,6 @@ interface
 end interface
 
 interface
-   integer(trexio_exit_code) function trexio_write_mo_class_low (trex_file, dset, max_str_len) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     character(kind=c_char), intent(in)    :: dset(*)
-     integer(c_int32_t), intent(in), value :: max_str_len
-   end function trexio_write_mo_class_low
-end interface
-
-interface
-   integer(trexio_exit_code) function trexio_write_mo_symmetry_low (trex_file, dset, max_str_len) bind(C)
-     use, intrinsic :: iso_c_binding
-     import
-     integer(trexio_t), intent(in), value :: trex_file
-     character(kind=c_char), intent(in)    :: dset(*)
-     integer(c_int32_t), intent(in), value :: max_str_len
-   end function trexio_write_mo_symmetry_low
-end interface
-
-interface
    integer(trexio_exit_code) function trexio_write_state_label_low (trex_file, dset, max_str_len) bind(C)
      use, intrinsic :: iso_c_binding
      import
@@ -6264,6 +9791,26 @@ interface
      character(kind=c_char), intent(in)    :: dset(*)
      integer(c_int32_t), intent(in), value :: max_str_len
    end function trexio_write_state_file_name_low
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_mo_class_low (trex_file, dset, max_str_len) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     character(kind=c_char), intent(in)    :: dset(*)
+     integer(c_int32_t), intent(in), value :: max_str_len
+   end function trexio_write_mo_class_low
+end interface
+
+interface
+   integer(trexio_exit_code) function trexio_write_mo_symmetry_low (trex_file, dset, max_str_len) bind(C)
+     use, intrinsic :: iso_c_binding
+     import
+     integer(trexio_t), intent(in), value :: trex_file
+     character(kind=c_char), intent(in)    :: dset(*)
+     integer(c_int32_t), intent(in), value :: max_str_len
+   end function trexio_write_mo_symmetry_low
 end interface
 
 interface
@@ -6364,6 +9911,19 @@ integer(trexio_exit_code) function trexio_inquire (filename)
   filename_c = trim(filename) // c_null_char
   trexio_inquire = trexio_inquire_c(filename_c)
 end function trexio_inquire
+
+integer(trexio_exit_code) function trexio_cp (source, destination)
+  use, intrinsic :: iso_c_binding
+  implicit none
+  character(len=*), intent(in)           :: source
+  character(len=*), intent(in)           :: destination
+  character(len=len_trim(source)+1)      :: source_c
+  character(len=len_trim(destination)+1) :: destination_c
+
+  source_c = trim(source) // c_null_char
+  destination_c = trim(destination) // c_null_char
+  trexio_cp = trexio_cp_c(source_c, destination_c)
+end function trexio_cp
 
 integer(trexio_exit_code) function trexio_to_bitfield_list(list, occupied_num, det_list, N_int)
   use, intrinsic :: iso_c_binding
@@ -6531,6 +10091,16 @@ integer(trexio_exit_code) function trexio_read_nucleus_point_group (trex_file, s
 
 end function trexio_read_nucleus_point_group
 
+integer(trexio_exit_code) function trexio_read_state_current_label (trex_file, str, max_str_len)
+  implicit none
+  integer(trexio_t), intent(in), value  :: trex_file
+  integer(c_int32_t), intent(in), value :: max_str_len
+  character, intent(out) :: str(*)
+
+  trexio_read_state_current_label = trexio_read_state_current_label_c(trex_file, str, max_str_len)
+
+end function trexio_read_state_current_label
+
 integer(trexio_exit_code) function trexio_read_basis_type (trex_file, str, max_str_len)
   implicit none
   integer(trexio_t), intent(in), value  :: trex_file
@@ -6540,6 +10110,16 @@ integer(trexio_exit_code) function trexio_read_basis_type (trex_file, str, max_s
   trexio_read_basis_type = trexio_read_basis_type_c(trex_file, str, max_str_len)
 
 end function trexio_read_basis_type
+
+integer(trexio_exit_code) function trexio_read_grid_description (trex_file, str, max_str_len)
+  implicit none
+  integer(trexio_t), intent(in), value  :: trex_file
+  integer(c_int32_t), intent(in), value :: max_str_len
+  character, intent(out) :: str(*)
+
+  trexio_read_grid_description = trexio_read_grid_description_c(trex_file, str, max_str_len)
+
+end function trexio_read_grid_description
 
 integer(trexio_exit_code) function trexio_read_mo_type (trex_file, str, max_str_len)
   implicit none
@@ -6551,15 +10131,15 @@ integer(trexio_exit_code) function trexio_read_mo_type (trex_file, str, max_str_
 
 end function trexio_read_mo_type
 
-integer(trexio_exit_code) function trexio_read_state_current_label (trex_file, str, max_str_len)
+integer(trexio_exit_code) function trexio_read_jastrow_type (trex_file, str, max_str_len)
   implicit none
   integer(trexio_t), intent(in), value  :: trex_file
   integer(c_int32_t), intent(in), value :: max_str_len
   character, intent(out) :: str(*)
 
-  trexio_read_state_current_label = trexio_read_state_current_label_c(trex_file, str, max_str_len)
+  trexio_read_jastrow_type = trexio_read_jastrow_type_c(trex_file, str, max_str_len)
 
-end function trexio_read_state_current_label
+end function trexio_read_jastrow_type
 
 integer(trexio_exit_code) function trexio_read_metadata_code (trex_file, dset, max_str_len)
   implicit none
@@ -6642,60 +10222,6 @@ integer(trexio_exit_code) function trexio_read_nucleus_label (trex_file, dset, m
 
 end function trexio_read_nucleus_label
 
-integer(trexio_exit_code) function trexio_read_mo_class (trex_file, dset, max_str_len)
-  implicit none
-  integer(trexio_t), intent(in), value :: trex_file
-  integer(c_int32_t), intent(in), value :: max_str_len
-  character(len=*), intent(inout) :: dset(*)
-
-  character, allocatable :: str_compiled(:)
-  integer(c_int64_t) :: mo_num
-  integer(trexio_exit_code) :: rc
-
-  rc = trexio_read_mo_num_64(trex_file, mo_num)
-  if (rc /= TREXIO_SUCCESS) trexio_read_mo_class = rc
-
-  allocate(str_compiled(mo_num*(max_str_len+1)+1))
-
-  rc = trexio_read_mo_class_low(trex_file, str_compiled, max_str_len)
-  if (rc /= TREXIO_SUCCESS) then
-    deallocate(str_compiled)
-    trexio_read_mo_class = rc
-  else
-    call trexio_str2strarray(str_compiled, mo_num, max_str_len, dset)
-    deallocate(str_compiled)
-    trexio_read_mo_class = TREXIO_SUCCESS
-  endif
-
-end function trexio_read_mo_class
-
-integer(trexio_exit_code) function trexio_read_mo_symmetry (trex_file, dset, max_str_len)
-  implicit none
-  integer(trexio_t), intent(in), value :: trex_file
-  integer(c_int32_t), intent(in), value :: max_str_len
-  character(len=*), intent(inout) :: dset(*)
-
-  character, allocatable :: str_compiled(:)
-  integer(c_int64_t) :: mo_num
-  integer(trexio_exit_code) :: rc
-
-  rc = trexio_read_mo_num_64(trex_file, mo_num)
-  if (rc /= TREXIO_SUCCESS) trexio_read_mo_symmetry = rc
-
-  allocate(str_compiled(mo_num*(max_str_len+1)+1))
-
-  rc = trexio_read_mo_symmetry_low(trex_file, str_compiled, max_str_len)
-  if (rc /= TREXIO_SUCCESS) then
-    deallocate(str_compiled)
-    trexio_read_mo_symmetry = rc
-  else
-    call trexio_str2strarray(str_compiled, mo_num, max_str_len, dset)
-    deallocate(str_compiled)
-    trexio_read_mo_symmetry = TREXIO_SUCCESS
-  endif
-
-end function trexio_read_mo_symmetry
-
 integer(trexio_exit_code) function trexio_read_state_label (trex_file, dset, max_str_len)
   implicit none
   integer(trexio_t), intent(in), value :: trex_file
@@ -6750,6 +10276,60 @@ integer(trexio_exit_code) function trexio_read_state_file_name (trex_file, dset,
 
 end function trexio_read_state_file_name
 
+integer(trexio_exit_code) function trexio_read_mo_class (trex_file, dset, max_str_len)
+  implicit none
+  integer(trexio_t), intent(in), value :: trex_file
+  integer(c_int32_t), intent(in), value :: max_str_len
+  character(len=*), intent(inout) :: dset(*)
+
+  character, allocatable :: str_compiled(:)
+  integer(c_int64_t) :: mo_num
+  integer(trexio_exit_code) :: rc
+
+  rc = trexio_read_mo_num_64(trex_file, mo_num)
+  if (rc /= TREXIO_SUCCESS) trexio_read_mo_class = rc
+
+  allocate(str_compiled(mo_num*(max_str_len+1)+1))
+
+  rc = trexio_read_mo_class_low(trex_file, str_compiled, max_str_len)
+  if (rc /= TREXIO_SUCCESS) then
+    deallocate(str_compiled)
+    trexio_read_mo_class = rc
+  else
+    call trexio_str2strarray(str_compiled, mo_num, max_str_len, dset)
+    deallocate(str_compiled)
+    trexio_read_mo_class = TREXIO_SUCCESS
+  endif
+
+end function trexio_read_mo_class
+
+integer(trexio_exit_code) function trexio_read_mo_symmetry (trex_file, dset, max_str_len)
+  implicit none
+  integer(trexio_t), intent(in), value :: trex_file
+  integer(c_int32_t), intent(in), value :: max_str_len
+  character(len=*), intent(inout) :: dset(*)
+
+  character, allocatable :: str_compiled(:)
+  integer(c_int64_t) :: mo_num
+  integer(trexio_exit_code) :: rc
+
+  rc = trexio_read_mo_num_64(trex_file, mo_num)
+  if (rc /= TREXIO_SUCCESS) trexio_read_mo_symmetry = rc
+
+  allocate(str_compiled(mo_num*(max_str_len+1)+1))
+
+  rc = trexio_read_mo_symmetry_low(trex_file, str_compiled, max_str_len)
+  if (rc /= TREXIO_SUCCESS) then
+    deallocate(str_compiled)
+    trexio_read_mo_symmetry = rc
+  else
+    call trexio_str2strarray(str_compiled, mo_num, max_str_len, dset)
+    deallocate(str_compiled)
+    trexio_read_mo_symmetry = TREXIO_SUCCESS
+  endif
+
+end function trexio_read_mo_symmetry
+
 integer(trexio_exit_code) function trexio_write_metadata_package_version (trex_file, str, max_str_len)
   use, intrinsic :: iso_c_binding, only : c_null_char
   implicit none
@@ -6795,6 +10375,21 @@ integer(trexio_exit_code) function trexio_write_nucleus_point_group (trex_file, 
 
 end function trexio_write_nucleus_point_group
 
+integer(trexio_exit_code) function trexio_write_state_current_label (trex_file, str, max_str_len)
+  use, intrinsic :: iso_c_binding, only : c_null_char
+  implicit none
+  integer(trexio_t), intent(in), value  :: trex_file
+  integer(c_int32_t), intent(in), value :: max_str_len
+  character(len=*), intent(in) :: str
+
+  character(len=len_trim(str)+1) :: str_c
+
+  str_c = trim(str) // c_null_char
+
+  trexio_write_state_current_label = trexio_write_state_current_label_c(trex_file, str_c, max_str_len)
+
+end function trexio_write_state_current_label
+
 integer(trexio_exit_code) function trexio_write_basis_type (trex_file, str, max_str_len)
   use, intrinsic :: iso_c_binding, only : c_null_char
   implicit none
@@ -6809,6 +10404,21 @@ integer(trexio_exit_code) function trexio_write_basis_type (trex_file, str, max_
   trexio_write_basis_type = trexio_write_basis_type_c(trex_file, str_c, max_str_len)
 
 end function trexio_write_basis_type
+
+integer(trexio_exit_code) function trexio_write_grid_description (trex_file, str, max_str_len)
+  use, intrinsic :: iso_c_binding, only : c_null_char
+  implicit none
+  integer(trexio_t), intent(in), value  :: trex_file
+  integer(c_int32_t), intent(in), value :: max_str_len
+  character(len=*), intent(in) :: str
+
+  character(len=len_trim(str)+1) :: str_c
+
+  str_c = trim(str) // c_null_char
+
+  trexio_write_grid_description = trexio_write_grid_description_c(trex_file, str_c, max_str_len)
+
+end function trexio_write_grid_description
 
 integer(trexio_exit_code) function trexio_write_mo_type (trex_file, str, max_str_len)
   use, intrinsic :: iso_c_binding, only : c_null_char
@@ -6825,7 +10435,7 @@ integer(trexio_exit_code) function trexio_write_mo_type (trex_file, str, max_str
 
 end function trexio_write_mo_type
 
-integer(trexio_exit_code) function trexio_write_state_current_label (trex_file, str, max_str_len)
+integer(trexio_exit_code) function trexio_write_jastrow_type (trex_file, str, max_str_len)
   use, intrinsic :: iso_c_binding, only : c_null_char
   implicit none
   integer(trexio_t), intent(in), value  :: trex_file
@@ -6836,9 +10446,9 @@ integer(trexio_exit_code) function trexio_write_state_current_label (trex_file, 
 
   str_c = trim(str) // c_null_char
 
-  trexio_write_state_current_label = trexio_write_state_current_label_c(trex_file, str_c, max_str_len)
+  trexio_write_jastrow_type = trexio_write_jastrow_type_c(trex_file, str_c, max_str_len)
 
-end function trexio_write_state_current_label
+end function trexio_write_jastrow_type
 
 integer(trexio_exit_code) function trexio_write_metadata_code (trex_file, dset, max_str_len)
   implicit none
@@ -6900,46 +10510,6 @@ integer(trexio_exit_code) function trexio_write_nucleus_label (trex_file, dset, 
 
 end function trexio_write_nucleus_label
 
-integer(trexio_exit_code) function trexio_write_mo_class (trex_file, dset, max_str_len)
-  implicit none
-  integer(trexio_t), intent(in), value :: trex_file
-  integer(c_int32_t), intent(in), value :: max_str_len
-  character(len=*), intent(in) :: dset(*)
-
-  character(len=:), allocatable :: str_compiled
-  integer(c_int64_t) :: mo_num
-  integer(trexio_exit_code) :: rc
-
-  rc = trexio_read_mo_num_64(trex_file, mo_num)
-  if (rc /= TREXIO_SUCCESS) then
-    trexio_write_mo_class = rc
-  else
-    call trexio_strarray2str(dset, mo_num, max_str_len, str_compiled)
-    trexio_write_mo_class = trexio_write_mo_class_low(trex_file, str_compiled, max_str_len)
-  endif
-
-end function trexio_write_mo_class
-
-integer(trexio_exit_code) function trexio_write_mo_symmetry (trex_file, dset, max_str_len)
-  implicit none
-  integer(trexio_t), intent(in), value :: trex_file
-  integer(c_int32_t), intent(in), value :: max_str_len
-  character(len=*), intent(in) :: dset(*)
-
-  character(len=:), allocatable :: str_compiled
-  integer(c_int64_t) :: mo_num
-  integer(trexio_exit_code) :: rc
-
-  rc = trexio_read_mo_num_64(trex_file, mo_num)
-  if (rc /= TREXIO_SUCCESS) then
-    trexio_write_mo_symmetry = rc
-  else
-    call trexio_strarray2str(dset, mo_num, max_str_len, str_compiled)
-    trexio_write_mo_symmetry = trexio_write_mo_symmetry_low(trex_file, str_compiled, max_str_len)
-  endif
-
-end function trexio_write_mo_symmetry
-
 integer(trexio_exit_code) function trexio_write_state_label (trex_file, dset, max_str_len)
   implicit none
   integer(trexio_t), intent(in), value :: trex_file
@@ -6979,5 +10549,45 @@ integer(trexio_exit_code) function trexio_write_state_file_name (trex_file, dset
   endif
 
 end function trexio_write_state_file_name
+
+integer(trexio_exit_code) function trexio_write_mo_class (trex_file, dset, max_str_len)
+  implicit none
+  integer(trexio_t), intent(in), value :: trex_file
+  integer(c_int32_t), intent(in), value :: max_str_len
+  character(len=*), intent(in) :: dset(*)
+
+  character(len=:), allocatable :: str_compiled
+  integer(c_int64_t) :: mo_num
+  integer(trexio_exit_code) :: rc
+
+  rc = trexio_read_mo_num_64(trex_file, mo_num)
+  if (rc /= TREXIO_SUCCESS) then
+    trexio_write_mo_class = rc
+  else
+    call trexio_strarray2str(dset, mo_num, max_str_len, str_compiled)
+    trexio_write_mo_class = trexio_write_mo_class_low(trex_file, str_compiled, max_str_len)
+  endif
+
+end function trexio_write_mo_class
+
+integer(trexio_exit_code) function trexio_write_mo_symmetry (trex_file, dset, max_str_len)
+  implicit none
+  integer(trexio_t), intent(in), value :: trex_file
+  integer(c_int32_t), intent(in), value :: max_str_len
+  character(len=*), intent(in) :: dset(*)
+
+  character(len=:), allocatable :: str_compiled
+  integer(c_int64_t) :: mo_num
+  integer(trexio_exit_code) :: rc
+
+  rc = trexio_read_mo_num_64(trex_file, mo_num)
+  if (rc /= TREXIO_SUCCESS) then
+    trexio_write_mo_symmetry = rc
+  else
+    call trexio_strarray2str(dset, mo_num, max_str_len, str_compiled)
+    trexio_write_mo_symmetry = trexio_write_mo_symmetry_low(trex_file, str_compiled, max_str_len)
+  endif
+
+end function trexio_write_mo_symmetry
 
 end module trexio

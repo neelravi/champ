@@ -101,6 +101,8 @@ if (HDF5_FOUND)
 endif(HDF5_FOUND)
 
 # Find TREXIO
+message(" ")
+message("Looking for TREXIO library:")
 find_package(TREXIO QUIET)
 
 if (TREXIO_FOUND)
@@ -109,8 +111,32 @@ if (TREXIO_FOUND)
   message(STATUS "TREXIO Library lib dirs          :: " ${TREXIO_LIBRARY})
   message(STATUS "                                    ")
   add_definitions(-DTREXIO_FOUND=\"${TREXIO_FOUND}\")
+# Taken from TurboRVB
+# list( APPEND PPDIRECTIVES _TREXIO )
+  link_libraries(${TREXIO_LIBRARIES})
+  include_directories( ${TREXIO_INCLUDE_DIRS} )
 endif(TREXIO_FOUND)
 endif(ENABLE_TREXIO)
+
+
+# Find QMCkl
+if (TREXIO_FOUND)
+  find_package(QMCKL QUIET)
+endif(TREXIO_FOUND)
+if (QMCKL_FOUND)
+  message(STATUS "Is QMCkl library found           :: " ${QMCKL_FOUND})
+  message(STATUS "QMCKL Library include dirs       :: " ${QMCKL_INCLUDE_DIR})
+  message(STATUS "QMCKL Library lib dirs           :: " ${QMCKL_LIBRARY})
+  message("                                    ")
+  add_definitions(-DQMCKL_FOUND=\"${QMCKL_FOUND}\")
+# Taken from TurboRVB
+#   list( APPEND PPDIRECTIVES _QMCKL )
+   link_libraries(${QMCKL_LIBRARIES})
+  include_directories( ${QMCKL_INCLUDE_DIRS} )
+endif(QMCKL_FOUND)
+
+
+
 
 #  documentation requirements
 if (BUILD_DOC)
@@ -146,9 +172,9 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
         "-Wno-c-binding-type" "-Wno-function-elimination"
         )
   endif()
-  if (TREXIO_FOUND)
-    list(APPEND Fortran_FLAGS "-ltrexio")
-  endif()
+#  if (TREXIO_FOUND)
+#    list(APPEND Fortran_FLAGS "-ltrexio")
+#  endif()
 
   set(CMAKE_Fortran_FORMAT_FIXED_FLAG "-ffixed-form -ffixed-line-length-132 -fno-automatic")
 
