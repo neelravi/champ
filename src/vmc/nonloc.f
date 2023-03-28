@@ -238,7 +238,7 @@ c transition probabilities for Casula's moves in DMC
      &,orbn,dorbn,da_orbn,psij_ratio,vjn,da_psij_ratio)
 
       if(ipr.ge.4) write(ounit,'(''vpsp_det,det,r_en(1)='',100d12.4)')
-     &,(vpsp_det(iab),detiab(1,iab),iab=1,2),r_en(1,1)
+     & (vpsp_det(iab),detiab(1,iab),iab=1,2),r_en(1,1)
 
       return
       end

@@ -107,10 +107,10 @@ c     Therefore use original verion of code instead of this one.
       i2=i2+i3/itwo12
       ll(2)=mod(i2,itwo12)
       ll(1)=mod(i1+i2/itwo12,itwo12)
-      val=two12i *(dfloat(ll(1))+
-     &       two12i*(dfloat(ll(2))+
-     &       two12i*(dfloat(ll(3))+
-     &       two12i*(dfloat(ll(4))))))
+      val=two12i *(dble(ll(1))+
+     &       two12i*(dble(ll(2))+
+     &       two12i*(dble(ll(3))+
+     &       two12i*(dble(ll(4))))))
       return
       end
 

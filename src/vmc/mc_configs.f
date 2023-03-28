@@ -1,7 +1,4 @@
       module mc_configs
-      contains
-      subroutine mc_configs_start
-
       use config,  only: xnew,xold
       use contrl_file, only: errunit,ounit
       use control_vmc, only: vmc_icharged_atom,vmc_irstar,vmc_isite
@@ -19,6 +16,10 @@
 
       implicit none
 
+      contains
+      subroutine mc_configs_start
+      implicit none
+
       integer :: i, ic, icharge_system, id, ierr
       integer :: index, k, l, ntotal_sites
       integer, dimension(4) :: irn
@@ -26,7 +27,7 @@
       integer, dimension(MPI_STATUS_SIZE) :: istatus
       integer, dimension(4) :: irn_temp
       real(dp) :: err, rnd
-      character*20 filename
+      character(len=20) filename
 
 c set the random number seed differently on each processor
 c call to setrn must be in read_input since irn local there
@@ -64,7 +65,7 @@ c check sites flag if one gets initial configuration from sites routine
         goto 40
 
    20   continue
-	ntotal_sites=0
+        ntotal_sites=0
         do i=1,ncent
           ntotal_sites=ntotal_sites+int(znuc(iwctype(i))+0.5d0)
         enddo
@@ -75,8 +76,8 @@ c check sites flag if one gets initial configuration from sites routine
           nsite(i)=int(znuc(iwctype(i))+0.5d0)
           if (vmc_icharged_atom.eq.i) then
             nsite(i)=int(znuc(iwctype(i))+0.5d0)-icharge_system
-	    if (nsite(i).lt.0) call fatal_error('MC_CONFIG: error in icharged_atom')
-	  endif
+            if (nsite(i).lt.0) call fatal_error('MC_CONFIG: error in icharged_atom')
+          endif
           l=l+nsite(i)
           if (l.gt.nelec) then
             nsite(i)=nsite(i)-(l-nelec)
@@ -120,10 +121,13 @@ c then set up so no configurations are written.
         rewind 7
       endif
       call pcm_qvol(nproc)
-      return
+      end subroutine
 
 c-----------------------------------------------------------------------
-      entry mc_configs_write
+      subroutine mc_configs_write
+      implicit none
+      integer :: i, ic, id, ierr
+      integer, dimension(MPI_STATUS_SIZE) :: istatus
 
       if(idtask.ne.0) then
         call mpi_send(xold,3*nelec,mpi_double_precision,0

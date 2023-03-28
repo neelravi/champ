@@ -146,12 +146,12 @@ c-----------------------------------------------------------------------
       use pseudo_mod, only: MPS_QUAD
       use qua,     only: nquad
       use system,  only: ncent,ncent_tot,nelec
+      use save_mod, only: t_vpsp_save
 
       implicit none
 
       integer :: i, ic, iq
 
-      real(dp), allocatable, save :: t_vpsp_save(:, :, :)
 
       if (.not.allocated(t_vpsp_save)) allocate(t_vpsp_save(ncent_tot, MPS_QUAD, nelec))
 
@@ -166,9 +166,17 @@ c-----------------------------------------------------------------------
         enddo
       enddo
 
-      return
+      end subroutine
 
-      entry t_vpsp_get
+      subroutine t_vpsp_get
+      use casula,  only: t_vpsp
+      use qua,     only: nquad
+      use system,  only: ncent,nelec
+      use save_mod, only: t_vpsp_save
+
+      implicit none
+
+      integer :: i, ic, iq
 
       do i=1,nelec
         do iq=1,nquad

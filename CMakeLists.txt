@@ -145,6 +145,7 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
         "-Wno-character-truncation" "-Wno-compare-reals" "-Wno-tabs"
         "-Wno-c-binding-type" "-Wno-function-elimination"
         "-fno-check-array-temporaries"
+        "-std=f2018" "-Werror"
         # "-ffpe-trap=invalid,zero,overflow" 
         )
   endif()

@@ -386,7 +386,7 @@ c-----------------------------------------------------------------------
       implicit none
 
       integer :: i, iblk, idx, j
-      real(dp) :: err, wcum, x, x2
+      real(dp) :: wcum, x, x2
       real(dp), dimension(mxciterm) :: oav
       real(dp), dimension(mxciterm) :: deav
       real(dp), dimension(mxciterm, mxcireduced) :: oeav
@@ -395,10 +395,6 @@ c-----------------------------------------------------------------------
       real(dp), dimension(ncimatdim) :: ooerr
       real(dp), dimension(ncimatdim) :: ooeav
 
-
-
-
-      err(x,x2)=dsqrt(abs(x2/wcum-(x/wcum)**2)/iblk)
 
       if(ioptci.eq.0.or.method.eq.'sr_n'.or.method.eq.'lin_d') return
 
@@ -423,8 +419,14 @@ c-----------------------------------------------------------------------
         ooerr(idx)=err(ci_oo_cum(idx),ci_oo_cm2(idx))
        enddo
       enddo
-
-      end
+      contains
+        elemental pure function err(x,x2)
+        implicit none
+        real(dp) err
+        real(dp), intent(in) :: x, x2
+        err = dsqrt(abs(x2/wcum-(x/wcum)**2)/iblk)
+        end function
+      end subroutine
 c-----------------------------------------------------------------------
       subroutine optci_fin(iblk,passes,etot)
 

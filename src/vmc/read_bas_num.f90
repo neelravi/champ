@@ -271,7 +271,7 @@ subroutine readps_gauss
   logical         :: exist, skip = .true.
   real(dp) ::  necp_power_tmp
 
-  character*80 label
+  character(len=80) label
 
 
   do ic=1,nctype

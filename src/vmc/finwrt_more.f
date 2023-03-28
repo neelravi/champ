@@ -19,7 +19,7 @@ c written by Claudia Filippi
       real(dp) :: passes
 
 
-      passes=dfloat(iblk*vmc_nstep)
+      passes=dble(iblk*vmc_nstep)
       write(ounit,'(''average psid, det_ref '',2d12.5)') (apsi(istate)*nproc/passes,istate=1,nstates),aref*nproc/passes
       write(ounit,'(''log detref '',2d12.5)') (detref(iab)*nproc/passes,iab=1,2)
 
