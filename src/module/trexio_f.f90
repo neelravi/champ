@@ -141,7 +141,7 @@ interface
 end interface
 
 interface
-   integer function trexio_info () bind(C)
+   integer(c_int32_t) function trexio_info () bind(C)
      use, intrinsic :: iso_c_binding
    end function trexio_info
 end interface
