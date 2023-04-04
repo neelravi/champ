@@ -1,5 +1,5 @@
       module random_mod
-      private
+        private
         interface ! xoshiro c bindings
           function xoshiro_next() result(res)
      &          bind(c,name="next_uniform_double")
@@ -11,16 +11,7 @@
             integer(c_int64_t), intent(in) :: s(4)
           end subroutine
         end interface
-
-        interface ! transparent interface for CHAMP
-          function next_rn_if() 
-            use precision_kinds, only: dp
-            real(dp) :: next_rn_if
-          end function
-        end interface
-        procedure(next_rn_if), pointer :: random_dp => NULL()
-      public :: random_dp
-      public :: setrn, savern
+        public :: setrn, savern, random_dp
       contains
       subroutine setrn(legaseed)
 
@@ -40,17 +31,28 @@
 
       select case(switch_rng)
         case(0)
-          random_dp => rannyu_reference_wrap
           call setrn_rannyu_reference(legaseed)
         case(-1)
-          random_dp => std_reference_wrap
           call setrn_rannyu_std(legaseed)
         case default
-          random_dp => xoshiro_wrap
           call xoshiro_seed(iseed)
       end select
       endsubroutine
 
+      function random_dp() 
+          use precision_kinds, only: dp
+          use rnyucm,  only: switch_rng
+          implicit none
+          real(dp) :: random_dp
+          select case(switch_rng)
+            case(0)
+              random_dp = rannyu_reference_wrap()
+            case(-1)
+              random_dp = std_reference_wrap()
+            case default
+              random_dp = xoshiro_wrap()
+          end select
+      end function
 c--------------------------XOSHIRO----------
 
       function xoshiro_wrap()
