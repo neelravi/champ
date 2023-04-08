@@ -44,7 +44,7 @@ c Modified by A. Scemama
       
       implicit none
 
-      integer :: i, ier, ider, iorb, k, m
+      integer :: i, ier, ider, iorb, k, m, ielec
       integer :: m0
 
       real(dp), dimension(3,*) :: x
@@ -56,9 +56,13 @@ c     real(dp), dimension(nelec,nbasis) :: d2bhin
 
 
 #ifdef QMCKL_FOUND
-      real(dp), allocatable :: mo_vgl_qmckl(:,:,:)            
       integer :: rc                                           
-      integer*8 :: n8                                         
+      integer*8 :: n8
+      integer*8 :: na8
+      real(dp), allocatable :: mo_vgl_qmckl(:,:,:)
+      real(dp), allocatable :: ao_vgl_qmckl(:,:,:)
+      real(dp), allocatable :: mmo_vgl_qmckl(:,:,:)
+      real(dp), allocatable :: mo_coef_qmckl(:,:)
 #endif 
 
       
@@ -140,7 +144,8 @@ c     get basis functions for all electrons
 
          
 #ifdef QMCKL_FOUND
-
+        
+         
 
 ! get number MO's
          rc = qmckl_get_mo_basis_mo_num(qmckl_ctx, n8)
@@ -148,7 +153,7 @@ c     get basis functions for all electrons
             print *, 'Error getting mo_num from QMCkl'
             stop
          end if
-         
+        
 
          allocate(mo_vgl_qmckl(n8, 5, nelec))
          
@@ -172,23 +177,173 @@ c     get basis functions for all electrons
          end if
          
 
+!!! commented as using ao's computed by qmckl to debug         
 !            print*, "inside qmckl"
          
 ! pass computed qmckl orbitals back to champ
-         do i=1,nelec
-            do iorb=1,norb+nadorb
-               orb  (  i,iorb) = mo_vgl_qmckl(iorb,1,i)
-               dorb (iorb,i,1) = mo_vgl_qmckl(iorb,2,i)
-               dorb (iorb,i,2) = mo_vgl_qmckl(iorb,3,i)
-               dorb (iorb,i,3) = mo_vgl_qmckl(iorb,4,i)
-               ddorb(  iorb,i) = mo_vgl_qmckl(iorb,5,i)
+!         do i=1,nelec
+!            do iorb=1,norb+nadorb
+!               orb  (  i,iorb) = mo_vgl_qmckl(iorb,1,i)
+!               dorb (iorb,i,1) = mo_vgl_qmckl(iorb,2,i)
+!               dorb (iorb,i,2) = mo_vgl_qmckl(iorb,3,i)
+!               dorb (iorb,i,3) = mo_vgl_qmckl(iorb,4,i)
+!               ddorb(  iorb,i) = mo_vgl_qmckl(iorb,5,i)
+!            end do
+!     end do
+
+
+
+!debuging MO's by computing AO's
+         !! get ao number
+         rc = qmckl_get_ao_basis_ao_num(qmckl_ctx, na8)
+         if (rc /= QMCKL_SUCCESS) then
+            print *, 'Error getting ao_num from QMCkl'
+            stop
+         end if
+         if (nbasis/=na8) then
+            print *, "Error nbasis", nbasis,"na8",na8,"differ "
+            stop
+         endif
+
+         print*, "ao's",na8, "mo's",n8
+        
+!     get and allocate mo's coefficients
+         allocate(mo_coef_qmckl(nbasis, n8))
+         rc = qmckl_get_mo_basis_coefficient(qmckl_ctx,
+     &        mo_coef_qmckl, n8*nbasis)
+         if (rc /= QMCKL_SUCCESS) then
+            print *, 'Error getting MOs from QMCkl'
+         end if
+         
+
+!     checking molecular coeficients
+         print*,"Checkl molecular coefficients"
+         print*,"iorb, iorb_trexio, m, coef_champ, coef_qmckl"           
+         do iorb=1,norb
+            do m=1,nbasis
+               print*, iorb, m, coef(m,iorb,iwf), mo_coef_qmckl(m,iorb) 
             end do
          end do
 
-         deallocate(mo_vgl_qmckl)
          
          
 
+         
+!     allocate and get ao's
+         allocate(ao_vgl_qmckl(nbasis, 5, nelec))
+!     allocate(ao_vgl_qmckl(nelec, 5, nbasis))
+!     just sanity check to verify if qmckl is passing it correcty
+!     ao_vgl_qmckl=1.d0
+         
+         rc = qmckl_get_ao_basis_ao_vgl(qmckl_ctx,
+!     rc = qmckl_get_ao_basis_ao_vgl_inplace(qmckl_ctx,
+     &        ao_vgl_qmckl, nbasis*nelec*5_8)
+         if (rc /= QMCKL_SUCCESS) then
+            print *,  'Error getting AOs from QMCkl'
+         endif
+         
+         
+         allocate(mmo_vgl_qmckl(n8, 5, nelec))
+!     set values to zero              
+         mmo_vgl_qmckl=0.d0
+         
+        do i=1,nelec
+           do iorb=1,norb+nadorb
+              do m=1,nbasis
+                 mmo_vgl_qmckl(iorb,1,i)=mmo_vgl_qmckl(iorb,1,i)+mo_coef_qmckl(m,iorb)*ao_vgl_qmckl(m,1,i)
+                 mmo_vgl_qmckl(iorb,2,i)=mmo_vgl_qmckl(iorb,2,i)+mo_coef_qmckl(m,iorb)*ao_vgl_qmckl(m,2,i)
+                 mmo_vgl_qmckl(iorb,3,i)=mmo_vgl_qmckl(iorb,3,i)+mo_coef_qmckl(m,iorb)*ao_vgl_qmckl(m,3,i)
+                 mmo_vgl_qmckl(iorb,4,i)=mmo_vgl_qmckl(iorb,4,i)+mo_coef_qmckl(m,iorb)*ao_vgl_qmckl(m,4,i)
+                 mmo_vgl_qmckl(iorb,5,i)=mmo_vgl_qmckl(iorb,5,i)+mo_coef_qmckl(m,iorb)*ao_vgl_qmckl(m,5,i)
+               enddo
+            enddo
+         enddo
+
+!         do i=1,nelec
+!            do iorb=1,norb+nadorb
+!               do m=1,nbasis
+!                  mmo_vgl_qmckl(iorb,1,i)=mmo_vgl_qmckl(iorb,1,i)+mo_coef_qmckl(m,iorb)*ao_vgl_qmckl(i,1,m)
+!                  mmo_vgl_qmckl(iorb,2,i)=mmo_vgl_qmckl(iorb,2,i)+mo_coef_qmckl(m,iorb)*ao_vgl_qmckl(i,2,m)
+!                  mmo_vgl_qmckl(iorb,3,i)=mmo_vgl_qmckl(iorb,3,i)+mo_coef_qmckl(m,iorb)*ao_vgl_qmckl(i,3,m)
+!                  mmo_vgl_qmckl(iorb,4,i)=mmo_vgl_qmckl(iorb,4,i)+mo_coef_qmckl(m,iorb)*ao_vgl_qmckl(i,4,m)
+!                  mmo_vgl_qmckl(iorb,5,i)=mmo_vgl_qmckl(iorb,5,i)+mo_coef_qmckl(m,iorb)*ao_vgl_qmckl(i,5,m)
+!               enddo
+!            enddo
+!         enddo
+         
+
+         
+!     repeat champ calculation for verification
+         call basis_fns(1,nelec,nelec,rvec_en,r_en,ider)
+
+         ielec=1
+         print*,"comparing ao_vgl against champ for iel",ielec
+         print*,"iel,m, ao_vgl_qmckl"
+         do m=1,nbasis
+            print *, ielec,m,'1',  phin(m,ielec), ao_vgl_qmckl(m,1,ielec)
+            print *, ielec,m,'2',  dphin(m,ielec,1), ao_vgl_qmckl(m,2,ielec)
+            print *, ielec,m,'3',  dphin(m,ielec,2), ao_vgl_qmckl(m,3,ielec)
+            print *, ielec,m, '4', dphin(m,ielec,3), ao_vgl_qmckl(m,4,ielec)
+         end do
+
+!         do m=1,nbasis
+!            print *, ielec,m,'1',  phin(m,ielec), ao_vgl_qmckl(ielec,1,m)
+!            print *, ielec,m,'2',  dphin(m,ielec,1), ao_vgl_qmckl(ielec,2,m)
+!            print *, ielec,m,'3',  dphin(m,ielec,2), ao_vgl_qmckl(ielec,3,m)
+!            print *, ielec,m, '4', dphin(m,ielec,3), ao_vgl_qmckl(ielec,4,m)
+!         end do
+
+
+
+
+         
+         
+          do i=1,nelec
+            do iorb=1,norb+nadorb
+               orb(i,iorb)=0.d0
+               dorb(iorb,i,1)=0.d0
+               dorb(iorb,i,2)=0.d0
+               dorb(iorb,i,3)=0.d0
+               ddorb(iorb,i)=0.d0
+               do m=1,nbasis
+                  orb  (  i,iorb)=orb  (  i,iorb)+coef(m,iorb,iwf)*phin  ( m,i)
+                  dorb (iorb,i,1)=dorb (iorb,i,1)+coef(m,iorb,iwf)*dphin (m,i,1)
+                  dorb (iorb,i,2)=dorb (iorb,i,2)+coef(m,iorb,iwf)*dphin (m,i,2)
+                  dorb (iorb,i,3)=dorb (iorb,i,3)+coef(m,iorb,iwf)*dphin (m,i,3)
+                  ddorb(  iorb,i)=ddorb(iorb,i)+coef(m,iorb,iwf)*d2phin( m,i)
+               enddo
+            enddo
+         enddo
+         
+
+         print*,"comparing values mo's iel",ielec
+         print*,"champ-orb        qmckl-orb"
+!     !comparing champ and qmckl orbitals
+         do iorb=1,norb  
+            print*,iorb,orb(ielec,iorb),mo_vgl_qmckl(iorb,1,ielec), mmo_vgl_qmckl(iorb,1,ielec)
+!     print*,iorb,dorb(iorb,ielec,1),mo_vgl_qmckl(iorb,2,ielec), mmo_vgl_qmckl(iorb,2,ielec)
+!     print*,iorb,dorb(iorb,ielec,2),mo_vgl_qmckl(iorb,3,ielec), mmo_vgl_qmckl(iorb,3,ielec)
+!     print*,iorb,dorb(iorb,ielec,3),mo_vgl_qmckl(iorb,4,ielec), mmo_vgl_qmckl(iorb,4,ielec)
+!     if(iflag.gt.0) print*,iorb,ddorb(iorb),mo_vgl_qmckl(iorb,5,ielec), mmo_vgl_qmckl(iorb,5,ielec)
+         enddo
+
+
+
+         
+         
+!deallocate all the arrays
+         deallocate(mo_vgl_qmckl)
+         deallocate(mmo_vgl_qmckl)
+         deallocate(ao_vgl_qmckl)
+         deallocate(mo_coef_qmckl)
+         
+         
+
+
+
+         
+
+         
 #else
 
          
