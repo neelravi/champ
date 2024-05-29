@@ -3,7 +3,7 @@
     pool            './pool/'
     pseudopot       ECP
     basis           BFD-aug-cc-pVDZ
-    mode            'vmc_one_mpi1'
+    mode            'vmc_one_mpi'
 %endmodule
 
 
@@ -24,7 +24,7 @@ load jastrow_der     jastrow.der
 
 %module blocking_vmc
     vmc_nstep     20
-    vmc_nblk      1000
+    vmc_nblk      4000
     vmc_nblkeq    1
     vmc_nconf_new 0
 %endmodule

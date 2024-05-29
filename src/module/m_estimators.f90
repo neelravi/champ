@@ -1,8 +1,8 @@
 module estcum
-     !> Arguments: ecum, ecum1, iblk, pecum, r2cum, tjfcum, tpbcum, avcum
-      use mstates_mod, only: MSTATES
-      use multiple_geo, only: MFORCE
-      use precision_kinds, only: dp
+     !> Arguments: ecum, ecum1, iblk, pecum, tjfcum, tpbcum, avcum
+     use mstates_mod, only: MSTATES
+     use multiple_geo, only: MFORCE
+     use precision_kinds, only: dp
 
      implicit none
 
@@ -10,7 +10,6 @@ module estcum
      real(dp), dimension(:), allocatable :: ecum1 !(MSTATES)
      integer :: iblk
      real(dp), dimension(:), allocatable :: pecum !(MSTATES)
-     real(dp) :: r2cum
      real(dp), dimension(:), allocatable :: tjfcum !(MSTATES)
      real(dp), dimension(:), allocatable :: tpbcum !(MSTATES)
 
@@ -22,11 +21,7 @@ module estcum
      real(dp), dimension(:), allocatable :: egcum  !(MFORCE)
      real(dp), dimension(:), allocatable :: egcum1 !(MFORCE)
      real(dp) :: ei1cum
-     real(dp) :: ei2cum
-     real(dp) :: ei3cum
      real(dp), dimension(:), allocatable :: pecum_dmc !(MFORCE)
-     real(dp) :: r2cum_dmc
-     real(dp) :: ricum
      real(dp), dimension(:), allocatable :: taucum !(MFORCE)
      real(dp), dimension(:), allocatable :: tjfcum_dmc !(MFORCE)
      real(dp), dimension(:), allocatable :: tpbcum_dmc !(MFORCE)
@@ -46,12 +41,12 @@ module estcum
      integer :: ipass
 
      private
-     public :: ecum, ecum1, iblk, pecum, r2cum, tjfcum, tpbcum
+     public :: ecum, ecum1, iblk, pecum, tjfcum, tpbcum
 
      public :: allocate_estcum, deallocate_estcum
      !> DMC variables:
-     public :: ecum1_dmc, ecum_dmc, efcum, efcum1, egcum, egcum1, ei1cum, ei2cum
-     public :: ei3cum, pecum_dmc, r2cum_dmc, ricum, taucum, tjfcum_dmc, tpbcum_dmc
+     public :: ecum1_dmc, ecum_dmc, efcum, efcum1, egcum, egcum1, ei1cum
+     public :: pecum_dmc, taucum, tjfcum_dmc, tpbcum_dmc
      public :: w_acc_cum, w_acc_cum1, wcum1, wcum_dmc, wdcum, wdcum1, wfcum, wfcum1
      public :: wg_acc_cum, wg_acc_cum1, wgcum, wgcum1
      public :: wgdcum, ipass
@@ -106,8 +101,8 @@ module estcum
 
  module estsig
      !> Arguments: ecm21s, ecum1s
-      use mstates_mod, only: MSTATES
-      use precision_kinds, only: dp
+     use mstates_mod, only: MSTATES
+     use precision_kinds, only: dp
 
      implicit none
 
@@ -133,14 +128,14 @@ module estcum
  end module estsig
 
  module estsum
-     !> Arguments: acc, esum, esum1, pesum, r2sum, tjfsum, tpbsum,
-     !> efsum, efsum1, egsum, egsum1, ei1sum, ei2sum, ei3sum, esum1_dmc, esum_dmc,
-     !> pesum_dmc, r2sum, risum, tausum, tjfsum_dmc, tpbsum_dmc, w_acc_sum, w_acc_sum1, wdsum,
+     !> Arguments: acc, esum, esum1, pesum, tjfsum, tpbsum,
+     !> efsum, efsum1, egsum, egsum1, ei1sum, esum1_dmc, esum_dmc,
+     !> pesum_dmc, tausum, tjfsum_dmc, tpbsum_dmc, w_acc_sum, w_acc_sum1, wdsum,
      !> wdsum1, wfsum, wfsum1, wg_acc_sum, wg_acc_sum1, wgdsum, wgsum, wgsum1, wsum1, wsum_dmc
 
-      use mstates_mod, only: MSTATES
-      use multiple_geo, only: MFORCE
-      use precision_kinds, only: dp
+     use mstates_mod, only: MSTATES
+     use multiple_geo, only: MFORCE
+     use precision_kinds, only: dp
 
      implicit none
 
@@ -148,7 +143,6 @@ module estcum
      real(dp), dimension(:, :), allocatable :: esum !(MSTATES,MFORCE)
      real(dp), dimension(:), allocatable :: esum1 !(MSTATES)
      real(dp), dimension(:), allocatable :: pesum !(MSTATES)
-     real(dp) :: r2sum
      real(dp), dimension(:), allocatable :: tjfsum !(MSTATES)
      real(dp), dimension(:), allocatable :: tpbsum !(MSTATES)
      !> DMC variables:
@@ -157,12 +151,9 @@ module estcum
      real(dp), dimension(:), allocatable :: egsum  !(MFORCE)
      real(dp), dimension(:), allocatable :: egsum1 !(MFORCE)
      real(dp) :: ei1sum
-     real(dp) :: ei2sum
-     real(dp) :: ei3sum
      real(dp), dimension(:), allocatable :: esum1_dmc !(MFORCE)
      real(dp) :: esum_dmc
      real(dp), dimension(:), allocatable :: pesum_dmc !(MFORCE)
-     real(dp) :: risum
      real(dp), dimension(:), allocatable :: tausum !(MFORCE)
      real(dp), dimension(:), allocatable :: tjfsum_dmc !(MFORCE)
      real(dp), dimension(:), allocatable :: tpbsum_dmc !(MFORCE)
@@ -181,10 +172,10 @@ module estcum
      real(dp) :: wsum_dmc
 
      private
-     public :: acc, esum, esum1, pesum, r2sum, tjfsum, tpbsum
+     public :: acc, esum, esum1, pesum, tjfsum, tpbsum
      public :: allocate_estsum, deallocate_estsum
-     public :: efsum, efsum1, egsum, egsum1, ei1sum, ei2sum, ei3sum, esum1_dmc, esum_dmc
-     public :: pesum_dmc, risum, tausum, tjfsum_dmc, tpbsum_dmc, w_acc_sum
+     public :: efsum, efsum1, egsum, egsum1, ei1sum, esum1_dmc, esum_dmc
+     public :: pesum_dmc, tausum, tjfsum_dmc, tpbsum_dmc, w_acc_sum
      public :: w_acc_sum1, wdsum, wdsum1, wfsum, wfsum1, wg_acc_sum, wg_acc_sum1
      public :: wgdsum, wgsum, wgsum1, wsum1, wsum_dmc
      public :: allocate_estsum_dmc, deallocate_estsum_dmc
@@ -241,14 +232,14 @@ module estcum
 
  module estpsi
      !> Arguments: apsi, aref, detref
-      use mstates_mod, only: MSTATES
-      use precision_kinds, only: dp
+     use mstates_mod, only: MSTATES
+     use precision_kinds, only: dp
 
      implicit none
 
      real(dp), dimension(:), allocatable :: apsi !(MSTATES)
-     real(dp) :: aref
-     real(dp), dimension(:), allocatable :: detref !(2)
+     real(dp), dimension(:), allocatable :: aref !(nwftypeorb)
+     real(dp), dimension(:, :), allocatable :: detref !(2,nwftypeorb)
 
      private
      public   ::  apsi, aref, detref
@@ -257,33 +248,35 @@ module estcum
  contains
      subroutine allocate_estpsi()
       use mstates_mod, only: MSTATES
+         use vmc_mod, only: nwftypeorb
          if (.not. allocated(apsi)) allocate (apsi(MSTATES))
-         if (.not. allocated(detref)) allocate (detref(2))
+         if (.not. allocated(aref)) allocate (aref(nwftypeorb))
+         if (.not. allocated(detref)) allocate (detref(2,nwftypeorb))
      end subroutine allocate_estpsi
 
      subroutine deallocate_estpsi()
          if (allocated(detref)) deallocate (detref)
+         if (allocated(aref)) deallocate (aref)
          if (allocated(apsi)) deallocate (apsi)
      end subroutine deallocate_estpsi
 
  end module estpsi
 
  module est2cm
-     !> Arguments: ecm2, ecm21, pecm2, r2cm2, tjfcm2, tpbcm2, avcm2,
-     !> ecm21_dmc, ecm2_dmc, efcm2, efcm21, egcm2, egcm21, ei1cm2, ei2cm2,
-     !> ei3cm2, pecm2_dmc, r2cm2_dmc, ricm2, tjfcm_dmc, tpbcm2_dmc, wcm2, wcm21, wdcm2, wdcm21,
+     !> Arguments: ecm2, ecm21, pecm2, tjfcm2, tpbcm2, avcm2,
+     !> ecm21_dmc, ecm2_dmc, efcm2, efcm21, egcm2, egcm21, ei1cm2,
+     !> pecm2_dmc, tjfcm_dmc, tpbcm2_dmc, wcm2, wcm21, wdcm2, wdcm21,
      !> wfcm2, wfcm21, wgcm2, wgcm21, wgdcm2
 
-      use mstates_mod, only: MSTATES
-      use multiple_geo, only: MFORCE
-      use precision_kinds, only: dp
+     use mstates_mod, only: MSTATES
+     use multiple_geo, only: MFORCE
+     use precision_kinds, only: dp
 
      implicit none
 
      real(dp), dimension(:, :), allocatable :: ecm2 !(MSTATES,MFORCE)
      real(dp), dimension(:), allocatable :: ecm21 !(MSTATES)
      real(dp), dimension(:), allocatable :: pecm2 !(MSTATES)
-     real(dp) :: r2cm2
      real(dp), dimension(:), allocatable :: tjfcm2 !(MSTATES)
      real(dp), dimension(:), allocatable :: tpbcm2 !(MSTATES)
 
@@ -295,11 +288,7 @@ module estcum
      real(dp), dimension(:), allocatable :: egcm2  !(MFORCE)
      real(dp), dimension(:), allocatable :: egcm21 !(MFORCE)
      real(dp) :: ei1cm2
-     real(dp) :: ei2cm2
-     real(dp) :: ei3cm2
      real(dp), dimension(:), allocatable :: pecm2_dmc !(MFORCE)
-     real(dp) :: r2cm2_dmc
-     real(dp) :: ricm2
      real(dp), dimension(:), allocatable :: tjfcm_dmc  !(MFORCE)
      real(dp), dimension(:), allocatable :: tpbcm2_dmc !(MFORCE)
      real(dp) :: wcm2
@@ -313,10 +302,10 @@ module estcum
      real(dp) :: wgdcm2
 
      private
-     public :: ecm2, ecm21, pecm2, r2cm2, tjfcm2, tpbcm2
+     public :: ecm2, ecm21, pecm2, tjfcm2, tpbcm2
      public :: allocate_est2cm, deallocate_est2cm
-     public :: ecm21_dmc, ecm2_dmc, efcm2, efcm21, egcm2, egcm21, ei1cm2, ei2cm2
-     public :: ei3cm2, pecm2_dmc, r2cm2_dmc, ricm2, tjfcm_dmc, tpbcm2_dmc
+     public :: ecm21_dmc, ecm2_dmc, efcm2, efcm21, egcm2, egcm21, ei1cm2
+     public :: pecm2_dmc, tjfcm_dmc, tpbcm2_dmc
      public :: wcm2, wcm21, wdcm2, wdcm21
      public :: wfcm2, wfcm21, wgcm2, wgcm21, wgdcm2
      public :: allocate_est2cm_dmc, deallocate_est2cm_dmc
@@ -368,11 +357,11 @@ module estcum
 module m_estimators
 contains
  subroutine allocate_m_estimators()
-      use est2cm,  only: allocate_est2cm
-      use estcum,  only: allocate_estcum
-      use estpsi,  only: allocate_estpsi
-      use estsig,  only: allocate_estsig
-      use estsum,  only: allocate_estsum
+     use est2cm, only: allocate_est2cm
+     use estcum, only: allocate_estcum
+     use estpsi, only: allocate_estpsi
+     use estsig, only: allocate_estsig
+     use estsum, only: allocate_estsum
 
      implicit none
 
@@ -384,11 +373,11 @@ contains
  end subroutine allocate_m_estimators
 
  subroutine deallocate_m_estimators()
-      use est2cm,  only: deallocate_est2cm
-      use estcum,  only: deallocate_estcum
-      use estpsi,  only: deallocate_estpsi
-      use estsig,  only: deallocate_estsig
-      use estsum,  only: deallocate_estsum
+     use est2cm, only: deallocate_est2cm
+     use estcum, only: deallocate_estcum
+     use estpsi, only: deallocate_estpsi
+     use estsig, only: deallocate_estsig
+     use estsum, only: deallocate_estsum
 
      implicit none
 

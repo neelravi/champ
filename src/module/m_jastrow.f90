@@ -4,19 +4,19 @@ module jastrow_update
 
     implicit none
 
-    real(dp), dimension(:, :), allocatable :: d2ijn !(MELEC,MELEC)
-    real(dp) :: d2n
-    real(dp), dimension(:, :, :), allocatable :: fijn !(3,MELEC,MELEC)
-    real(dp), dimension(:, :), allocatable :: fjn !(3,MELEC)
-    real(dp), dimension(:, :), allocatable :: fsn !(MELEC,MELEC)
-    real(dp) :: fsumn
+    real(dp), dimension(:, :, :), allocatable :: d2ijn !(MELEC,MELEC,nwftypejas)
+    real(dp), dimension(:), allocatable :: d2n !(nwftypejas)
+    real(dp), dimension(:, :, :, :), allocatable :: fijn !(3,MELEC,MELEC,nwftypejas)
+    real(dp), dimension(:, :, :), allocatable :: fjn !(3,MELEC,nwftypejas)
+    real(dp), dimension(:, :, :), allocatable :: fsn !(MELEC,MELEC,nwftypejas)
+    real(dp), dimension(:), allocatable :: fsumn !(nwftypejas)
 
-    real(dp), dimension(:, :), allocatable :: d2ijo !(MELEC,MELEC)
-    real(dp) :: d2o
-    real(dp), dimension(:, :, :), allocatable :: fijo !(3,MELEC,MELEC)
-    real(dp), dimension(:, :), allocatable :: fjo !(3,MELEC)
-    real(dp), dimension(:, :), allocatable :: fso !(MELEC,MELEC)
-    real(dp) :: fsumo
+    real(dp), dimension(:, :, :), allocatable :: d2ijo !(MELEC,MELEC,nwftypejas)
+    real(dp), dimension(:), allocatable :: d2o !(nwftypejas)
+    real(dp), dimension(:, :, :, :), allocatable :: fijo !(3,MELEC,MELEC,nwftypejas)
+    real(dp), dimension(:, :, :), allocatable :: fjo !(3,MELEC,MSTATES)
+    real(dp), dimension(:, :, :), allocatable :: fso !(MELEC,MELEC,nwftypejas)
+    real(dp), dimension(:), allocatable :: fsumo !(nwftypejas)
     !> DMC
     real(dp) :: d2jo
 
@@ -28,11 +28,14 @@ module jastrow_update
     save
 contains
     subroutine allocate_jasn()
-      use system,  only: nelec
-        if (.not. allocated(d2ijn)) allocate (d2ijn(nelec, nelec))
-        if (.not. allocated(fijn)) allocate (fijn(3, nelec, nelec))
-        if (.not. allocated(fjn)) allocate (fjn(3, nelec))
-        if (.not. allocated(fsn)) allocate (fsn(nelec, nelec))
+      use system, only: nelec
+      use vmc_mod, only: nwftypejas
+        if (.not. allocated(d2ijn)) allocate (d2ijn(nelec, nelec, nwftypejas))
+        if (.not. allocated(fijn)) allocate (fijn(3, nelec, nelec, nwftypejas))
+        if (.not. allocated(fjn)) allocate (fjn(3, nelec, nwftypejas))
+        if (.not. allocated(fsn)) allocate (fsn(nelec, nelec, nwftypejas))
+        if (.not. allocated(d2n)) allocate (d2n(nwftypejas))
+        if (.not. allocated(fsumn)) allocate (fsumn(nwftypejas))
     end subroutine allocate_jasn
 
     subroutine deallocate_jasn()
@@ -40,14 +43,19 @@ contains
         if (allocated(fjn)) deallocate (fjn)
         if (allocated(fijn)) deallocate (fijn)
         if (allocated(d2ijn)) deallocate (d2ijn)
+        if (allocated(d2n)) deallocate (d2n)
+        if (allocated(fsumn)) deallocate (fsumn)
     end subroutine deallocate_jasn
 
     subroutine allocate_jaso()
-      use system,  only: nelec
-        if (.not. allocated(d2ijo)) allocate (d2ijo(nelec, nelec))
-        if (.not. allocated(fijo)) allocate (fijo(3, nelec, nelec))
-        if (.not. allocated(fjo)) allocate (fjo(3, nelec))
-        if (.not. allocated(fso)) allocate (fso(nelec, nelec))
+      use system, only: nelec
+      use vmc_mod, only: nwftypejas
+        if (.not. allocated(d2ijo)) allocate (d2ijo(nelec, nelec, nwftypejas))
+        if (.not. allocated(fijo)) allocate (fijo(3, nelec, nelec, nwftypejas))
+        if (.not. allocated(fjo)) allocate (fjo(3, nelec, nwftypejas))
+        if (.not. allocated(fso)) allocate (fso(nelec, nelec, nwftypejas))
+        if (.not. allocated(d2o)) allocate (d2o(nwftypejas))
+        if (.not. allocated(fsumo)) allocate (fsumo(nwftypejas))
     end subroutine allocate_jaso
 
     subroutine deallocate_jaso()
@@ -55,13 +63,15 @@ contains
         if (allocated(fjo)) deallocate (fjo)
         if (allocated(fijo)) deallocate (fijo)
         if (allocated(d2ijo)) deallocate (d2ijo)
+        if (allocated(d2o)) deallocate (d2o)
+        if (allocated(fsumo)) deallocate (fsumo)
     end subroutine deallocate_jaso
 
 end module jastrow_update
 
 module jaspar6
-    !> Arguments: asymp_jasa, asymp_jasb, asymp_r, c1_jas6, c1_jas6i, c2_jas6, cutjas, cutjasi
-      use precision_kinds, only: dp
+    !> Arguments: asymp_r, c1_jas6, c1_jas6i, c2_jas6, cutjas, cutjasi
+    use precision_kinds, only: dp
 
     implicit none
 
@@ -75,17 +85,6 @@ module jaspar6
     private
     public :: asymp_r, c1_jas6, c1_jas6i, c2_jas6, cutjas, cutjasi
     save
-! contains
-!     subroutine allocate_jaspar6()
-!         use system, only: nctype_tot
-!         if (.not. allocated(asymp_jasa)) allocate (asymp_jasa(nctype_tot))
-!         if (.not. allocated(asymp_jasb)) allocate (asymp_jasb(2))
-!     end subroutine allocate_jaspar6
-
-!     subroutine deallocate_jaspar6()
-!         if (allocated(asymp_jasb)) deallocate (asymp_jasb)
-!         if (allocated(asymp_jasa)) deallocate (asymp_jasa)
-!     end subroutine deallocate_jaspar6
 
 end module jaspar6
 
@@ -115,44 +114,40 @@ contains
 
 end module jaspointer
 
-
-
 module jastrow
-      use precision_kinds, only: dp
+    use precision_kinds, only: dp
     implicit none
 
-    ! From contr2
-    integer :: ijas
+    integer :: ijas, ijas_lr
     integer :: isc
     integer :: ianalyt_lap
 
-    ! From jaspar
     integer :: is
     integer :: nspin1
     integer :: nspin2
     real(dp) :: sspin
     real(dp) :: sspinn
 
-    ! From jaspar3
+    real(dp), dimension(:,:)    , allocatable :: cutjas_en !(MCTYPE,MWF)
+    real(dp), dimension(:,:)    , allocatable :: cutjas_eni!(MCTYPE,MWF)
+    real(dp), dimension(:,:)    , allocatable :: cutjas_ee !(2,MWF)
+    real(dp), dimension(:,:)    , allocatable :: cutjas_eei!(2,MWF)
+
     real(dp), dimension(:, :, :), allocatable :: b !(nordj1,2,MWF)
     real(dp), dimension(:, :, :), allocatable :: c !(83,MCTYPE,MWF)
-    real(dp), dimension(:)      , allocatable :: scalek !(MWF)
+    real(dp), dimension(:), allocatable :: scalek !(MWF)
 
-    ! From jaspar4
     real(dp), dimension(:, :, :), allocatable :: a4 !(nordj1,nctype_tot,MWF)
     integer :: norda
     integer :: nordb
     integer :: nordc
 
-    ! From jaspar6
-    real(dp), dimension(:)      , allocatable :: asymp_jasa !(MCTYPE)
-    real(dp), dimension(:)      , allocatable :: asymp_jasb !(2)
+    real(dp), dimension(:,:), allocatable :: asymp_jasa !(MCTYPE,nwftypejas)
+    real(dp), dimension(:,:), allocatable :: asymp_jasb !(2,nwftypejas)
 
-    ! From vmc_mod
     integer :: nordj
     integer :: nordj1   ! nordj+1
     integer :: neqsx    ! 6*nordj
-    
     save
 contains
 
@@ -162,26 +157,34 @@ subroutine allocate_m_jastrow()
       use multiple_geo, only: MWF
       use system,  only: nctype_tot
 
-
     implicit none
 
-    if (.not. allocated(a4))         allocate (a4(nordj1, nctype_tot, MWF))
-    if (.not. allocated(b))          allocate (b(nordj1, 2, MWF))
-    if (.not. allocated(c))          allocate (c(83, nctype_tot, MWF))
-    if (.not. allocated(scalek))     allocate (scalek(MWF))
+    if (.not. allocated(a4)) allocate (a4(nordj1, nctype_tot, MWF))
+    if (.not. allocated(b)) allocate (b(nordj1, 2, MWF))
+    if (.not. allocated(c)) allocate (c(83, nctype_tot, MWF))
+    if (.not. allocated(scalek)) allocate (scalek(MWF))
 
+    if (.not. allocated(cutjas_en))  allocate (cutjas_en(nctype_tot, MWF))
+    if (.not. allocated(cutjas_eni)) allocate (cutjas_eni(nctype_tot, MWF))
+    if (.not. allocated(cutjas_ee))  allocate (cutjas_ee(2, MWF))
+    if (.not. allocated(cutjas_eei)) allocate (cutjas_eei(2, MWF))
+
+    
     call allocate_jasn()
     call allocate_jaso()
     call allocate_jaspointer()
 end subroutine allocate_m_jastrow
 
-subroutine allocate_jaspar6()
+subroutine allocate_jasasymp()
       use system,  only: nctype_tot
-    implicit none
+      use vmc_mod, only: nwftypejas
 
-    if (.not. allocated(asymp_jasa)) allocate (asymp_jasa(nctype_tot))
-    if (.not. allocated(asymp_jasb)) allocate (asymp_jasb(2))
-end subroutine allocate_jaspar6
+      implicit none
+      
+      if (.not. allocated(asymp_jasa)) allocate (asymp_jasa(nctype_tot,nwftypejas))
+      if (.not. allocated(asymp_jasb)) allocate (asymp_jasb(2,nwftypejas))
+
+end subroutine allocate_jasasymp
 
 subroutine deallocate_m_jastrow()
       use jaspointer, only: deallocate_jaspointer
@@ -196,16 +199,23 @@ subroutine deallocate_m_jastrow()
     if (allocated(c))          deallocate (c)
     if (allocated(scalek))     deallocate (scalek)
 
+    if (allocated(cutjas_en))  deallocate (cutjas_en)
+    if (allocated(cutjas_eni)) deallocate (cutjas_eni)
+    if (allocated(cutjas_ee))  deallocate (cutjas_ee)
+    if (allocated(cutjas_eei)) deallocate (cutjas_eei)
+
+    
     call deallocate_jasn()
     call deallocate_jaso()
     call deallocate_jaspointer()
 end subroutine deallocate_m_jastrow
-
+    
 end module jastrow
+
 
 module cuspmat4
     !> Arguments: d, nterms
-      use precision_kinds, only: dp
+    use precision_kinds, only: dp
 
     implicit none
 

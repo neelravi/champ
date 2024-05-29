@@ -1,5 +1,6 @@
 module trexio_read_data
     use error, only: fatal_error
+    use mpi
     use precision_kinds, only: dp
     use array_utils, only: unique_elements
 
@@ -10,6 +11,8 @@ module trexio_read_data
     logical :: trexio_has_group_determinant   = .false.
     logical :: trexio_has_group_ecp           = .false.
 
+    character(:), allocatable  :: file_trexio_new, file_trexio_path
+
     private
     public :: dp
 
@@ -19,16 +22,23 @@ module trexio_read_data
     public :: trexio_has_group_basis
     public :: trexio_has_group_determinant
     public :: trexio_has_group_ecp
+    public :: file_trexio_new
+    public :: file_trexio_path
 
+
+#if defined(TREXIO_FOUND)
     public :: read_trexio_molecule_file
     public :: read_trexio_symmetry_file
     public :: read_trexio_orbitals_file
     public :: read_trexio_basis_file
+    public :: update_trexio_orbitals
     public :: read_trexio_determinant_file
     public :: read_trexio_ecp_file
     public :: write_trexio_basis_num_info_file
+#endif
     contains
 
+#if defined(TREXIO_FOUND)
     subroutine read_trexio_molecule_file(file_trexio)
         !> This subroutine reads the .hdf5 trexio generated file/folder. It then computes the
         !! number of types of atoms, nuclear charges (from the symbol), and
@@ -44,15 +54,13 @@ module trexio_read_data
         use contrl_file, only: ounit, errunit
         use general, only: pooldir
         use precision_kinds, only: dp
+        use pseudo, only: nloc
         use system, only: nelec
         use system, only: nup
         use system, only: ndn
-#if defined(TREXIO_FOUND)
         use trexio
         use contrl_file, only: backend
-      use multiple_geo, only: pecent
-
-#endif
+        use multiple_geo, only: pecent
 
         implicit none
 
@@ -90,7 +98,6 @@ module trexio_read_data
 
         ! Check if the file exists
         if (wid) then
-#if defined(TREXIO_FOUND)
             trex_molecule_file = trexio_open(file_trexio_path, 'r', backend, rc)
             call trexio_assert(rc, TREXIO_SUCCESS)
             rc = trexio_read_nucleus_num(trex_molecule_file, ncent)
@@ -100,7 +107,6 @@ module trexio_read_data
             call trexio_assert(rc, TREXIO_SUCCESS)
             rc = trexio_read_electron_dn_num(trex_molecule_file, ndn)
             call trexio_assert(rc, TREXIO_SUCCESS)
-#endif
         endif
         call bcast(trexio_has_group_molecule)
         call bcast(ncent)
@@ -116,14 +122,12 @@ module trexio_read_data
         if (.not. allocated(unique))  allocate(unique(ncent))
 
         if (wid) then
-#if defined(TREXIO_FOUND)
         rc = trexio_read_nucleus_coord(trex_molecule_file, cent)
         call trexio_assert(rc, TREXIO_SUCCESS)
         rc = trexio_read_nucleus_label(trex_molecule_file, symbol, 3)
         call trexio_assert(rc, TREXIO_SUCCESS)
         rc = trexio_close(trex_molecule_file)
         call trexio_assert(rc, TREXIO_SUCCESS)
-#endif
         endif
         call bcast(cent)
         call bcast(symbol)
@@ -164,7 +168,11 @@ module trexio_read_data
         ! Get the znuc for each unique atom
         do j = 1, nctype
             atoms = element(atomtyp(j))
-            znuc(j) = atoms%nvalence
+            if (nloc == 0) then
+                znuc(j) = atoms%znuclear
+            else
+                znuc(j) = atoms%znuclear - atoms%core
+            endif
         enddo
 
         ncent_tot = ncent + nghostcent
@@ -203,25 +211,24 @@ module trexio_read_data
         use custom_broadcast,   only: bcast
         use mpiconf,            only: wid
         use contrl_file,        only: ounit, errunit
-        use coefs, only: nbasis
+        use coefs,              only: nbasis
+        use csfs,               only: nstates
         use inputflags,         only: ilcao
         use numbas,             only: nrbas
         use numbas1,            only: iwlbas, nbastyp
         use orbval,             only: nadorb
         use pcm_fdc,            only: fs
-        use vmc_mod,            only: norb_tot
+        use vmc_mod,            only: norb_tot, nwftypeorb
         use multiple_geo,       only: nwftype
         use general,            only: pooldir
         use optwf_control,      only: method
         use precision_kinds, only: dp
         use slater,             only: coef
-
+        use vmc_mod, only: nwftypeorb, nstoo, nstoomax, otos, extrao, nstoo_tot
 
         use error, only: trexio_error
-#if defined(TREXIO_FOUND)
         use trexio
         use contrl_file, only: backend
-#endif
         use m_trexio_basis,     only: slm_per_l, index_slm, num_rad_per_cent
         use m_trexio_basis,     only: basis_num_shell, basis_shell_ang_mom
         use m_trexio_basis,     only: num_ao_per_cent, ao_radial_index
@@ -276,7 +283,6 @@ module trexio_read_data
         ! Check if the file exists
 
         if (wid) then
-#if defined(TREXIO_FOUND)
             trex_orbitals_file = trexio_open(file_trexio_path, 'r', backend, rc)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio file open error', __FILE__, __LINE__)
             rc = trexio_read_mo_num(trex_orbitals_file, norb_tot)
@@ -285,7 +291,6 @@ module trexio_read_data
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_ao_num', __FILE__, __LINE__)
             rc = trexio_read_basis_shell_num(trex_orbitals_file, basis_num_shell)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_basis_shell_num', __FILE__, __LINE__)
-#endif
         endif
         call bcast(norb_tot)
         call bcast(nbasis)
@@ -293,9 +298,22 @@ module trexio_read_data
 
         norb = norb_tot        ! norb will get updated later. norb_tot is fixed
 
+
         ! Do the array allocations
         if( (method(1:3) == 'lin')) then
             if (.not. allocated(coef)) allocate (coef(nbasis, norb_tot, 3))
+        elseif(method == 'sr_n') then
+            if (.not. allocated(coef)) allocate (coef(nbasis, norb_tot, nstates))
+            nwftypeorb=nstates
+            nstoo_tot=nstates
+            nstoomax=1
+            extrao=1
+            if (.not. allocated(nstoo)) allocate (nstoo(nwftypeorb))
+            if (.not. allocated(otos)) allocate (otos(nwftypeorb,1))
+            do i=1,nstates
+               nstoo(i)=1
+               otos(i,1)=i
+            enddo
         else
             if (.not. allocated(coef)) allocate (coef(nbasis, norb_tot, nwftype))
         endif
@@ -311,25 +329,27 @@ module trexio_read_data
         if (.not. build_only_basis) then
         ! Read the orbitals
         if (wid) then
-#if defined(TREXIO_FOUND)
             if (trexio_has_mo(trex_orbitals_file) == 0) trexio_has_group_orbitals = .true.
             rc = trexio_read_mo_coefficient(trex_orbitals_file, coef(:,:,1))
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_mo_coeffs', __FILE__, __LINE__)
-#endif
         endif
         call bcast(trexio_has_group_orbitals)
         call bcast(coef(:,:,1))
         endif
 
+        ! Make a copy of orbital coeffs for multiple states
+        if( (method == 'sr_n') .and. (nstates .gt. 1)) then
+            do i=2,nstates
+              coef(:,:,i)=coef(:,:,1)
+            enddo
+        endif
 
 !   Generate the basis information (which radial to be read for which Slm)
         if (wid) then
-#if defined(TREXIO_FOUND)
             rc = trexio_read_basis_shell_ang_mom(trex_orbitals_file, basis_shell_ang_mom)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_basis_shell_ang_mom', __FILE__, __LINE__)
             rc = trexio_read_basis_nucleus_index(trex_orbitals_file, basis_nucleus_index)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_basis_nucleus_index', __FILE__, __LINE__)
-#endif
         endif
         call bcast(basis_shell_ang_mom)
         call bcast(basis_nucleus_index)
@@ -416,8 +436,8 @@ module trexio_read_data
         if (.not. allocated(iwlbas)) allocate (iwlbas(nbasis, nctype_tot))
         if (.not. allocated(nrbas)) allocate (nrbas(nctype_tot), source=0)
         if (.not. allocated(iwrwf))  allocate (iwrwf(nbasis, nctype_tot))
-        if (.not. allocated(ao_frequency)) allocate (ao_frequency(35), source=0)    ! ao upto g orbitals
-        if (.not. allocated(unique_index)) allocate (unique_index(35), source=0)    ! ao upto g orbitals
+        if (.not. allocated(ao_frequency)) allocate (ao_frequency(nbasis), source=0)    ! ao upto g orbitals
+        if (.not. allocated(unique_index)) allocate (unique_index(nbasis), source=0)    ! ao upto g orbitals
         if (.not. allocated(res)) allocate (res(basis_num_shell), source=0)                       ! shells upto g orbitals
 
         do i = 1, ncent_tot
@@ -460,6 +480,9 @@ module trexio_read_data
         write(ounit,int_format) " Number of lcao orbitals ", norb
         write(ounit,int_format) " Type of wave functions ", iwft
         write(ounit,*) "Orbital coefficients are written to the output.log file"
+
+
+
 
         write(ounit,*)
         ilcao = ilcao + 1
@@ -516,6 +539,100 @@ module trexio_read_data
     end subroutine write_trexio_basis_num_info_file
 
 
+    subroutine update_trexio_orbitals
+        !> This subroutine updates the .hdf5 trexio generated file/folder. It then reads the
+        !! number of molecular and atomic orbitals and their corresponding coefficients.
+        !! @author Ravindra Shinde (r.l.shinde@utwente.nl)
+        !! @date 08 November 2023
+        use mpiconf,            only: wid
+        use custom_broadcast,   only: bcast
+        use contrl_file,        only: ounit, errunit
+        use mpiconf,            only: wid
+        use contrl_file,        only: ounit, errunit
+        use coefs,              only: nbasis
+        use csfs,               only: nstates
+        use inputflags,         only: scalecoef
+        use vmc_mod,            only: norb_tot, nwftypeorb
+        use mpiconf,            only: wid
+        use multiple_geo,       only: nwftype
+        use optwf_control,      only: ioptorb
+        use slater,             only: coef
+        use general,            only: pooldir
+        use precision_kinds,    only: dp
+        use error,              only: trexio_error
+        use trexio
+        use contrl_file,        only: backend
+        use slater,             only: norb
+
+
+#if defined(TREXIO_FOUND) && defined(QMCKL_FOUND)
+        use qmckl_data
+#endif
+
+        implicit none
+
+    !   local use
+        character(len=120)              :: file_trexio_path
+
+    ! trexio
+        integer(8)                      :: trex_orbitals_file
+        integer                         :: k, rc, ierr
+
+        if(ioptorb.eq.0) return
+
+        trex_orbitals_file = 0
+
+        !   External file reading
+#if defined(TREXIO_FOUND) && defined(QMCKL_FOUND)
+        if((file_trexio_new(1:6) == '$pool/') .or. (file_trexio_new(1:6) == '$POOL/')) then
+            file_trexio_path = pooldir // file_trexio_new(7:)
+        else
+            file_trexio_path = file_trexio_new
+        endif
+
+        write(ounit,*) '---------------------------------------------------------------------------'
+        write(ounit,*) " Updating LCAO orbitals from the file :: ",  trim(file_trexio_path)
+        write(ounit,*) '---------------------------------------------------------------------------'
+
+        ! Destroy the existing QMCkl context first
+        write(ounit, *) " QMCkl destroying the old context " , qmckl_ctx , " successfully "
+        rc = qmckl_context_destroy(qmckl_ctx)
+        call trexio_error(rc, TREXIO_SUCCESS, 'trexio_close trex_update_mo', __FILE__, __LINE__)
+        write(ounit, '(a)') " QMCkl old context destroyed successfully "
+
+        if(wid) then
+
+        ! Check if the file exists
+            trex_orbitals_file = trexio_open(file_trexio_path, 'u', backend, rc)
+            call trexio_error(rc, TREXIO_SUCCESS, 'trexio file open error', __FILE__, __LINE__)
+            write(ounit, '(a)') "File opened successfully "
+
+        ! Update the orbitals
+            do k=1,nwftypeorb
+              rc = trexio_write_mo_coefficient(trex_orbitals_file, coef(:,:,k)/scalecoef)
+              call trexio_error(rc, TREXIO_SUCCESS, 'trexio_write_mo_coeffs', __FILE__, __LINE__)
+              write(ounit, '(a)') " MO coeffs updated successfully "
+            enddo
+
+        ! Close the file
+            rc = trexio_close(trex_orbitals_file)
+            call trexio_error(rc, TREXIO_SUCCESS, 'trexio_close trex_update_mo', __FILE__, __LINE__)
+            write(ounit, '(a)') "File " // trim(file_trexio_path) // " closed successfully "
+        endif
+        call MPI_Barrier( MPI_COMM_WORLD, ierr )
+
+        ! Create a new QMCkl context with the new trexio file
+        qmckl_ctx = qmckl_context_create()
+        rc = qmckl_trexio_read(qmckl_ctx, file_trexio_path, 1_8*len(trim(file_trexio_path)))
+        call trexio_error(rc, TREXIO_SUCCESS, 'INPUT: QMCkl error: Unable to read TREXIO file', __FILE__, __LINE__)
+        write(ounit, *) " QMCkl new context created  ", qmckl_ctx,  " successfully "
+
+#endif
+
+        write(ounit,*) "----------------------------------------------------------"
+
+    end subroutine update_trexio_orbitals
+
 
     subroutine read_trexio_basis_file(file_trexio)
         !> This subroutine reads the .hdf5 trexio generated file/folder.
@@ -550,11 +667,9 @@ module trexio_read_data
         use spline2_mod,        only: spline2
         use fitting_methods,    only: exp_fit
 
-#if defined(TREXIO_FOUND)
         use trexio
         use contrl_file,        only: backend
         use error,              only: trexio_error
-#endif
         use m_trexio_basis,     only: gnorm
 
         implicit none
@@ -633,7 +748,6 @@ module trexio_read_data
 
         ! Check if the file exists
         if (wid) then
-#if defined(TREXIO_FOUND)
             trex_basis_file = trexio_open(file_trexio_path, 'r', backend, rc)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio file open error', __FILE__, __LINE__)
             rc = trexio_read_basis_shell_num(trex_basis_file, basis_num_shell)
@@ -643,7 +757,6 @@ module trexio_read_data
             rc = trexio_read_basis_prim_num(trex_basis_file, basis_num_prim)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_basis_prim_num', __FILE__, __LINE__)
             if (trexio_has_basis(trex_basis_file) == 0) trexio_has_group_basis = .true.
-#endif
         endif
         call bcast(trexio_has_group_basis)
         call bcast(basis_num_prim)
@@ -662,7 +775,6 @@ module trexio_read_data
         if (.not. allocated(ao_normalization))       allocate(ao_normalization(ao_num))
 
         if (wid) then
-#if defined(TREXIO_FOUND)
             trex_basis_file = trexio_open(file_trexio_path, 'r', backend, rc)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio file open error', __FILE__, __LINE__)
             rc = trexio_read_basis_nucleus_index(trex_basis_file, basis_nucleus_index)
@@ -683,7 +795,6 @@ module trexio_read_data
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_ao_shell', __FILE__, __LINE__)
             rc = trexio_read_ao_normalization(trex_basis_file, ao_normalization)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_ao_normalization', __FILE__, __LINE__)
-#endif
         endif
         call bcast(basis_nucleus_index)
         call bcast(basis_shell_index)
@@ -696,10 +807,8 @@ module trexio_read_data
         call bcast(ao_normalization)
 
         if (wid) then
-#if defined(TREXIO_FOUND)
             rc = trexio_close(trex_basis_file)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_close trex_basis_file', __FILE__, __LINE__)
-#endif
         endif
 
         write(ounit,fmt=int_format) " Number of primitives  ::  ", basis_num_prim
@@ -716,11 +825,8 @@ module trexio_read_data
         ! Get the number of shells per atom (information needed to reshuffle AOs)
 
         allocate(atom_index(basis_num_shell))
-        allocate(nshells_per_atom(basis_num_shell))
+        allocate(nshells_per_atom(basis_num_shell), source=0)
         allocate(shell_index_atom(basis_num_shell))
-
-
-
 
         call unique_elements(basis_num_shell, basis_nucleus_index, atom_index, count, nshells_per_atom, shell_index_atom)
 
@@ -734,8 +840,8 @@ module trexio_read_data
 
         ! Now get the number of primitives per atom and their indices
         ! also obtain the number of primitives per shell for all the atoms
-        allocate(nprims_per_atom(basis_num_prim))
-        allocate(prim_index_atom(basis_num_prim))
+        allocate(nprims_per_atom(ncent_tot), source=0)
+        allocate(prim_index_atom(ncent_tot))
         allocate(shell_prim_correspondence(basis_num_shell))
 
         prim_index_atom(1) = 1
@@ -821,14 +927,13 @@ module trexio_read_data
             write(ounit,'(A, T60, I0)')     " Icusp                 ::  ", icusp(ic)
             write(ounit,*)
 
-            ! DEBUG following loop; Special case when nloc equals zero.
-            ! Make sure that the trexio file stores this information.
-!            if(nloc.eq.0) then
-!                do irb = 1, nrbas(ic)
-!                    l(irb) = 0
-!                enddo
-!            endif
-
+            ! All electron case when nloc equals zero.
+            ! Make sure that the input file has nloc=0.
+            if(nloc.eq.0) then
+                do irb = 1, nrbas(ic)
+                    l(irb) = 0
+                enddo
+            endif
 
 
             ! loop over all the primitives for the unique atom
@@ -907,19 +1012,21 @@ module trexio_read_data
 
 
         ! c       if(ipr.gt.1) then
-                write(45,'(''basis = '',i4)') irb
-                write(45,'(''check the small radius expansion'')')
-                write(45,'(''coefficients'',1p10e22.10)') &
-                            (ce(iff,irb,ic,iwf),iff=1,NCOEF)
-                write(45,'(''check the small radius expansion'')')
-                write(45,'(''irad, rad, extrapolated value, correct value'')')
-                do ir=1,10
-                    val=ce(1,irb,ic,iwf)
-                    do icoef=2,NCOEF
-                    val=val+ce(icoef,irb,ic,iwf)*x(ir)**(icoef-1)
+                if (wid) then
+                    write(45,'(''basis = '',i4)') irb
+                    write(45,'(''check the small radius expansion'')')
+                    write(45,'(''coefficients'',1p10e22.10)') &
+                                (ce(iff,irb,ic,iwf),iff=1,NCOEF)
+                    write(45,'(''check the small radius expansion'')')
+                    write(45,'(''irad, rad, extrapolated value, correct value'')')
+                    do ir=1,10
+                        val=ce(1,irb,ic,iwf)
+                        do icoef=2,NCOEF
+                        val=val+ce(icoef,irb,ic,iwf)*x(ir)**(icoef-1)
+                        enddo
+                        write(45,'(i2,1p3e22.14)')ir,x(ir),val,rwf(ir,irb,ic,iwf)
                     enddo
-                    write(45,'(i2,1p3e22.14)')ir,x(ir),val,rwf(ir,irb,ic,iwf)
-                enddo
+                endif
         ! c       endif
 
                 dwf1=0.d0
@@ -936,7 +1043,7 @@ module trexio_read_data
                   endif
                 enddo rloop
 
-                write(45,'(a,i0,a,i0,a,g0)') "Initial rmax for center = ",ic, " basis = ",irb, " is ", rmaxwf(irb, ic)
+                if (wid) write(45,'(a,i0,a,i0,a,g0)') "Initial rmax for center = ",ic, " basis = ",irb, " is ", rmaxwf(irb, ic)
 
 ! Nonzero basis at the boundary : Do exponential fitting.
                 if(dabs(rmaxwf(irb,ic)-x(nr(ic))).lt.1.0d-10) then
@@ -945,22 +1052,24 @@ module trexio_read_data
 
                     rmaxwf(irb,ic)=-dlog(cutoff_rmax/dabs(ae(1,irb,ic,iwf)))/ae(2,irb,ic,iwf)
 
-                    write(45,'(a)') 'check the large radius expansion'
-                    write(45,'(a,g0,2x,g0)') 'Exponential fitting parameters : ', ae(1,irb,ic,iwf), ae(2,irb,ic,iwf)
+                    if (wid) then
+                        write(45,'(a)') 'check the large radius expansion'
+                        write(45,'(a,g0,2x,g0)') 'Exponential fitting parameters : ', ae(1,irb,ic,iwf), ae(2,irb,ic,iwf)
 
-                    write(45,'(a,i0,a,i0,a,g0)') "Final rmax (fit) for center = ",ic, " basis = ",irb, " is ", rmaxwf(irb, ic)
-                    write(45, '(a)') 'irad,         rad                  rwf value            expo fit'
-                    do ir=1,10
-                      temp = ae(1,irb,ic,iwf)*dexp(-ae(2,irb,ic,iwf)*x(nr(ic)-ir))
-                      write(45,'(i3,2x,1p4e22.14)') ir,x(nr(ic)-ir),rwf(nr(ic)-ir,irb,ic,iwf), temp
-                    enddo
+                        write(45,'(a,i0,a,i0,a,g0)') "Final rmax (fit) for center = ",ic, " basis = ",irb, " is ", rmaxwf(irb, ic)
+                        write(45, '(a)') 'irad,         rad                  rwf value            expo fit'
+                        do ir=1,10
+                        temp = ae(1,irb,ic,iwf)*dexp(-ae(2,irb,ic,iwf)*x(nr(ic)-ir))
+                        write(45,'(i3,2x,1p4e22.14)') ir,x(nr(ic)-ir),rwf(nr(ic)-ir,irb,ic,iwf), temp
+                        enddo
+                    endif
 
                     dwfn=-ae(2,irb,ic,iwf)*ae(1,irb,ic,iwf)*dexp(-ae(2,irb,ic,iwf)*x(nr(ic)))
 
                 else
                     dwfn=0.d0
                 endif
-                write(45,*) 'dwf1,dwfn',dwf1,dwfn
+                if (wid) write(45,*) 'dwf1,dwfn',dwf1,dwfn
 
                 call spline2(x,rwf(1,irb,ic,iwf),nr(ic),dwf1,dwfn, d2rwf(1,irb,ic,iwf), work)
 
@@ -1008,11 +1117,9 @@ module trexio_read_data
         use array_utils,        only: unique_string_elements
 
 
-#if defined(TREXIO_FOUND)
         use trexio
         use contrl_file,        only: backend
         use error,              only: trexio_error
-#endif
 
         implicit none
 
@@ -1054,12 +1161,10 @@ module trexio_read_data
 
         ! Check if the file exists
         if (wid) then
-#if defined(TREXIO_FOUND)
             trex_symmetry_file = trexio_open(file_trexio_path, 'r', backend, rc)
             rc = trexio_read_mo_num(trex_symmetry_file, mo_num)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_mo_num failed', __FILE__, __LINE__)
             if (trexio_has_mo_symmetry(trex_symmetry_file) == 0) trexio_has_group_symmetry = .true.
-#endif
         endif
         call bcast(mo_num)
         call bcast(trexio_has_group_symmetry)
@@ -1071,10 +1176,8 @@ module trexio_read_data
 
         if (trexio_has_group_symmetry) then
             if (wid) then
-#if defined(TREXIO_FOUND)
                 rc = trexio_read_mo_symmetry(trex_symmetry_file, mo_symmetry, 2)
                 call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_mo_symmetry failed', __FILE__, __LINE__)
-#endif
             endif
             call bcast(mo_symmetry)
         else ! set default symmetry if information not present in the file
@@ -1091,7 +1194,7 @@ module trexio_read_data
         write(ounit,fmt=int_format) " Number of irreducible representations       ::  ", num_irrep
         write(ounit,*)
         write(ounit,'(a)')          " Irreducible representations correspondence  ::  "
-        write(ounit,'(1x,10(a2,a,i2,a,x))') (unique_irrep(i), "=", i ,";", i=1, num_irrep)
+        write(ounit,'(1x,10(a2,a,i2,a,1x))') (unique_irrep(i), "=", i ,";", i=1, num_irrep)
         write(ounit,*)
 
         ! get the correspondence for each atom according to the rule defined for atomtypes
@@ -1131,11 +1234,9 @@ module trexio_read_data
         use optwf_control,      only: method
         use precision_kinds,    only: dp
 
-#if defined(TREXIO_FOUND)
         use trexio
         use contrl_file,        only: backend
         use error,              only: trexio_error
-#endif
 
         implicit none
 
@@ -1181,7 +1282,6 @@ module trexio_read_data
 
         ! Check if the file exists
         if (wid) then
-#if defined(TREXIO_FOUND)
             trex_determinant_file = trexio_open(file_trexio_path, 'r', backend, rc)
             call trexio_assert(rc, TREXIO_SUCCESS)
             rc = trexio_has_determinant (trex_determinant_file)
@@ -1194,7 +1294,6 @@ module trexio_read_data
                 write(errunit,*) "trexio file does not have number of determinant  stored :: ", rc
                 call trexio_error(rc, TREXIO_SUCCESS, 'trexio_has_group_determinant failed', __FILE__, __LINE__)
             endif
-#endif
         endif
         call bcast(ndet)
         call bcast(int64_num)
@@ -1217,11 +1316,9 @@ module trexio_read_data
 
 
         if (wid) then
-#if defined(TREXIO_FOUND)
         rc = trexio_read_determinant_coefficient(trex_determinant_file, offset, BUFSIZE, cdet(:,1,nwftype))
         if (trexio_has_determinant_coefficient(trex_determinant_file) == 0) trexio_has_group_determinant = .true.
         call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_determinant_coeff failed', __FILE__, __LINE__)
-#endif
         endif
         call bcast(trexio_has_group_determinant)
         call bcast(cdet)
@@ -1243,7 +1340,6 @@ module trexio_read_data
         offset = 0_8
         icount = BUFSIZE
 
-#if defined(TREXIO_FOUND)
         if (wid) then
             do while (icount == BUFSIZE)
                 if (offset < ndet) then
@@ -1274,7 +1370,6 @@ module trexio_read_data
             deallocate(orb_list_up)
             deallocate(orb_list_dn)
         endif
-#endif
         call bcast(iworbd)
 
         write(ounit,*) '-----------------------------------------------------------------------'
@@ -1291,11 +1386,9 @@ module trexio_read_data
         use custom_broadcast,   only: bcast
         use mpiconf,            only: wid
 
-#if defined(TREXIO_FOUND)
         use trexio
         use contrl_file,        only: backend
         use error,              only: trexio_error
-#endif
 
         use pseudo_mod,         only: MPS_L, MGAUSS, MPS_QUAD
         use system,               only: symbol, nctype_tot, ncent_tot
@@ -1360,13 +1453,11 @@ module trexio_read_data
 
         ! Check if the file exists
         if (wid) then
-#if defined(TREXIO_FOUND)
             trex_ecp_file = trexio_open(file_trexio_path, 'r', backend, rc)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio file open', __FILE__, __LINE__)
             rc = trexio_read_ecp_num(trex_ecp_file, ecp_num)
             if (trexio_has_ecp(trex_ecp_file) == 0) trexio_has_group_ecp = .true.
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_ecp_num', __FILE__, __LINE__)
-#endif
         endif
         call bcast(trexio_has_group_ecp)
         call bcast(ecp_num)
@@ -1380,7 +1471,6 @@ module trexio_read_data
         allocate (flat_ecp_exponent(ecp_num))
 
         if (wid) then
-#if defined(TREXIO_FOUND)
             rc = trexio_read_ecp_ang_mom(trex_ecp_file, flat_ecp_ang_mom)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_ecp_ang_mom', __FILE__, __LINE__)
             rc = trexio_read_ecp_nucleus_index(trex_ecp_file, flat_ecp_nucleus_index)
@@ -1395,7 +1485,6 @@ module trexio_read_data
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_ecp_coefficient', __FILE__, __LINE__)
             rc = trexio_read_ecp_exponent(trex_ecp_file, flat_ecp_exponent)
             call trexio_error(rc, TREXIO_SUCCESS, 'trexio_read_ecp_exponent', __FILE__, __LINE__)
-#endif
         endif
         call bcast(flat_ecp_ang_mom)
         call bcast(flat_ecp_nucleus_index)
@@ -1519,6 +1608,7 @@ module trexio_read_data
 
         call gesqua(nquad,xq0,yq0,zq0,wq)
     end subroutine read_trexio_ecp_file
+#endif
 
 
 end module

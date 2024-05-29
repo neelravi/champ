@@ -27,13 +27,18 @@ if (MPI_Fortran_FOUND)
     m_pseudo.f90
     m_sampling.f90
     m_sr.f90
+    m_slater.f90
+    m_metropolis.f90
     m_dmc.f90
     m_vmc.f90
+    m_vd.f90
+    m_pathak.f90
     m_grid.f90
     m_pcm.f90
     m_ewald.f90
     m_jastrow.f90
     m_mmpol.f90
+    m_save.f90
     m_optorb.f90
     m_prop.f90
     m_efield.f90
@@ -55,7 +60,11 @@ if (MPI_Fortran_FOUND)
     ${CMAKE_PARSER_DIR}/utils.F90)
 
     if (TREXIO_FOUND)
-      list(APPEND SHARED_MODULES trexio_f.f90)
+      list(APPEND SHARED_MODULES m_trexio.F90)
+    endif()
+
+    if (QMCKL_FOUND)
+       list(APPEND SHARED_MODULES m_qmckl.F90)
     endif()
 
     add_library(shared_modules OBJECT ${SHARED_MODULES})

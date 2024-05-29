@@ -19,7 +19,7 @@ module config
     real(dp), dimension(:), allocatable :: psi2n !(MFORCE)
     real(dp), dimension(:, :), allocatable :: psi2o !(MSTATES, MFORCE)
     real(dp), dimension(:), allocatable :: psido !(MSTATES)
-    real(dp) :: psijo
+    real(dp), dimension(:), allocatable :: psijo !(nwftypejas)
     real(dp), dimension(:), allocatable :: rminn !(MELEC)
     real(dp), dimension(:), allocatable :: rminno !(MELEC)
     real(dp), dimension(:), allocatable :: rmino !(MELEC)
@@ -55,8 +55,9 @@ module config
 contains
     subroutine allocate_config()
       use mstates_mod, only: MSTATES
+      use system, only: nelec
       use multiple_geo, only: MFORCE
-      use system,  only: nelec
+      use vmc_mod, only: nwftypejas
         implicit none
         if (.not. allocated(delttn)) allocate (delttn(nelec))
         if (.not. allocated(enew)) allocate (enew(MFORCE))
@@ -68,6 +69,7 @@ contains
         if (.not. allocated(psi2n)) allocate (psi2n(MFORCE))
         if (.not. allocated(psi2o)) allocate (psi2o(MSTATES, MFORCE))
         if (.not. allocated(psido)) allocate (psido(MSTATES))
+        if (.not. allocated(psijo)) allocate (psijo(nwftypejas))
         if (.not. allocated(rminn)) allocate (rminn(nelec))
         if (.not. allocated(rminno)) allocate (rminno(nelec))
         if (.not. allocated(rmino)) allocate (rmino(nelec))
@@ -111,7 +113,7 @@ contains
     subroutine allocate_config_dmc()
       use dmc_mod, only: mwalk
       use multiple_geo, only: MFORCE
-      use system,  only: nelec
+      use system, only: nelec
 
       implicit none
 
@@ -133,7 +135,7 @@ contains
     end subroutine deallocate_config_dmc
 end module config
 
-module rnyucm
+module random
     !> I guess the random number generator
     !> used to move in the MC sampling
     !> Arguments: ll, lm
@@ -149,10 +151,10 @@ module rnyucm
     public :: ll, mm, switch_rng
     save
 
-end module rnyucm
+end module random
 
 module stats
-    !> Arguments: rejmax, acc, dfus2ac, dfus2un, dr2ac, dr2un, nacc,
+    !> Arguments: rejmax, acc, dfus2ac, dfus2un, nacc,
     !> nbrnch, nodecr, trymove
       use precision_kinds, only: dp
 
@@ -161,8 +163,6 @@ module stats
     real(dp) :: acc
     real(dp) :: dfus2ac
     real(dp) :: dfus2un
-    real(dp) :: dr2ac
-    real(dp) :: dr2un
     integer  :: nacc
     integer  :: nbrnch
     integer  :: nodecr
@@ -170,48 +170,9 @@ module stats
 
     private
     public :: rejmax
-    public :: acc, dfus2ac, dfus2un, dr2ac, dr2un, nacc, nbrnch, nodecr, trymove
+    public :: acc, dfus2ac, dfus2un, nacc, nbrnch, nodecr, trymove
     save
 end module stats
-
-module step
-    !> I guess has to do with the sampling
-    !> Arguments: ekin, ekin2, rprob, suc, trunfb, try
-      use precision_kinds, only: dp
-      use vmc_mod, only: nrad
-
-    real(dp), dimension(:), allocatable :: ekin !(nrad)
-    real(dp), dimension(:), allocatable :: ekin2 !(nrad)
-    real(dp), dimension(:), allocatable :: rprob !(nrad)
-    real(dp), dimension(:), allocatable :: suc !(nrad)
-    real(dp), dimension(:), allocatable :: trunfb !(nrad)
-    real(dp), dimension(:), allocatable :: try !(nrad)
-
-    private
-    public :: ekin, ekin2, rprob, suc, trunfb, try
-    public :: allocate_step, deallocate_step
-    save
-contains
-    subroutine allocate_step()
-      use vmc_mod, only: nrad
-        if (.not. allocated(ekin)) allocate (ekin(nrad))
-        if (.not. allocated(ekin2)) allocate (ekin2(nrad))
-        if (.not. allocated(rprob)) allocate (rprob(nrad))
-        if (.not. allocated(suc)) allocate (suc(nrad))
-        if (.not. allocated(trunfb)) allocate (trunfb(nrad))
-        if (.not. allocated(try)) allocate (try(nrad))
-    end subroutine allocate_step
-
-    subroutine deallocate_step()
-        if (allocated(try)) deallocate (try)
-        if (allocated(trunfb)) deallocate (trunfb)
-        if (allocated(suc)) deallocate (suc)
-        if (allocated(rprob)) deallocate (rprob)
-        if (allocated(ekin2)) deallocate (ekin2)
-        if (allocated(ekin)) deallocate (ekin)
-    end subroutine deallocate_step
-
-end module step
 
 module tmpnode
     !> has to do with the sampling
@@ -225,53 +186,17 @@ module tmpnode
     save
 end module tmpnode
 
-module kinet
-    !> kinetic energy ?
-    !> only used in metropolis
-    !> Arguments: dtdx2n, dtdx2o
-      use precision_kinds, only: dp
-      use system,  only: nelec
-
-    real(dp), dimension(:), allocatable :: dtdx2n !(MELEC)
-    real(dp), dimension(:), allocatable :: dtdx2o !(MELEC)
-
-    private
-    public :: dtdx2n, dtdx2o
-    public :: allocate_kinet, deallocate_kinet
-    save
-contains
-    subroutine allocate_kinet()
-        if (.not. allocated(dtdx2n)) allocate (dtdx2n(nelec))
-        if (.not. allocated(dtdx2o)) allocate (dtdx2o(nelec))
-    end subroutine allocate_kinet
-
-    subroutine deallocate_kinet()
-        if (allocated(dtdx2o)) deallocate (dtdx2o)
-        if (allocated(dtdx2n)) deallocate (dtdx2n)
-    end subroutine deallocate_kinet
-
-end module kinet
-
 module m_sampling
 contains
 subroutine allocate_m_sampling()
-      use config,  only: allocate_config
-      use kinet,   only: allocate_kinet
-      use step,    only: allocate_step
-      use system,  only: nelec
+    use config, only: allocate_config
 
     call allocate_config()
-    call allocate_step()
-    call allocate_kinet()
 end subroutine allocate_m_sampling
 
 subroutine deallocate_m_sampling()
-      use config,  only: deallocate_config
-      use kinet,   only: deallocate_kinet
-      use step,    only: deallocate_step
+    use config, only: deallocate_config
 
     call deallocate_config()
-    call deallocate_step()
-    call deallocate_kinet()
 end subroutine deallocate_m_sampling
 end module 

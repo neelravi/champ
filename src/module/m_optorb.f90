@@ -50,10 +50,13 @@ module optorb_mod
     integer :: nmatdim
     integer :: nmatdim2
 
+    ! imported from check_orbitals_(reset), so it can be saved here
+    integer :: nadorb_save
+
     integer, parameter :: MXREP = 10
     private
     public :: mxreduced, nmatdim, nmatdim2, MXREP
-    public :: set_optorb_size
+    public :: set_optorb_size, nadorb_save
     save
 
 contains
@@ -446,7 +449,7 @@ end module optorb_mix
 module m_optorb
 contains
 subroutine allocate_m_optorb()
-      use optorb,  only: allocate_optorb
+      use optorb, only: allocate_optorb
       use optorb_mix, only: allocate_optorb_mix
       use orb_mat_001, only: allocate_orb_mat_001
       use orb_mat_002, only: allocate_orb_mat_002
@@ -476,7 +479,7 @@ subroutine allocate_m_optorb()
 end subroutine allocate_m_optorb
 
 subroutine deallocate_m_optorb()
-      use optorb,  only: deallocate_optorb
+      use optorb, only: deallocate_optorb
       use optorb_mix, only: deallocate_optorb_mix
       use orb_mat_001, only: deallocate_orb_mat_001
       use orb_mat_002, only: deallocate_orb_mat_002

@@ -1,0 +1,64 @@
+name: GitHub-hosted Intel OneAPI build
+
+on:
+  push:
+    branches:
+      - 'releases/**'
+      - main
+    tags:
+      - v2.*.*
+      - v3.*.*
+  pull_request:
+    branches:
+      - 'releases/**'
+      - main
+
+jobs:
+  build_champ:
+    strategy:
+      matrix:
+        toolchain: ['intel']
+    name: Build CHAMP with ${{ matrix.toolchain }} OneAPI GitHub-hosted runner
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: bash --noprofile --norc {0}
+    steps:
+      - name: Download Intel oneAPI
+        run: |
+          sudo apt update
+          sudo apt install -y gpg-agent wget
+          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt update
+
+      - name: install Intel oneapi components
+        run: |
+          sudo apt install -y intel-mkl
+          sudo apt install -y intel-hpckit
+
+      - name: Get the CHAMP code
+        uses: actions/checkout@v4
+
+      - name: Compile the CHAMP code using Intel and run all tests
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+
+          cmake --version
+          ifx --version
+          icx --version
+          mpiifx --version
+          mpiicx --version
+
+          cmake -H. -Bbuild \
+            -DCMAKE_Fortran_COMPILER=mpiifx \
+            -DCMAKE_C_COMPILER=mpiicx \
+            -DBLA_STATIC=ON \
+            -DBLA_VENDOR=Intel10_64lp_seq \
+            -DENABLE_TREXIO=OFF \
+            -DENABLE_QMCKL=OFF \
+
+          cmake --build build -- -j2
+          cd build
+          ctest --output-on-failure --verbose -LE "(TREXIO|QMCKL)"

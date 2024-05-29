@@ -5,13 +5,13 @@ module test_random_mod
   contains
 subroutine test_random
   use random_mod, only: setrn, random_dp
-  use rnyucm, only: switch_rng
+  use random, only: switch_rng
   implicit none
 
   integer :: n                     
   real(dp) :: rn
 
-  call setrn([1,2,3,4])
+  call setrn([1,2,3,4,5,6,7,8])
 
   call tag_test("test if random is between 0 and 1, xoshiro")
   do n = 1,100
@@ -22,7 +22,7 @@ subroutine test_random
   end do
   call tag_test("test if random is between 0 and 1, legacy")
   switch_rng = 0
-  call setrn([1,2,3,4])
+  call setrn([1,2,3,4,5,6,7,8])
   do n = 1,100
     rn = random_dp()
     if (rn > 1. .or. rn < 0.) then

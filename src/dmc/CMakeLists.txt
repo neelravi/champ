@@ -1,42 +1,38 @@
 # Source files
 file(GLOB DMC_SOURCE
-  acues1_reduce.f
-  averages.f
-  dumper.f
-  gauss.f
-  main.f
-  mmpol_reduce.f
-  nonloc_grid.f
-  pcm_reduce.f
-  redistribute.f
-  splitj.f
-  zerest.f
-  acues1.f
-  acuest.f
-  dmc.f
-  dumper_gpop.f
-  hpsiedmc.f
-  mc_configs.f
-  move_walker.f
-  optwf_dmc.f
-  prop_dmc.f
-  restart.f
-  walksav_det.f
-  acues1_gpop.f
-  acuest_gpop.f
-  dmc_ps_mov1.f
-  finwrt.f
-  init.f
-  mmpol_dmc.f
-  multideterminant_tmove.f
-  pcm_dmc.f
-  prop_reduce.f
-  restart_gpop.f
-  walksav_jas.f
+  acues1_reduce.f90
+  averages.f90
+  dumper.f90
+  main.f90
+  mmpol_reduce.f90
+  nonloc_grid.f90
+  pcm_reduce.f90
+  redistribute.f90
+  splitj.f90
+  zerest.f90
+  acues1.f90
+  acuest.f90
+  dmc.f90
+  dumper_gpop.f90
+  hpsiedmc.f90
+  mc_configs.f90
+  move_walker.f90
+  optwf_dmc.f90
+  prop_dmc.f90
+  restart.f90
+  walksav_det.f90
+  acues1_gpop.f90
+  acuest_gpop.f90
+  dmc_ps_mov1.f90
+  finwrt.f90
+  init.f90
+  mmpol_dmc.f90
+  multideterminant_tmove.f90
+  pcm_dmc.f90
+  prop_reduce.f90
+  restart_gpop.f90
+  walksav_jas.f90
   )
-
-find_package(FortranFormat)
-formatFortran("${DMC_SOURCE}") # Set Fixed format property
 
 # --------------------------------------------------------------------
 
@@ -62,6 +58,14 @@ target_compile_options(dmc.mov1
   "$<$<CONFIG:Debug>:${Fortan_FLAGS_DEBUG}>"
   )
 
+  if(CMAKE_Fortran_COMPILER_ID MATCHES "NVHPC" OR CMAKE_Fortran_COMPILER_ID MATCHES "Fujitsu")
+  	target_link_options(dmc.mov1
+	  PRIVATE
+	  ${Fortran_FLAGS}
+	  "$<$<CONFIG:Debug>:${Fortan_FLAGS_DEBUG}>"
+	  )
+  endif()
+
 if (TREXIO_FOUND)
   target_link_libraries(dmc.mov1
     PRIVATE
@@ -76,7 +80,9 @@ else()
     pspline
     parser
     ${LINEAR_ALGEBRA}
+    ${CUDA_LIBRARIES}
     MPI::MPI_Fortran)
 endif()
+
 
 set(DMC_SOURCE ${DMC_SOURCE} CACHE INTERNAL "Path to the source of vmc f77")

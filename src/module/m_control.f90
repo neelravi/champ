@@ -3,7 +3,7 @@ module control
 
     implicit none
 
-    character*12 :: mode
+    character(len=12) :: mode
     integer  :: ipr
     private
     public :: mode, ipr, init_control_mode
@@ -142,9 +142,10 @@ contains
 !    end subroutine init_files
 
     subroutine close_files()
+      use mpiconf, only: wid
         close (5)
         close (6)
-        close (45)
+        if (wid) close (45)
     end subroutine close_files
 
     subroutine init_logfile()
@@ -153,12 +154,13 @@ contains
         !> Open the standard output and the log file only on the master
         if (wid) then
             log_filename = 'output.log'
+            open (45, file=log_filename, status='unknown')
         else
             log_filename = '/dev/null'
             close (6)
             open (6, file='/dev/null')
         endif
-        open (45, file=log_filename, status='unknown')
+        !open (45, file=log_filename, status='unknown')
     end subroutine init_logfile
 
     subroutine initialize()
@@ -174,6 +176,13 @@ contains
         integer                                 :: i, j, iostat, argcount
         character(len=10), dimension(12)        :: extensions
         character(len=100)                      :: string_format  = '(A, T40, A)'
+
+        ! Initialize file names to empty variables to avoid garbage in the output
+        file_error = ''
+        file_input = ''
+        file_output = ''
+
+
 
         ! Make sure ounit default is stdout, and errunit is stderr
         ounit = output_unit
@@ -212,10 +221,10 @@ contains
                         stop
                     endif
 !                        write(output_unit, fmt=string_format) ' input file      :: ', file_input
-                    if (wid) then
-                        open (newunit=iunit,file=file_input, iostat=iostat, action='read' )
-                        if (iostat /= 0) error stop "error in opening input file"
-                    endif
+!                    if (wid) then
+!                        open (newunit=iunit,file=file_input, iostat=iostat, action='read' )
+!                        if (iostat /= 0) error stop "error in opening input file"
+!                    endif
 
                 case ('-o', '-ou', '-out', '-output', '--output')
                     file_output = arg(i+1)
@@ -223,12 +232,16 @@ contains
                         file_output = '/dev/null'
                         close (6)
                         open (6, file='/dev/null')
+                    else
+                      open (newunit=ounit,file=file_output, iostat=iostat, action='write', status='unknown' )
+                      if (iostat /= 0) error stop "error in opening output unit"
                     endif
-                    open (newunit=ounit,file=file_output, iostat=iostat, action='write', status='unknown' )
-                    if (iostat /= 0) error stop "error in opening output unit"
 
                 case ('-e', '-er', '-err', '-error', '--error')
                     file_error = arg(i+1)
+                    if (.not. wid ) then
+                        file_error = '/dev/null'
+                    endif
                     open (newunit=errunit,file=file_error, iostat=iostat, action='write' )
 
                 case ('-h', '--help')

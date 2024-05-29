@@ -3,7 +3,7 @@ module optwf_control
     !>            nopt_iter, micro_iter_sr, energy_tol,
     !>            dparm_norm_min, nvec, nvecx, alin_adiag, alin_eps, lin_jdav ibeta, ratio_j,
     !>            iapprox, ncore, iuse_orbeigv, no_active, multiple_adiag, iroot_geo,
-    !>            ilastvmc, sr_tau, sr_adig, sr_adiag, sr_eps
+    !>            ilastvmc, sr_tau, sr_adig, sr_adiag, sr_eps, orbitals_ortho
 
       use precision_kinds, only: dp
 
@@ -39,7 +39,7 @@ module optwf_control
     real(dp) :: sr_eps
     character(20) :: dl_alg
     real(dp) :: dl_mom
-
+    logical :: orbitals_ortho
 
     private
     public :: ioptwf
@@ -54,7 +54,7 @@ module optwf_control
     public :: ilastvmc
     public :: sr_tau, sr_adiag, sr_eps
     public :: dl_alg, dl_mom
-    public :: method
+    public :: method, orbitals_ortho
     save
 
 end module optwf_control
@@ -111,7 +111,7 @@ module optwf_nparmj
     save
 contains
     subroutine allocate_optwf_nparmj()
-      use system,  only: nctype_tot
+      use system, only: nctype_tot
       use vmc_mod, only: nctyp3x
 
         if (.not. allocated(nparma)) allocate (nparma(nctyp3x), source=0)
@@ -158,7 +158,7 @@ module optwf_wjas
     save
 contains
     subroutine allocate_optwf_wjas()
-      use system,  only: nctype_tot
+      use system, only: nctype_tot
       use vmc_mod, only: nctyp3x
         if (.not. allocated(iwjasa)) allocate (iwjasa(83, nctyp3x), source=0)
         if (.not. allocated(iwjasb)) allocate (iwjasb(83, 3), source=0)
