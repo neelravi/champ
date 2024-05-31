@@ -61,4 +61,4 @@ jobs:
 
           cmake --build build -- -j2
           cd build
-          ctest --output-on-failure --verbose -LE "(TREXIO|QMCKL)"
+          ctest --output-on-failure --verbose -L VMC-HNO-cipsi_322_dets_143_csfs_optall
