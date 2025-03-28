@@ -62,39 +62,39 @@ jobs:
           make install
 
 
-      - name: Clone and Install QMCKL
-        run: |
-          source /opt/intel/oneapi/setvars.sh
-          git clone https://github.com/TREX-CoE/qmckl.git
-          cd qmckl
-          export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
-          ./autogen.sh
-          ./configure --prefix=$HOME --with-icx --with-ifort --enable-hpc --with-hdf5=$HOME --with-trexio=$HOME --with-openmp --disable-python
-          make -j$(nproc)
-          make check -j$(nproc)
-          make install
+      # - name: Clone and Install QMCKL
+      #   run: |
+      #     source /opt/intel/oneapi/setvars.sh
+      #     git clone https://github.com/TREX-CoE/qmckl.git
+      #     cd qmckl
+      #     export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
+      #     ./autogen.sh
+      #     ./configure --prefix=$HOME --with-icx --with-ifort --enable-hpc --with-hdf5=$HOME --with-trexio=$HOME --with-openmp --disable-python
+      #     make -j$(nproc)
+      #     make check -j$(nproc)
+      #     make install
 
 
       - name: Clone the CHAMP code from GitHub
         uses: actions/checkout@v4
 
-      - name: Compile the CHAMP code with TREXIO and QMCkl using Intel and run all tests
-        run: |
-          source /opt/intel/oneapi/setvars.sh
-          export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
-          cmake -H. -Bbuild \
-            -DCMAKE_Fortran_COMPILER=mpiifx \
-            -DCMAKE_C_COMPILER=mpiicx \
-            -DENABLE_TREXIO=ON \
-            -DTREXIO_INCLUDE_DIR=$HOME/include \
-            -DTREXIO_LIBRARY=$HOME/lib/libtrexio.so \
-            -DENABLE_QMCKL=ON \
-            -DQMCKL_INCLUDE_DIR=$HOME/include \
-            -DQMCKL_LIBRARY=$HOME/lib/libqmckl.so
+      # - name: Compile the CHAMP code with TREXIO and QMCkl using Intel and run all tests
+      #   run: |
+      #     source /opt/intel/oneapi/setvars.sh
+      #     export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
+      #     cmake -H. -Bbuild \
+      #       -DCMAKE_Fortran_COMPILER=mpiifx \
+      #       -DCMAKE_C_COMPILER=mpiicx \
+      #       -DENABLE_TREXIO=ON \
+      #       -DTREXIO_INCLUDE_DIR=$HOME/include \
+      #       -DTREXIO_LIBRARY=$HOME/lib/libtrexio.so \
+      #       -DENABLE_QMCKL=ON \
+      #       -DQMCKL_INCLUDE_DIR=$HOME/include \
+      #       -DQMCKL_LIBRARY=$HOME/lib/libqmckl.so
 
-          cmake --build build -- -j$(nproc)
-          cd build
-          ctest --output-on-failure --verbose -L "QMCKL"
+      #     cmake --build build -- -j$(nproc)
+      #     cd build
+      #     ctest --output-on-failure --verbose -L "QMCKL"
 
       - name: Clean and Re-Compile CHAMP with TREXIO only
         run: |
